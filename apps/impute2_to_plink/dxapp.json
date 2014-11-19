@@ -1,0 +1,75 @@
+{
+  "name": "impute2_to_plink",
+  "title": "Impute2 To PLINK",
+  "summary": "Convert Impute2 file to PLINK files",
+  "tags": [
+    "Variation Calling"
+  ],
+  "dxapi": "1.0.0",
+  "version" : "0.0.1",
+  "inputSpec": [
+    {
+      "patterns": [
+        "*.sample"
+      ],
+      "label": "Sample Files",
+      "optional": false,
+      "name": "sample_files",
+      "class": "array:file"
+    },
+    {
+      "patterns": [
+        "*.impute2_info.gz"
+      ],
+      "label": "Marker Info Files",
+      "optional": false,
+      "name": "info_files",
+      "class": "array:file"
+    },
+    {
+      "patterns": [
+        "*.impute2.gz"
+      ],
+      "label": "Genotype Files",
+      "optional": false,
+      "name": "geno_files",
+      "class": "array:file"
+    },
+    {
+      "label": "Chromosomes",
+      "optional": false,
+      "name": "chroms",
+      "class": "array:string"
+    },
+    {
+      "default": 0.9,
+      "label": "Genotype Probability Threshold",
+      "optional": true,
+      "name": "prob_thresh",
+      "class": "float"
+    }
+  ],
+  "outputSpec": [
+    {
+      "label": "BED Files",
+      "name": "bed_files",
+      "class": "array:file"
+    },
+    {
+      "label": "BIM Files",
+      "name": "bim_files",
+      "class": "array:file"
+    },
+    {
+      "label": "FAM Files",
+      "name": "fam_files",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "file": "src/impute2plink.sh",
+    "interpreter": "bash"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["org-geisinger"]
+}

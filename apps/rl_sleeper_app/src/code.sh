@@ -15,17 +15,14 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
+# Make sure to get GNU parallel here
 sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get install --yes parallel
 
 main() {
 
-
     echo "Value of sleep_time: '$sleep_time'"
-
-	# parallel example:
-	seq 1 10 | parallel --gnu 'sleep $((RANDOM % 10)); echo {}'
 
     # Fill in your application code here.
     #

@@ -1,0 +1,33 @@
+{
+  "name": "rl_sleeper_app",
+  "title": "RL_Sleeper_App",
+  "summary": "Ritchie Lab App for useful tools via an SSH terminal",
+  "dxapi": "1.0.0",
+  "version": "1.0.0",
+  "inputSpec": [
+    {
+      "default": "1h",
+      "optional": true,
+      "name": "sleep_time",
+      "class": "string"
+    }
+  ],
+  "outputSpec": [],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "libgsl0ldbl"
+      }
+    ],
+    "file": "src/code.sh",
+    "interpreter": "bash"
+  },
+  "access": {
+    "network": [
+      "*"
+    ],
+    "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["org-geisinger"]
+}

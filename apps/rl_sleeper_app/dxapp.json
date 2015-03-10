@@ -15,11 +15,16 @@
   "outputSpec": [],
   "runSpec": {
     "execDepends": [
-      {"name": "libgsl0ldbl"}
+      {"name": "libgsl0ldbl"},
+      {"name": "libgsl0-dev"},
+      {"name": "tabix"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "pigz"}	
     ],
     "file": "src/code.sh",
     "interpreter": "bash"
   },
+  "openSource" : true,
   "access": {
     "network": [
       "*"

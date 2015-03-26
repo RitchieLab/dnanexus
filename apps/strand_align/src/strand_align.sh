@@ -143,14 +143,14 @@ strand_check(){
 	## Run ShapeIt to check strands
 	shapeit.v2.r644.linux.x84_64 -check -B ${prefix}_chr${chr} --input-ref haplotype_file legend_file sample_file --output-log chr${chr}.alignments -T $(nproc) || true
 	
-	if test -f chr${chr}.alignments.snp.strand; then
+	if test -f chr${chr}.alignments.snp.strand -a $(grep "^strand" chr${chr}.alignments.snp.strand | wc -l) -gt 0; then
 		## Store all Strand Alignment problems in a seperate file
 		
 		echo "Log File:"
 		cat chr${chr}.alignments.log
 		
 		echo "Strand problems"
-		grep '^strand' chr${chr}.alignments.snp.strand
+		grep '^strand' chr${chr}.alignments.snp.strand || true
 
 		# add monomorphic alleles and flip simple strands
 		fix_monomorphic.py chr${chr}.alignments.snp.strand > allele_recode

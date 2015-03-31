@@ -1,0 +1,75 @@
+{
+  "name": "geno_p",
+  "title": "geno_p",
+  "summary": "geno_p",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "gvcfs",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*vcf.gz", "*vcf"
+      ]
+    },
+    {
+      "name": "gvcfidxs",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "target_file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.bed"
+      ]
+    },
+    {
+      "name": "PREFIX",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+      "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "file": "src/geno_p.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+}

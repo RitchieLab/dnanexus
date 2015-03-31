@@ -1,0 +1,74 @@
+{
+  "name": "call_genotypes",
+  "title": "call_genotypes",
+  "summary": "call_genotypes",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "gvcfs",
+      "label": "GVCF Files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*vcf.gz", "*vcf"
+      ]
+    },
+    {
+      "name": "gvcfidxs",
+      "label": "GVCF Index Files",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "patterns": [
+        "*.bed"
+      ],
+      "optional": true,
+      "name": "target_file",
+      "class": "file"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "Raw VCF",
+      "class": "file"
+    },
+    {
+      "name": "vcf_idx_fn",
+      "label": "Raw VCF Index file",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/call_genotypes.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+}

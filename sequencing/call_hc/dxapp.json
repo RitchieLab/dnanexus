@@ -1,0 +1,77 @@
+{
+  "name": "call_hc",
+  "title": "Haplotype Caller",
+  "summary": "call_hc",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "bam",
+      "label": "BAM File",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.bam"
+      ]
+    },
+    {
+      "name": "bam_idx",
+      "label": "BAM Index file",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.bai"
+      ]
+    },
+    {
+      "name": "target",
+      "label": "Target File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.bed"
+      ]
+    },
+    {
+      "name": "call_bqsr",
+      "label": "Call Base Quality Recalibration?",
+      "class": "boolean",
+	  "default" : false,
+	  "optional" : true
+	}
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File(s)",
+      "class": "array:file"
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index file(s)",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+      "execDepends": [
+      { "name": "pigz" },
+      { "name": "openjdk-7-jre-headless" },
+      { "name": "tabix" },
+      { "name": "samtools" }
+    ],
+    "file": "src/call_hc.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+}

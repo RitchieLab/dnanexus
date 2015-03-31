@@ -1,0 +1,122 @@
+{
+  "name": "vcf_qc",
+  "title": "VCF QC",
+  "summary": "Apply Recalibration and hard filters to VCF file",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "SNP_tranches",
+      "label": "SNP tranches file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tranches"
+      ]
+    },
+    {
+      "name": "SNP_recal",
+      "label": "SNP recal file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.recal"
+      ]
+    },
+    {
+      "name": "INDEL_tranches",
+      "label": "INDEL tranches file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tranches"
+      ]
+    },
+    {
+      "name": "INDEL_recal",
+      "label": "INDEL recal file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.recal"
+      ]
+    },
+    {
+      "name": "SNP_ts",
+      "label": "SNP Truth sensitivity",
+      "class": "float",
+      "optional": false,
+      "default" : 99.5
+    },
+    {
+      "name": "INDEL_ts",
+      "label": "INDEL Truth sensitivity",
+      "class": "float",
+      "optional": false,
+      "default" : 99.0
+    },
+    {
+      "name": "addl_filter",
+      "label": "Additional Hard Filters",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Filtered VCF file",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Filtered VCF Index file",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/vcf_qc.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "user-szs14", "user-azo121"]
+}

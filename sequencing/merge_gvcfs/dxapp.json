@@ -1,0 +1,102 @@
+{
+  "name": "merge_gvcfs",
+  "title": "merge_gvcfs",
+  "summary": "merge_gvcfs",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "project",
+      "label": "Project",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "folder",
+      "label": "Folder of GVCFs",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "gvcfs",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*vcf.gz" 
+      ]
+    },
+    {
+      "name": "gvcfidxs",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "target",
+      "label" : "Sequencing Target",
+      "optional" : true,
+      "class" : "file",
+      "patterns" : ["*.bed"]
+    },
+    {
+      "name" : "padding",
+      "label" : "Interval Padding",
+      "class" : "int",
+      "optional" : true,
+      "default" : 0
+    },
+    {
+      "name": "N_BATCHES",
+      "label": "Number of resulting GVCFs",
+      "class": "int",
+      "optional": false,
+      "default": 64
+    },
+    {
+      "name": "PREFIX",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "Raw VCF",
+      "class": "array:file"
+    },
+    {
+      "name": "vcf_idx_fn",
+      "label": "Raw VCF Index file",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/merge_gvcfs.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+}

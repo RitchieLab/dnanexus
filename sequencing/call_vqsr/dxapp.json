@@ -1,0 +1,96 @@
+{
+  "name": "call_vqsr",
+  "title": "call_vqsr",
+  "summary": "call_vqsr",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_file",
+      "label": "Input VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcf_idx_file",
+      "label": "Input VCF Index File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "mode",
+      "label": "VQSR Mode",
+      "class": "string",
+      "choices" : [
+          "SNP",
+          "INDEL"
+       ],
+      "optional": true,
+      "default": "SNP"
+    },
+    {
+      "name": "exome",
+      "label": "Whole Exome?",
+      "class": "boolean",
+      "optional": true,
+      "default": true
+    },
+    {
+      "name": "target_titv",
+      "label": "Target Ti/Tv ratio",
+      "class": "float",
+      "optional": false,
+      "default": 2.15
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "recal_file",
+      "class": "file"
+    },
+    {
+      "name": "recal_idx_file",
+      "class": "file"
+    },
+    {
+      "name": "tranches_file",
+      "class": "file"
+    },
+    {
+      "name": "rscript_file",
+      "class": "file"
+    },
+    {
+      "name": "pdf_files",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/call_vqsr.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [ "*" ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+}

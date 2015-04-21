@@ -27,10 +27,13 @@ if __name__ == "__main__":
 	for i in intervals:
 		if curr_int is None:
 			curr_int = i
-		elif curr_int[0] == i[0] and curr_int[1][1] <= i[1][0]:
-			curr_int = (curr_int[0], (curr_int[1][0], i[1][1]))
 		else:
-			print "%s\t%d\t%d" % (curr_int[0], curr_int[1][0], curr_int[1][1])
-			curr_int = i
+			if curr_int[0] == i[0] and curr_int[1][1] >= i[1][0]:
+				curr_int = (curr_int[0], (curr_int[1][0], i[1][1]))
+			else:
+				print "%s\t%d\t%d" % (curr_int[0], curr_int[1][0], curr_int[1][1])
+				curr_int = i
+		
+	
 	
 	print "%s\t%d\t%d" % (curr_int[0], curr_int[1][0], curr_int[1][1])

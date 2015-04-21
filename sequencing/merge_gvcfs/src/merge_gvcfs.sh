@@ -230,7 +230,7 @@ function dl_merge_interval() {
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
 		GVCF_URL=$(dx make_download_url "$dxfn")
 		download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL" > $GVCF_BASE.$INTERVAL.vcf
-	done < $DX_GVXF_FILES
+	done < $DX_GVCF_FILES
 	
 	# Now, do the actual merging
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
@@ -584,9 +584,10 @@ function single_merge_subjob() {
 	
 		OVER_SUB=1
 		INTERVAL_LIST=$(mktemp)
+		ORIG_INTERVALS=$(mktemp)
 		if test "$target"; then
-			OVER_SUB=2
-			dx cat "$target" | interval_pad.py $padding > $INTERVAL_LIST
+			OVER_SUB=128
+			dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding > $INTERVAL_LIST
 		else
 			TMPWKDIR=$(mktemp -d)
 			cd $TMPWKDIR
@@ -603,7 +604,10 @@ function single_merge_subjob() {
 		SPLIT_DIR=$(mktemp -d)
 		cd $SPLIT_DIR
 		NPROC=$(nproc --all)
-		cat $INTERVAL_LIST | split -l $((OVER_SUB * N_PROC)) - "interval_split."
+		
+		N_INT=$(cat $INTERVAL_LIST | wc -l)
+		N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
+		cat $INTERVAL_LIST | split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l $((OVER_SUB * NPROC)) - "interval_split."
 		
 		CIDX=0
 		CONCAT_ARGS=""

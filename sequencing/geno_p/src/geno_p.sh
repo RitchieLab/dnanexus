@@ -24,43 +24,36 @@ sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get install --yes parallel
 
-function dl_split() {
+sudo pip install pytabix
+
+function parallel_download() {
 	set -x
-	WKDIR=$2
-	OUTDIR=$3
-	
-	echo "'$1', '$2', '$3"
-	cd $WKDIR
-	fn=$(dx describe --name "$1")
-	dx download "$1" -o "$fn"
-	if test -z "$(ls $fn.tbi)"; then
-		tabix -p vcf $fn
-	fi
-	
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
-		
-	# Now, split by chromosome
-	fn_base="$(echo $fn | sed 's/^\(.*\)\.vcf\(\.gz\)*$/\1/')"
-	for chr in  $(tabix -l $fn); do
-		java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-		-T SelectVariants -L $chr \
-		-V $fn \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-o $OUTDIR/$fn_base.$chr.vcf.gz
-	done
-	
-	rm "$fn"
-	rm "$fn.tbi"
+	cd $2
+	dx download "$1"
+	cd -
 }
+export -f parallel_download
 
-export -f dl_split
-
-function dl_index() {
+function dl_part_index() {
 	set -x
-	echo "'$1', '$2', '$3'"
+	echo "'$1', '$2', '$3', '$4'"
 	cd "$2"
 	fn=$(dx describe --name "$1")
+	fn_base=$(echo "$fn" | sed 's/.vcf.gz$//')
+	file_url=$(dx make_download_url "$1")
+	idxfn=$(ls "$2/$fn.tbi")
+	
+	download_part.py -f "$file_url" -i "$idxfn" -L "$3" | tee "$4/$fn_base.$3.vcf" | bgzip -c > "$4/$fn_base.$3.vcf.gz"
+	tabix -p vcf "$4/$fn_base.$3.vcf.gz"
+}
+
+export -f dl_part_index
+
+function dl_index() {
+ 	set -x
+	echo "'$1', '$2', '$3'"
+ 	cd "$2"
+ 	fn=$(dx describe --name "$1")
 	dx download "$1" -o "$fn"
 	if test -z "$(ls $fn.tbi)"; then
 		tabix -p vcf $fn
@@ -70,53 +63,16 @@ function dl_index() {
 
 export -f dl_index
 
-function upload_files() {
-	set -x
-	fn_list=$1
-	arg_fn=$2
-	target_fn=$3
-	
-	chrom=$(head -1 $fn_list | sed -e 's/\.vcf\.gz$//' -e 's/.*\.//')
-	process_args=""
-	DO_UPLOAD=1
-	if test "$target_fn"; then
-		# subset the target file for only the target chromosome
-		TARGET_SUBSET=$(mktemp -d)
-		grep "^$chrom\W" $target_fn > $TARGET_SUBSET/targets.$chrom.bed
-		if test $(cat $TARGET_SUBSET/targets.$chrom.bed | wc -l) -gt 0; then
-			target_dxfn=$(dx upload --brief $TARGET_SUBSET/targets.$chrom.bed)
-			process_args="$process_args -itarget_file:file=${target_dxfn}"
-		else 
-			DO_UPLOAD=0
-		fi
-	fi
-	
-	if test $DO_UPLOAD -ne 0; then
-		for f in $(cat $fn_list); do
-			echo "Uploading $f"
-			vcf_fn=$(dx upload --brief $f)
-			vcfidx_fn=$(dx upload --brief $f.tbi)
-			process_args="$process_args -ivcf_files:array:file=${vcf_fn} -ivcfidx_files:array:file=${vcfidx_fn}"
-		done
-	fi
-	
-	echo "$process_args" >> $2
-}
-
-export -f upload_files
 
 main() {
 
 	export SHELL="/bin/bash"
 	ADDL_CMD=""
 
-	TARGET_FILE=""
+	SUBJOB_ARGS=""
 	if test "$target_file"; then
-		TARGET_DIR=$(mktemp -d)
-		cd $TARGET_DIR
-		dx download "$target_file" -o targets.bed
-		cd -
-		TARGET_FILE=$TARGET_DIR/targets.bed
+		tgt_id=$(dx describe "$target_file" --json | jq .id | sed 's/"//g')
+		SUBJOB_ARGS="$SUBJOB_ARGS -itarget_file:file=$tgt_id"
 	fi
 	
 	if test -z "$PREFIX"; then
@@ -126,57 +82,35 @@ main() {
 	WKDIR=$(mktemp -d)
 	GVCF_SPLITDIR=$(mktemp -d)
 	DXGVCF_LIST=$(mktemp)
+	DXGVCFIDX_LIST=$(mktemp)
 	
 	cd $WKDIR
 	
+	# Get a list of chromosomes
+	dx download "${gvcfidxs[0]}" -o test.vcf.gz.tbi
+	CHROM_LIST=$(mktemp)
+	tabix -l test.vcf.gz > $CHROM_LIST
+	
+	
 	for i in "${!gvcfidxs[@]}"; do	
-		dx download "${gvcfidxs[$i]}"
+		echo "${gvcfidxs[$i]}" >> $DXGVCFIDX_LIST
 	done
 	
 	for i in "${!gvcfs[@]}"; do
 		echo "${gvcfs[$i]}" >> $DXGVCF_LIST
 	done
 	
-	# get the resources we need in /usr/share/GATK
-	sudo mkdir -p /usr/share/GATK/resources
-	sudo chmod -R a+rwX /usr/share/GATK
-		
-	#dx download $(dx find data --name "GenomeAnalysisTK-3.2-2.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta.fai" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download $(dx find data --name "human_g1k_v37_decoy.dict" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-
-	# Now, download and index in parallel, please
-	parallel -u -j $(nproc --all) --gnu dl_split :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_SPLITDIR
-	
-	# OK, now get a list of the individual files for each chromosome and output that to a file
-	# merge all of the GVCFs by chromosome
-	GVCF_MASTER_LIST=$(mktemp)
-	for f in $(ls $GVCF_SPLITDIR | grep '\.vcf\.gz$' | sed 's/.*\.\([^.]*\)\.vcf.gz/\1/' | sort | uniq); do
-		LIST_TMPF=$(mktemp)
-		ls -1 $GVCF_SPLITDIR/*.$f.vcf.gz > $LIST_TMPF || true
-		echo $LIST_TMPF >> $GVCF_MASTER_LIST
-	done
-	
-	cat $GVCF_MASTER_LIST
-	
-	# now, upload everything and get the process arguments for subjobs
-	PROCESS_ARG_FN=$(mktemp)
-	parallel -u -j $(nproc --all) --gnu upload_files :::: $GVCF_MASTER_LIST ::: $PROCESS_ARG_FN ::: $TARGET_FILE
+	GVCF_LIST=$(dx upload $DXGVCF_LIST --brief)
+	GVCFIDX_LIST=$(dx upload $DXGVCFIDX_LIST --brief)
 	
 	# Kick off each of those subjobs
 	CIDX=0
 	pparg=""
-	while read arg; do
-		echo "INPUT ARGS=$arg"
-		# Only do this if we have a job to run (can happen if no targets on a chromosome)
-		if test "$arg"; then
-			process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CIDX $arg)
-			pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out"
-			CIDX=$((CIDX + 1))
-		fi
-	done < $PROCESS_ARG_FN
+	while read chrom; do
+		process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$chrom -ichrom=$chrom -ivcf_files:file="$GVCF_LIST" -ivcfidx_files:file="$GVCFIDX_LIST" $SUBJOB_ARGS)
+		pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out"
+		CIDX=$((CIDX + 1))
+	done < $CHROM_LIST
 	
 	# OK, now we simply have to merge all of the VCF files together
 	postprocess=$(dx-jobutil-new-job merge_vcf $pparg -iPREFIX:string="$PREFIX" --depends-on ${process_jobs[@]})
@@ -190,8 +124,11 @@ genotype_gvcfs() {
 	ADDL_CMD=""
 
 	if test "$target_file"; then
-		dx download "$target_file" -o targets.bed
+		dx download "$target_file" -o targets_raw.bed
+		sed -n "/^$chrom[ \t].*/p" targets_raw.bed > targets.bed
 		ADDL_CMD="-L $PWD/targets.bed"
+	else
+		ADDL_CMD="-L $chrom"
 	fi
 	
 	if test -z "$PREFIX"; then
@@ -199,21 +136,28 @@ genotype_gvcfs() {
 	fi
 	
 	WKDIR=$(mktemp -d)
+	OUTDIR=$(mktemp -d)
 	GVCF_LIST=$(mktemp)
 	DXGVCF_LIST=$(mktemp)
+	DXGVCFIDX_LIST=$(mktemp)
 	
 	cd $WKDIR
 	
-	for i in "${!vcfidx_files[@]}"; do	
-		dx download "${vcfidx_files[$i]}"
-	done
+	dx download "${vcfidx_files}" -f -o $DXGVCFIDX_LIST
+	parallel -u -j $(nproc --all) --gnu parallel_download :::: $DXGVCFIDX_LIST ::: $WKDIR
 	
-	for i in "${!vcf_files[@]}"; do
-		echo "${vcf_files[$i]}" >> $DXGVCF_LIST
-	done
+	dx download "${vcf_files}" -f -o $DXGVCF_LIST
 	
 	# Now, download and index in parallel, please
-	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_LIST
+	parallel -u -j $(nproc --all) --gnu dl_part_index :::: $DXGVCF_LIST ::: $WKDIR ::: $chrom ::: $OUTDIR
+	
+	echo "Contents of WKDIR:"
+	ls -alh $WKDIR
+	
+	echo "Contents of OUTDIR:"
+	ls -alh $OUTDIR
+	
+	sleep 10	
 		
 	# get the resources we need in /usr/share/GATK
 	sudo mkdir -p /usr/share/GATK/resources
@@ -242,10 +186,13 @@ genotype_gvcfs() {
 	-A AlleleBalance \
 	-A InbreedingCoeff \
 	-A StrandOddsRatio \
+	-A HardyWeinberg \
+	-A ChromosomeCounts \
+	-A VariantType \
 	-A GenotypeSummaries $ADDL_CMD \
 	-nt $(nproc --all) \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
+	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
 	--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
 	-o "$VCF_TMPDIR/$PREFIX.vcf.gz"
 	
@@ -279,13 +226,17 @@ merge_vcf() {
 	WKDIR=$(mktemp -d)
 	GVCF_LIST=$(mktemp)
 	DXGVCF_LIST=$(mktemp)
+	DXGCVFIDX_LIST=$(mktemp)
 	
-	cd $WKDIR
-	
+
 	for i in "${!vcfidx_files[@]}"; do	
-		dx download "${vcfidx_files[$i]}"
+		echo "${vcfidx_files[$i]}" >> $DXGCVFIDX_LIST
 	done
 	
+	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_LIST ::: $WKDIR
+	
+	cd $WKDIR
+		
 	for i in "${!vcf_files[@]}"; do
 		echo "${vcf_files[$i]}" >> $DXGVCF_LIST
 	done

@@ -85,6 +85,9 @@
       },
       {
         "name": "tabix"
+      },
+      {
+      	"name": "vcftools"
       }
     ],
     "interpreter": "bash",
@@ -95,7 +98,8 @@
     "network": [
       "*"
     ],
-     "allProjects": "VIEW"
+     "allProjects": "VIEW",
+     "project": "CONTRIBUTE"
   },
   "developers": ["user-johnwallace123", "user-auv13"],
   "authorizedUsers" : ["user-johnwallace123", "user-auv13"]

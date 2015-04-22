@@ -129,10 +129,10 @@ if __name__ =="__main__":
 	for interval in intervals:
 		
 		tabix_itr = ()
-		if intervals[1] is None:
-			tabix_itr = tb.querys(intervals[0])
+		if interval[1] is None:
+			tabix_itr = tb.querys(interval[0])
 		else:
-			tabix_itr = tb.query(intervals[0], intervals[1][0], intervals[1][1])
+			tabix_itr = tb.query(interval[0], interval[1][0], interval[1][1])
 		
 		for line in tabix_itr:
 			sys.stdout.write("\t".join(line) + "\n")

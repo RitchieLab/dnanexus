@@ -25,6 +25,21 @@ sudo pip install pytabix
 
 set -x
 
+#mkfifo /LOG_SPLITTER
+#stdbuf -oL tee /LOGS < /LOG_SPLITTER &
+
+#splitter_pid=$!
+#exec > /LOG_SPLITTER 2>&1
+
+#save_logs() {
+#	if test -f "$HOME/job_error.json" -a "$(cat $HOME/job_error.json | jq .error.type | sed 's/\"//g')" = "AppInternalError"; then
+#	    dx upload --brief /LOGS --destination "${DX_PROJECT_CONTEXT_ID}:/${DX_JOB_ID}.log" >/dev/null
+#   	echo "Full logs saved in ${DX_PROJECT_CONTEXT_ID}:/${DX_JOB_ID}.log"
+#    fi
+#}
+
+#trap save_logs EXIT
+
 function download_resources() {
 
 	# get the resources we need in /usr/share/GATK
@@ -160,6 +175,7 @@ function upload_files() {
 export -f upload_files
 
 function merge_parts() {
+	set -x
 	GVCF_LIST=$1
 	OUTDIR=$2
 	PREFIX=$3
@@ -178,10 +194,12 @@ function merge_parts() {
 export -f merge_parts
 
 function dl_merge() {
+	set -x
 	DX_GVCF_LIST=$1
 	WKDIR=$2
 	OUTDIR=$3
 	PREFIX=$4
+	
 	
 	cd $WKDIR
 	
@@ -211,10 +229,16 @@ function dl_merge() {
 export -f dl_merge
 
 function dl_merge_interval() {
-	INTERVAL=$(echo "$1" | sed -e 's/[ \t][ \t]*/:/' -e 's/[ \t][ \t]*/-/')
+	set -x
+	INTERVAL_FILE=$1
+	# $INTERVAL holds the overall interval from 1st to last
+	INTERVAL="$(head -1 $INTERVAL_FILE | cut -f1-2 | tr '\t' '.')_$(tail -1 $INTERVAL_FILE | cut -f3)"
+	CHR="$(echo $INTERVAL | sed 's/\..*//')"
 	DX_GVCF_FILES=$2
 	INDEX_DIR=$3
 	PREFIX=$4
+	N_PROC=$5
+	RERUN_FILE=$6
 	
 	IDX_NAMES=$(mktemp)
 	ls $INDEX_DIR/*.tbi | sed -e 's|.*/\(.*\)\.tbi$|\1\t&|' | sort -k1,1 > $IDX_NAMES
@@ -226,21 +250,30 @@ function dl_merge_interval() {
 	# First, match up the GVCF to its index
 	while read dxfn; do
 		GVCF_NAME=$(dx describe --name "$dxfn")
-		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/vcf\.gz$//')
+		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/.vcf\.gz$//')
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
 		GVCF_URL=$(dx make_download_url "$dxfn")
-		download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL" > $GVCF_BASE.$INTERVAL.vcf
+		# I had some issues w/ unsorted VCFs, so take a shortcus and sort by the
+		# 2nd column - no need to sort on 1st, as these MUST all be on the
+		# same chromosome
+		download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL_FILE" | vcf-sort | bgzip -c > $GVCF_BASE.$INTERVAL.vcf.gz
+		tabix -p vcf $WKDIR/$GVCF_BASE.$INTERVAL.vcf.gz
 	done < $DX_GVCF_FILES
 	
-	# Now, do the actual merging
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
+	#N_PROC=$(nproc --all)
 
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 3 / (N_PROC * 2) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	# Ask for 95% of total per-core memory
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
 	-T CombineGVCFs \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -L $(echo "$INTERVAL" | sed 's/:.*//')\
-	$(ls $WKDIR/*.vcf | sed "s|^|-V |" | tr '\n' ' ') \
+	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -L $CHR\
+	$(ls *.vcf.gz | sed "s|^|-V |" | tr '\n' ' ') \
 	-o "$PREFIX.$INTERVAL.vcf.gz"
+	
+	# If GATK failed for any reason, add this interval file to the re-run list
+	if test "$?" -ne 0; then
+		echo "$1" >> $RERUN_FILE
+	fi
 }
 export -f dl_merge_interval
 
@@ -474,7 +507,7 @@ function merge_intervals(){
 	# download ALL of the indexes (in parallel!)
 	GVCFIDX_FN=$(mktemp)
 	dx download "$gvcfidxs" -f -o $GVCFIDX_FN
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
+	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
 	
 	# download the target file and the list of GVCFs
 	TARGET_FILE=$(mktemp)
@@ -483,9 +516,54 @@ function merge_intervals(){
 	GVCF_FN=$(mktemp)
 	dx download "$gvcfs" -f -o $GVCF_FN
 	
+	# To reduce startup overhead of GATK, let's do multiple intervals at a time
+	# This variable tells us to use $OVERSUB * $(nproc) different GATK runs
+	OVERSUB=4
+	SPLIT_DIR=$(mktemp -d)
+	cd $SPLIT_DIR
+	NPROC=$(nproc --all)
+	
+	N_BATCHES=$((OVERSUB * NPROC))
+	split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $TARGET_FILE "interval_split."
+	
+	cd -
+	MASTER_TARGET_LIST=$(mktemp)
+	ls -1 $SPLIT_DIR/interval_split.* > $MASTER_TARGET_LIST	
+	
 	# iterate over the intervals in TARGET_FILE, downloading only what is needed
+	#TODO: make this robust against GATK resource-related crashing
 	OUTDIR=$(mktemp -d)
-	parallel -u --gnu -j $(nproc --all) dl_merge_interval :::: $TARGET_FILE ::: $GVCF_FN ::: $INDEX_DIR ::: $OUTDIR
+	OUTDIR_PREF="$OUTDIR/combined"
+
+	N_CHUNKS=$(cat $MASTER_TARGET_LIST | wc -l)	
+	RERUN_FILE=$(mktemp)
+	N_RUNS=1
+	N_CORES=$(nproc)
+	N_JOBS=1
+	
+	# each run, we will decrease the number of cores available until we're at a single core at a time (using ALL the memory)
+	while test $N_CHUNKS -gt 0 -a $N_JOBS -gt 0; do	
+	
+		N_JOBS=$(echo "$N_CORES/2^($N_RUNS - 1)" | bc)
+		# make sure we have a minimum of 1 job, please!
+		N_JOBS=$((N_JOBS > 0 ? N_JOBS : 1))
+	
+		parallel --gnu -j $N_JOBS dl_merge_interval :::: $MASTER_TARGET_LIST ::: $GVCF_FN ::: $INDEX_DIR ::: $OUTDIR_PREF ::: $N_JOBS ::: $RERUN_FILE
+		
+		PREV_CHUNKS=$N_CHUNKS
+		N_CHUNKS=$(cat $RERUN_FILE | wc -l)
+		mv $RERUN_FILE $MASTER_TARGET_LIST
+		RERUN_FILE=$(mktemp)
+		N_RUNS=$((N_RUNS + 1))
+		# just to make N_JOBS 0 at the conditional when we ran only a single job!
+		N_JOBS=$((N_JOBS - 1))
+	done
+	
+	# We need to be certain that nothing remains to be merged!
+	if test "$N_CHUNKS" -ne 0; then
+		dx-jobutil-report-error "ERROR: Could not merge one or more interval chunks; try an instance with more memory!"
+	fi
+
 	
 	# OK, at this point everything should be merged, so we'll go ahead and concatenate everything in $OUTDIR
 	FINAL_DIR=$(mktemp -d)
@@ -535,9 +613,8 @@ function concatenate_gvcfs(){
 	done
 	
 	cd $WKDIR
-	while read dxfn; do
-		dx download "$dxfn"
-	done < $DX_GVCFIDX_LIST
+	
+	parallel -u --gnu -j $(nproc --all) download_parallel :::: $DX_GVCFIDX_LIST ::: $WKDIR
 	
 	# OK, now all of the gvcf indexes are in $WKDIR, time to download
 	# all of the GVCFs in parallel
@@ -586,8 +663,22 @@ function single_merge_subjob() {
 		INTERVAL_LIST=$(mktemp)
 		ORIG_INTERVALS=$(mktemp)
 		if test "$target"; then
-			OVER_SUB=128
-			dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding > $INTERVAL_LIST
+			OVER_SUB=512
+			INTV_FN=$(mktemp)
+			INTV_NUMERIC=$(mktemp)
+			INTV_OTHER=$(mktemp)
+			dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding | tr ' ' '\t' > $INTV_FN
+			
+			# Now, split into INTV_NUMERIC and INTV_OTHER; they need to be sorted
+			# separately (grumble..)
+			grep -e '^[0-9]*\s' $INTV_FN > $INTV_NUMERIC
+			join -v 1 -t '\0' <(sort $INTV_FN) <(sort $INTV_NUMERIC) > $INTV_OTHER
+			
+			cat <(sort -n -k1,2 $INTV_NUMERIC) <(sort -k1,1 -k2,2n $INTV_OTHER) > $INTERVAL_LIST
+			rm $INTV_FN
+			rm $INTV_NUMERIC
+			rm $INTV_OTHER
+			
 		else
 			TMPWKDIR=$(mktemp -d)
 			cd $TMPWKDIR
@@ -605,16 +696,27 @@ function single_merge_subjob() {
 		cd $SPLIT_DIR
 		NPROC=$(nproc --all)
 		
-		N_INT=$(cat $INTERVAL_LIST | wc -l)
-		N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
-		cat $INTERVAL_LIST | split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l $((OVER_SUB * NPROC)) - "interval_split."
+		#N_INT=$(cat $INTERVAL_LIST | wc -l)
+		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
+		
+		# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
+		# also, all the chromosomes should be together, so no need to sort
+		# this may allow us to use CatVariants later on...
+		for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
+			CHR_LIST=$(mktemp)
+			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
+			N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
+			N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
+			split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
+			rm $CHR_LIST
+		done
 		
 		CIDX=0
 		CONCAT_ARGS=""
 		for f in interval_split.*; do
 			int_fn=$(dx upload $f --brief)
 			# run a subjob that merges the input VCFs on the given target file
-			merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX")
+			merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
 			CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_job[$CIDX]}:vcf_list"			
 			CIDX=$((CIDX + 1))
 		done

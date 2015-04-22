@@ -641,8 +641,8 @@ function concatenate_gvcfs(){
 	DX_GVCF_UPLOAD=$(dx upload "$FINAL_DIR/$PREFIX.vcf.gz" --brief)
 	DX_GVCFIDX_UPLOAD=$(dx upload "$FINAL_DIR/$PREFIX.vcf.gz.tbi" --brief)
 	
-	dx-jobutil-add-output vcf_list $DX_GVCF_UPLOAD --class=file
-	dx-jobutil-add-output vcfidx_list $DX_GVCFIDX_UPLOAD --class=file
+	dx-jobutil-add-output gvcf $DX_GVCF_UPLOAD --class=file
+	dx-jobutil-add-output gvcfidx $DX_GVCFIDX_UPLOAD --class=file
 	
 }
 

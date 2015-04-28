@@ -21,9 +21,15 @@ sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get install --yes parallel
 
-sudo pip install pytabix
-
 set -x
+
+RERUN=1
+
+while test $RERUN -ne 0; do
+	sudo pip install pytabix
+	RERUN="$?"
+done
+
 
 #mkfifo /LOG_SPLITTER
 #stdbuf -oL tee /LOGS < /LOG_SPLITTER &
@@ -73,7 +79,7 @@ function merge_gvcf() {
 	GVCF_LIST=$(mktemp)
 		
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
+	N_PROC=$4
 	
 	while read dx_gvcf; do
 		gvcf_fn=$(dx describe --name "$dx_gvcf")
@@ -86,62 +92,34 @@ function merge_gvcf() {
 		echo $gvcf_fn >> $GVCF_LIST
 	done < $f
 	
-	# ask for 150% of per-core memory
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 3 / (N_PROC * 2) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
 	-T CombineGVCFs \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
 	-o "$f.vcf.gz"
 	
+	if test "$?" -ne 0; then
+		# Please add this to the list to be re-run
+		echo $f >> $5
+		rm "$f.vcf.gz" || true
+		rm "$f.vcf.gz.tbi" || true
+	else
+		echo "$f.vcf.gz" >> $2
+	fi
+	
 	rm $GVCF_LIST
-	
-	echo "$f.vcf.gz" >> $2
-	
+		
 	# clean up the working directory
-	for f in $(cat $GVCF_LIST); do
-		rm $f
-		rm $f.tbi || true
+	for tmpfn in $(cat $GVCF_LIST); do
+		rm $tmpfn
+		rm $tmpfn.tbi || true
 	done
 	
 	cd -
 	
 }
 export -f merge_gvcf
-
-# download a GVCf and split it into chromosomal parts
-function dl_split() {
-	set -x
-	dx_f=$1
-	WKDIR=$2
-	OUTDIR=$3
-
-	fn="$(dx describe --name "$dx_f")"
-	fn_base="$(echo $fn | sed 's/^\(.*\)\.vcf\(\.gz\)*$/\1/')"
-	cd $WKDIR
-	
-	dx download "$dx_f" -o "$fn"
-	
-	if test "$(echo $fn | grep '\.gz$')" -a -z "$(ls $fn.tbi)"; then
-		tabix -p vcf $fn
-	fi
-	
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
-	
-	for chr in  $(tabix -l $fn); do
-		java -d64 -Xms512m -Xmx$((TOT_MEM * 3 / (N_PROC * 2) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-		-T SelectVariants -L $chr \
-		-V $fn \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-o $OUTDIR/$fn_base.$chr.vcf.gz
-	done
-	
-	# clean up the files we were working with
-	rm $WKDIR/$fn
-	rm $WKDIR/$fn.tbi
-
-}
-export -f dl_split
 
 function dl_index() {
 	set -x
@@ -174,60 +152,6 @@ function upload_files() {
 
 export -f upload_files
 
-function merge_parts() {
-	set -x
-	GVCF_LIST=$1
-	OUTDIR=$2
-	PREFIX=$3
-	
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
-
-	# Let's oversubscribe the memory by 50% and hope it goes OK
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 3 / (N_PROC * 2) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-	-T CombineGVCFs \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
-	-o "$OUTDIR/$PREFIX.$CHROM.vcf.gz"
-	
-}
-export -f merge_parts
-
-function dl_merge() {
-	set -x
-	DX_GVCF_LIST=$1
-	WKDIR=$2
-	OUTDIR=$3
-	PREFIX=$4
-	
-	
-	cd $WKDIR
-	
-	GVCF_LIST=$(mktemp)
-	# Download everything in GVCF_LIST to $WKDIR, indexing if necessary
-	while read dx_fn; do
-		dx download "$dx_fn"
-		fn=$(dx describe "$dx_fn" --name)
-		echo $fn >> $GVCF_LIST
-		if test -z "$(ls $fn.*)"; then
-			tabix -p vcf "$fn"
-		fi
-	done < $DX_GVCF_LIST
-		
-	CHROM=$(head -1 $GVCF_LIST | sed -e 's/\.vcf\.gz$//' -e 's/^.*\.//')
-	
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	N_PROC=$(nproc --all)
-
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 3 / (N_PROC * 2) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-	-T CombineGVCFs \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -L $CHROM \
-	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
-	-o "$OUTDIR/$PREFIX.$CHROM.vcf.gz"
-	
-}
-export -f dl_merge
-
 function dl_merge_interval() {
 	set -x
 	INTERVAL_FILE=$1
@@ -246,18 +170,35 @@ function dl_merge_interval() {
 	WKDIR=$(mktemp -d)
 	cd $WKDIR
 	
+	set -o 'pipefail'
+	
 	GVCF_IDX_MAPPING=$(mktemp)
 	# First, match up the GVCF to its index
 	while read dxfn; do
 		GVCF_NAME=$(dx describe --name "$dxfn")
 		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/.vcf\.gz$//')
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
+		
+		
 		GVCF_URL=$(dx make_download_url "$dxfn")
+		
+		#GVCF_URL=$(dx describe --json "$dxfn" | jq .id | sed 's/"//g')
 		# I had some issues w/ unsorted VCFs, so take a shortcus and sort by the
 		# 2nd column - no need to sort on 1st, as these MUST all be on the
 		# same chromosome
-		download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL_FILE" | vcf-sort | bgzip -c > $GVCF_BASE.$INTERVAL.vcf.gz
-		tabix -p vcf $WKDIR/$GVCF_BASE.$INTERVAL.vcf.gz
+		RERUN=1
+		MAX_RETRY=5
+		while test $RERUN -ne 0 -a $MAX_RETRY -gt 0; do
+			download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL_FILE" | vcf-sort | bgzip -c > $GVCF_BASE.$INTERVAL.vcf.gz
+			RERUN="$?"
+			MAX_RETRY=$((MAX_RETRY - 1))
+		done
+		
+		# only do the tabix indexing if we succeeded.  This should cause a 
+		# failure downstream if an issue occurs
+		if test $RERUN -eq 0; then
+			tabix -p vcf $WKDIR/$GVCF_BASE.$INTERVAL.vcf.gz
+		fi
 	done < $DX_GVCF_FILES
 	
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
@@ -276,213 +217,6 @@ function dl_merge_interval() {
 	fi
 }
 export -f dl_merge_interval
-
-function split_gvcfs() {
-	# set the shell to work w/ GNU parallel
-	export SHELL="/bin/bash"
-
-	# Arguments:
-	# gvcfidxs (optional)
-	# array of files, each containing a "dx download"-able file, one per line
-	# and the files are tbi indexes of the gvcf.gz files
-	# gvcfs (mandatory)
-	# array of files, as above, where each line is a single gvcf file
-	# PREFIX (mandatory)
-	# the prefix to use for the single resultant gvcf
-	
-	download_resources
-	
-	# download my gvcfidx_list
-	WKDIR=$(mktemp -d)
-	cd $WKDIR
-	
-	if test "$gvcfidx_list"; then
-		DX_GVCFIDX_LIST=$(mktemp)
-		dx download "$gvcfidx_list" -f -o $DX_GVCFIDX_LIST
-	
-		while read dxfn; do
-			dx download "$dxfn"
-		done < $DX_GVCFIDX_LIST
-	fi
-	
-	# OK, now all of the gvcf indexes are in $WKDIR, time to download
-	# all of the GVCFs in parallel
-	DX_GVCF_LIST=$(mktemp)
-	dx download "$gvcfs" -f -o $DX_GVCF_LIST
-
-	OUTDIR=$(mktemp -d)
-	# download and split the components into their chromosomal parts
-	parallel -u --gnu -j $(nproc --all) dl_split :::: $DX_GVCF_LIST ::: $WKDIR ::: $OUTDIR
-	
-	# OK, now get a list of the individual files for each chromosome and output that to a file
-	GVCF_MASTER_LIST=$(mktemp)
-	for chr in $(ls $OUTDIR | grep '\.vcf\.gz$' | sed 's/.*\.\([^.]*\)\.vcf.gz/\1/' | sort | uniq); do
-		LIST_TMPF=$(mktemp)
-		ls -1 $OUTDIR/*.$chr.vcf.gz > $LIST_TMPF || true
-		echo $LIST_TMPF >> $GVCF_MASTER_LIST
-	done
-	
-	cat $GVCF_MASTER_LIST
-	
-	# upload the files by chromosome (in parallel, please!)
-	PROCESS_ARG_FN=$(mktemp)
-	DX_GVCF_MASTER_LIST=$(mktemp)
-	DX_GVCFIDX_MASTER_LIST=$(mktemp)
-	parallel -u -j $(nproc --all) --gnu upload_files :::: $GVCF_MASTER_LIST ::: $DX_GVCF_MASTER_LIST ::: $DX_GVCFIDX_MASTER_LIST
-	
-	# clean up some temporary files no longer used
-	while read vcf_fn; do
-		rm $vcf_fn
-	done < $GVCF_MASTER_LIST
-
-	MASTER_GVCF_OUTPUT=$(mktemp)
-	while read dx_gvcf; do
-		cat $dx_gvcf >> $MASTER_GVCF_OUTPUT
-		rm $dx_gvcf
-	done < $DX_GVCF_MASTER_LIST
-	
-	MASTER_GVCFIDX_OUTPUT=$(mktemp)
-	while read dx_gvcfidx; do
-		cat $dx_gvcfidx >> $MASTER_GVCFIDX_OUTPUT
-		rm $dx_gvcfidx
-	done < $DX_GVCFIDX_MASTER_LIST
-	
-	DX_MASTER_GVCF=$(dx upload $MASTER_GVCF_OUTPUT --brief)
-	DX_MASTER_GVCFIDX=$(dx upload $MASTER_GVCFIDX_OUTPUT --brief)
-	
-	dx-jobutil-add-output gvcfs $DX_MASTER_GVCF --class=file
-	dx-jobutil-add-output gvcfidxs $DX_MASTER_GVCFIDX --class=file	
-}
-
-function gather_rescatter(){
-	# Arguments:
-	# gvcfs (mandatory) a list of GVCF files uploaded to DNANexus
-	
-	IDXFN_FILE=$(mktemp)
-	for i in "${!gvcfidxs[@]}"; do
-		dx cat "${gvcfidxs[$i]}" >> $IDXFN_FILE
-	done
-	DX_IDXFN=$(dx upload $IDXFN_FILE --brief)
-	
-	
-	# FN_FILE will have a list of filenames, one per line and the associated dx file identifier
-	FN_FILE=$(mktemp)
-	
-	# describe the gvcfs files
-	for i in "${!gvcfs[@]}"; do	
-		FN_TMP=$(mktemp)
-		dx download "${gvcfs[$i]}" -f -o $FN_TMP
-		while read dx_fn; do
-			echo "$(dx describe "$dx_fn" --name)$(echo -e "\t")$dx_fn" >> $FN_FILE
-		done < $FN_TMP
-		
-		rm $FN_TMP
-	done
-	
-	# OK, now I want to re-scatter, so get the list of chromosomes
-	sed -i 's/^[^\t]*\.\([^.]*\)\.vcf\.gz\t.*$/\1\t&/' $FN_FILE
-	cat $FN_FILE
-	
-	MASTER_CHROM_LIST=$(mktemp)
-	for chr in $(cut -f1 $FN_FILE | sort | uniq); do
-		echo "Working with Chromosome: $chr"
-		FN_CHR=$(mktemp)
-		grep "^$chr\W" $FN_FILE | cut -f3 > $FN_CHR
-		cat $FN_CHR
-		echo $(dx upload $FN_CHR --brief) >> $MASTER_CHROM_LIST
-	done
-	
-	echo "MASTER CHROM LIST:" 
-	cat $MASTER_CHROM_LIST
-	
-	# Now, split the master_chrom_list into pieces with no more than $(nproc) lines
-	WKDIR=$(mktemp -d)
-	cd $WKDIR
-	# also, shuffle the chromosomes so we don't have issues with oversubscribing a node
-	cat $MASTER_CHROM_LIST | shuf | split -l $(nproc --all) - "dxfn_list."
-	
-	# For each dxfn_list.*, start a new merge_chrom job
-	CONCAT_ARGS=""
-	CIDX=0
-	for f in $(ls $WKDIR/dxfn_list.*); do
-		subprocess_args=""
-		for tmpf in $(cat $f); do
-			subprocess_args="$subprocess_args -igvcfs:array:file=$tmpf"
-		done
-		merge_chrom_job[$CIDX]=$(dx-jobutil-new-job merge_chrom $subprocess_args -igvcfidxs:file=$DX_IDXFN -iPREFIX="$PREFIX")
-		CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_chrom_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_chrom_job[$CIDX]}:vcf_list"
-		CIDX=$((CIDX + 1))
-	done	
-	
-	# output of gather_rescatter will be an array of chromosomal gVCFs
-	concat_job=$(dx-jobutil-new-job concatenate_gvcfs --depends-on ${merge_chrom_job[@]} -iPREFIX="$PREFIX" $CONCAT_ARGS)
-	
-	dx-jobutil-add-output gvcf "$concat_job:gvcf" --class=jobref
-	dx-jobutil-add-output gvcfidx "$concat_job:gvcfidx" --class=jobref
-
-
-}
-
-function merge_chrom(){
-
-	# set the shell to work w/ GNU parallel
-	export SHELL="/bin/bash"
-
-	# arguments:
-	# gvcfidxs - single file containing all gvcf indexes we MIGHT need, one per line
-	# gvcfs - array of files, each containing all gvcfs for a single chromosome
-	# PREFIX - the prefix of the gvcf to use (final name will be $PREFIX.$CHR.vcf.gz)
-
-	# I will have an array of files, each containing all of the gvcfs to merge
-	# for a single chromosome
-	
-	# Also, I'll have a single file with all of the gvcfidxs created - just 
-	# download ALL of them, even if they don't apply!
-	
-	download_resources
-	
-	WKDIR=$(mktemp -d)
-	
-	# download ALL of the indexes (in parallel!)
-	GVCFIDX_FN=$(mktemp)
-	dx download "$gvcfidxs" -f -o $GVCFIDX_FN
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $WKDIR
-	
-	cd $WKDIR
-
-	# OK, now all of the gvcf indexes are in $WKDIR, time to download
-	# all of the GVCFs in parallel
-	DX_GVCF_LIST=$(mktemp)
-	for i in "${!gvcfs[@]}"; do	
-		GVCF_CHR=$(mktemp)
-		dx download "${gvcfs[$i]}" -f -o $GVCF_CHR
-		echo $GVCF_CHR >> $DX_GVCF_LIST
-	done
-		
-
-	OUTDIR=$(mktemp -d)
-	# download the files, one per chromosome and merge them!
-	parallel -u --gnu -j $(nproc --all) dl_merge :::: $DX_GVCF_LIST ::: $WKDIR ::: $OUTDIR ::: $PREFIX
-	
-	DX_GVCF_LIST=$(mktemp)
-	DX_GVCFIDX_LIST=$(mktemp)
-	# Now, upload each file and its associated index, adding that file ID to the correct file
-	for f in $(ls $OUTDIR/*.vcf.gz); do
-		echo $(dx upload $f --brief) >> $DX_GVCF_LIST
-	done
-	
-	for f in $(ls $OUTDIR/*.vcf.gz.tbi); do
-		echo $(dx upload $f --brief) >> $DX_GVCFIDX_LIST
-	done
-	
-	# now, upload those lists, and add them to the output here
-	VCF_OUT=$(dx upload $DX_GVCF_LIST --brief)
-	VCFIDX_OUT=$(dx upload $DX_GVCFIDX_LIST --brief)
-	
-	dx-jobutil-add-output vcf_list "$VCF_OUT"
-	dx-jobutil-add-output vcfidx_list "$VCFIDX_OUT"
-
-}
 
 function merge_intervals(){
 
@@ -614,7 +348,7 @@ function concatenate_gvcfs(){
 	
 	cd $WKDIR
 	
-	parallel -u --gnu -j $(nproc --all) download_parallel :::: $DX_GVCFIDX_LIST ::: $WKDIR
+	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DX_GVCFIDX_LIST ::: $WKDIR
 	
 	# OK, now all of the gvcf indexes are in $WKDIR, time to download
 	# all of the GVCFs in parallel
@@ -655,115 +389,78 @@ function single_merge_subjob() {
 	
 	# If we are working with both GVCFs and their index files, let's break it up by interval
 	# If no interval given, just break up by chromosome
-	if test "$gvcflist" -a "$gvcfidxs"; then
-		gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq .id | sed 's/"//g')
-		gvcffn=$(dx describe "$gvcflist" --json | jq .id | sed 's/"//g')
-	
-		OVER_SUB=1
-		INTERVAL_LIST=$(mktemp)
-		ORIG_INTERVALS=$(mktemp)
-		if test "$target"; then
-			OVER_SUB=512
-			INTV_FN=$(mktemp)
-			INTV_NUMERIC=$(mktemp)
-			INTV_OTHER=$(mktemp)
-			dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding | tr ' ' '\t' > $INTV_FN
-			
-			# Now, split into INTV_NUMERIC and INTV_OTHER; they need to be sorted
-			# separately (grumble..)
-			grep -e '^[0-9]*\s' $INTV_FN > $INTV_NUMERIC
-			join -v 1 -t '\0' <(sort $INTV_FN) <(sort $INTV_NUMERIC) > $INTV_OTHER
-			
-			cat <(sort -n -k1,2 $INTV_NUMERIC) <(sort -k1,1 -k2,2n $INTV_OTHER) > $INTERVAL_LIST
-			rm $INTV_FN
-			rm $INTV_NUMERIC
-			rm $INTV_OTHER
-			
-		else
-			TMPWKDIR=$(mktemp -d)
-			cd $TMPWKDIR
-			idxfn=$(dx cat "$gvcfidxs" | head -1)
-			vcf_name=$(dx describe --name "$idxfn" | sed 's/\.tbi$//')
-			dx download "$idxfn"
-			# get a list of chromosomes, but randomize
-			tabix -l $vcf_name | shuf > $INTERVAL_LIST
-			cd -
-			rm -rf $TMPWKDIR
-		fi
-		
-		# OK, now split the interval list into files of OVER_SUB * # proc
-		SPLIT_DIR=$(mktemp -d)
-		cd $SPLIT_DIR
-		NPROC=$(nproc --all)
-		
-		#N_INT=$(cat $INTERVAL_LIST | wc -l)
-		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
-		
-		# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
-		# also, all the chromosomes should be together, so no need to sort
-		# this may allow us to use CatVariants later on...
-		for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
-			CHR_LIST=$(mktemp)
-			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
-			N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
-			N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
-			split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
-			rm $CHR_LIST
-		done
-		
-		CIDX=0
-		CONCAT_ARGS=""
-		for f in interval_split.*; do
-			int_fn=$(dx upload $f --brief)
-			# run a subjob that merges the input VCFs on the given target file
-			merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
-			CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_job[$CIDX]}:vcf_list"			
-			CIDX=$((CIDX + 1))
-		done
-		# concatenate the results
 
-		concat_job=$(dx-jobutil-new-job concatenate_gvcfs --depends-on ${merge_job[@]} -iPREFIX="$PREFIX" $CONCAT_ARGS)
-	
-		dx-jobutil-add-output gvcf "$concat_job:gvcf" --class=jobref
-		dx-jobutil-add-output gvcfidx "$concat_job:gvcfidx" --class=jobref
-	
+	gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq .id | sed 's/"//g')
+	gvcffn=$(dx describe "$gvcflist" --json | jq .id | sed 's/"//g')
+
+	OVER_SUB=1
+	INTERVAL_LIST=$(mktemp)
+	ORIG_INTERVALS=$(mktemp)
+	if test "$target"; then
+		OVER_SUB=512
+		INTV_FN=$(mktemp)
+		INTV_NUMERIC=$(mktemp)
+		INTV_OTHER=$(mktemp)
+		dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding | tr ' ' '\t' > $INTV_FN
+		
+		# Now, split into INTV_NUMERIC and INTV_OTHER; they need to be sorted
+		# separately (grumble..)
+		grep -e '^[0-9]*\s' $INTV_FN > $INTV_NUMERIC
+		join -v 1 -t '\0' <(sort $INTV_FN) <(sort $INTV_NUMERIC) > $INTV_OTHER
+		
+		cat <(sort -n -k1,2 $INTV_NUMERIC) <(sort -k1,1 -k2,2n $INTV_OTHER) > $INTERVAL_LIST
+		rm $INTV_FN
+		rm $INTV_NUMERIC
+		rm $INTV_OTHER
+		
 	else
-	
-		SPLIT_ARGS=""
-		if test "$gvcfidxs"; then
-			gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq .id | sed 's/"//g')
-			SPLIT_ARGS="$SPLIT_ARGS -igvcfidx_list:file=$gvcfidxfn"
-		fi
-
-		LIST_DIR=$(mktemp -d)
-		dx download "$gvcflist" -o $LIST_DIR/GVCF_LIST
-	
-		GVCF_WKDIR=$(mktemp -d)	
-	
-		# instead of subbing by core, split the input into files of N lines each!
-		SPLIT_WKDIR=$(mktemp -d)
-		cd $SPLIT_WKDIR
-		cat $LIST_DIR/GVCF_LIST | split -l $(nproc --all) - "gvcf_split."
+		TMPWKDIR=$(mktemp -d)
+		cd $TMPWKDIR
+		idxfn=$(dx cat "$gvcfidxs" | head -1)
+		vcf_name=$(dx describe --name "$idxfn" | sed 's/\.tbi$//')
+		dx download "$idxfn"
+		# get a list of chromosomes, but randomize
+		tabix -l $vcf_name | shuf > $INTERVAL_LIST
 		cd -
-	
-		# start subjobs
-		CIDX=0
-		GATHER_ARGS=""
-		for f in $(ls $SPLIT_WKDIR/gvcf_split.*); do
-			DX_GVCFLIST=$(dx upload $f --brief)
-			split_job[$CIDX]=$(dx-jobutil-new-job split_gvcfs $SPLIT_ARGS -igvcfs:file=$DX_GVCFLIST)
-			GATHER_ARGS="$GATHER_ARGS -igvcfs=${split_job[$CIDX]}:gvcfs -igvcfidxs=${split_job[$CIDX]}:gvcfidxs"
-			CIDX=$((CIDX + 1))
-		done
-		
-		# gather + rescatter by chromosome
-		gather_job=$(dx-jobutil-new-job gather_rescatter --depends-on ${split_job[@]} -iPREFIX="$PREFIX" $GATHER_ARGS)
-		# output of concatenate_gvcfs will be a single gVCF and accompanying index
-		dx-jobutil-add-output gvcf "$gather_job:gvcf" --class=jobref
-		dx-jobutil-add-output gvcfidx "$gather_job:gvcfidx" --class=jobref	
-	
+		rm -rf $TMPWKDIR
 	fi
+	
+	# OK, now split the interval list into files of OVER_SUB * # proc
+	SPLIT_DIR=$(mktemp -d)
+	cd $SPLIT_DIR
+	NPROC=$(nproc --all)
+	
+	#N_INT=$(cat $INTERVAL_LIST | wc -l)
+	#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
+	
+	# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
+	# also, all the chromosomes should be together, so no need to sort
+	# this may allow us to use CatVariants later on...
+	for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
+		CHR_LIST=$(mktemp)
+		cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
+		N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
+		N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
+		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
+		rm $CHR_LIST
+	done
+	
+	CIDX=0
+	CONCAT_ARGS=""
+	for f in interval_split.*; do
+		int_fn=$(dx upload $f --brief)
+		# run a subjob that merges the input VCFs on the given target file
+		merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
+		CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_job[$CIDX]}:vcf_list"			
+		CIDX=$((CIDX + 1))
+	done
+	# concatenate the results
 
+	concat_job=$(dx-jobutil-new-job concatenate_gvcfs --depends-on ${merge_job[@]} -iPREFIX="$PREFIX" $CONCAT_ARGS)
+
+	dx-jobutil-add-output gvcf "$concat_job:gvcf" --class=jobref
+	dx-jobutil-add-output gvcfidx "$concat_job:gvcfidx" --class=jobref
+	
 }
 
 # entry point for merging VCFs
@@ -812,7 +509,33 @@ function merge_subjob() {
 	TMP_GVCF_LIST=$(mktemp)
 	ls -1 ${GVCF_TMPDIR}/gvcflist.* > $TMP_GVCF_LIST
 
-	parallel -u -j $N_BATCHES --gnu merge_gvcf :::: $TMP_GVCF_LIST ::: $(echo $GVCF_TMP) ::: $(echo "$project:$folder")
+
+	N_CHUNKS=$(cat $TMP_GVCF_LIST | wc -l)	
+	RERUN_FILE=$(mktemp)
+	N_RUNS=1
+	N_CORES=$(nproc)
+	N_JOBS=1
+	
+	# each run, we will decrease the number of cores available until we're at a single core at a time (using ALL the memory)
+	while test $N_CHUNKS -gt 0 -a $N_JOBS -gt 0; do	
+	
+		N_JOBS=$(echo "$N_CORES/2^($N_RUNS - 1)" | bc)
+		# make sure we have a minimum of 1 job, please!
+		N_JOBS=$((N_JOBS > 0 ? N_JOBS : 1))
+	
+		parallel -u -j $N_JOBS --gnu merge_gvcf :::: $TMP_GVCF_LIST ::: $(echo $GVCF_TMP) ::: $(echo "$project:$folder") ::: $N_JOBS ::: $RERUN_FILE
+		
+		PREV_CHUNKS=$N_CHUNKS
+		N_CHUNKS=$(cat $RERUN_FILE | wc -l)
+		mv $RERUN_FILE $TMP_GVCF_LIST
+		RERUN_FILE=$(mktemp)
+		N_RUNS=$((N_RUNS + 1))
+		# just to make N_JOBS 0 at the conditional when we ran only a single job!
+		N_JOBS=$((N_JOBS - 1))
+	done
+	
+
+	
 	
 	CIDX=1
 	

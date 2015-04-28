@@ -43,8 +43,20 @@ function dl_part_index() {
 	file_url=$(dx make_download_url "$1")
 	idxfn=$(ls "$2/$fn.tbi")
 	
-	download_part.py -f "$file_url" -i "$idxfn" -L "$3" | tee "$4/$fn_base.$3.vcf" | bgzip -c > "$4/$fn_base.$3.vcf.gz"
-	tabix -p vcf "$4/$fn_base.$3.vcf.gz"
+	set -o 'pipefail'
+	
+	RERUN=1
+	MAX_RETRY=5
+	while test $RERUN -ne 0 -a $MAX_RETRY -gt 0; do
+		download_part.py -f "$file_url" -i "$idxfn" -L "$3" | bgzip -c > "$4/$fn_base.$3.vcf.gz"
+		RERUN="$?"
+		MAX_RETRY=$((MAX_RETRY - 1))
+	done
+	
+	# Make sure to cause problems downstream if we didn't succeed
+	if test "$RERUN" -eq 0; then
+		tabix -p vcf "$4/$fn_base.$3.vcf.gz"
+	fi
 }
 
 export -f dl_part_index

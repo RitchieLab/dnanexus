@@ -116,8 +116,13 @@ if __name__ =="__main__":
 	# print the VCF header
 	vcf_zfile = zfile(vcf_f)
 	
+	n_fields=0
+	
 	for l in vcf_zfile:
-		if l.startswith("#"):
+		if l.startswith("##"):
+			print l.strip()
+		elif l.startswith("#"):
+			n_fields=len(l.strip().split())
 			print l.strip()
 		else:
 			break
@@ -135,8 +140,9 @@ if __name__ =="__main__":
 			tabix_itr = tb.query(interval[0], interval[1][0], interval[1][1])
 		
 		for line in tabix_itr:
-			sys.stdout.write("\t".join(line) + "\n")
-
-	
-	
+			if len(line) != n_fields:
+				raise IOError("Inconsistent number of fields")
+				
+			print "\t".join(line)
+			#sys.stdout.write("\t".join(line) + "\n")	
 	

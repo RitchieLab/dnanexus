@@ -1,0 +1,103 @@
+{
+  "name": "select_variants",
+  "title": "Subset VCF",
+  "summary": "Apply Sample / Variant level subsetting to VCF",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "samp_incl",
+      "label" : "File of samples to include (one per line)",
+      "optional" : true,
+      "class" : "file"
+    },
+    {
+      "name": "samp_excl",
+      "label" : "File of samples to exclude (one per line)",
+      "optional" : true,
+      "class" : "file"
+    },    
+    {
+      "name": "env",
+      "label": "Exclude Non-Variant?",
+      "class": "boolean",
+      "optional": true,
+      "default": true
+    },
+    {
+      "name": "ef",
+      "label": "Exclude Filtered Sites?",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    },
+    {
+      "name": "PREFIX",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "EXTRA_CMD",
+      "label": "Additional Command Line parameters to SelectVariants",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Filtered VCF file",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Filtered VCF Index file",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/select_variants.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["org-geisinger"]
+}

@@ -7,29 +7,91 @@ import argparse
 import zlib
 import urllib
 
-def zfile(filePtr, splitChar="\n", chunkSize=1*1024*1024):
-        dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
-        text = ""
-        while dc:
-                data = filePtr.read(chunkSize)
-                if data:
-                        text += dc.decompress(data)
-                        data = None
-                else:
-                        text += dc.flush()
-                        dc = None
-                if text:
-                        lines = text.split(splitChar)
-                        i,x = 0,len(lines)-1
-                        text = lines[x]
-                        while i < x:
-                                yield lines[i]
-                                i += 1
-                        lines = None
-        #while data remains
-        if text:
-                yield text
-#zfile()
+class zopen(object):
+
+    def __init__(self, filePtr, splitChar="\n", chunkSize=16*1024):
+        self._filePtr = filePtr
+        self._splitChar = splitChar
+        self._chunkSize = chunkSize
+        self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
+        self._text = ""
+        self._lines = list()
+    #__init__()
+
+
+    def __del__(self):
+        if self._filePtr:
+            self._filePtr.close()
+    #__del__()
+
+
+    def __enter__(self):
+        return self
+    #__enter__()
+
+
+    def __exit__(self, excType, excVal, excTrace):
+        pass
+    #__exit__()
+
+
+    def __iter__(self):
+        return self
+    #__iter__()
+
+
+    def __next__(self):
+        # if lines are still cached from the last read, pop one
+        if len(self._lines) > 0:
+            return self._lines.pop()
+        # if there's data left in the source file, read and decompress another chunk
+        if self._dc:
+            data = self._dc.unused_data
+            if data:
+                self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
+            else:
+                data = self._filePtr.read(self._chunkSize)
+            if data:
+                self._text += self._dc.decompress(data)
+                data = None
+            else:
+                self._text += self._dc.flush()
+                self._dc = None
+        # if there's no text left, we're done
+        if not self._text:
+            raise StopIteration
+        # split the text into lines
+        self._lines = self._text.split(self._splitChar)
+        self._text = ""
+        # if there's more than one line, store the last to combine with the next chunk
+        # (but if there's only one line, and more to read, then keep reading until we get a linebreak)
+        if len(self._lines) > 1:
+            self._text = self._lines.pop()
+        elif self._dc:
+            self._text = self._lines.pop()
+            self._chunkSize *= 2
+            return self.__next__()
+        # reverse the remaining lines into a stack and pop one to return
+        self._lines.reverse()
+        return self._lines.pop()
+    #__next__()
+
+
+    def next(self):
+        return self.__next__()
+    #next()
+
+
+    def seek(self, offset, whence = 0):
+        if offset != 0:
+            raise Exception("zfile.seek() does not support offsets != 0")
+        self._filePtr.seek(0, whence)
+        self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
+        self._text = ""
+        self._lines = list()
+    #seek()
+
+#zopen
 
 def getNonOverlap(interval_in):
 	
@@ -114,9 +176,9 @@ if __name__ =="__main__":
 		vcf_f = urllib.urlopen(args.vcf)
 	
 	# print the VCF header
-	vcf_zfile = zfile(vcf_f)
+	vcf_zfile = zopen(vcf_f)
 	
-	n_fields=0
+	n_fields=None
 	
 	for l in vcf_zfile:
 		if l.startswith("##"):
@@ -140,7 +202,7 @@ if __name__ =="__main__":
 			tabix_itr = tb.query(interval[0], interval[1][0], interval[1][1])
 		
 		for line in tabix_itr:
-			if len(line) != n_fields:
+			if n_fields is not None and len(line) != n_fields:
 				raise IOError("Inconsistent number of fields")
 				
 			print "\t".join(line)

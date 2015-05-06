@@ -62,10 +62,10 @@ function download_resources() {
 }
 
 function parallel_download() {
-	set -x
+	#set -x
 	cd $2
 	dx download "$1"
-	cd -
+	cd - >/dev/null
 }
 export -f parallel_download
 
@@ -116,13 +116,13 @@ function merge_gvcf() {
 		rm $tmpfn.tbi || true
 	done
 	
-	cd -
+	cd - >/dev/null
 	
 }
 export -f merge_gvcf
 
 function dl_index() {
-	set -x
+	#set -x
 	cd "$2"
 	fn=$(dx describe --name "$1")
 	dx download "$1" -o "$fn"
@@ -153,10 +153,11 @@ function upload_files() {
 export -f upload_files
 
 function dl_merge_interval() {
-	set -x
+	#set -x
 	INTERVAL_FILE=$1
 	# $INTERVAL holds the overall interval from 1st to last
 	INTERVAL="$(head -1 $INTERVAL_FILE | cut -f1-2 | tr '\t' '.')_$(tail -1 $INTERVAL_FILE | cut -f3)"
+	INTERVAL_STR="$(echo $INTERVAL | tr '.' ':' | tr '_' '-' | sed 's/[:-]*$//')"
 	CHR="$(echo $INTERVAL | sed 's/\..*//')"
 	DX_GVCF_FILES=$2
 	INDEX_DIR=$3
@@ -176,11 +177,12 @@ function dl_merge_interval() {
 	# First, match up the GVCF to its index
 	while read dxfn; do
 		GVCF_NAME=$(dx describe --name "$dxfn")
+		GVCF_DXID=$(dx describe --json "$dxfn" | jq .id | sed 's/\"//g')
 		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/.vcf\.gz$//')
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
 		
 		
-		GVCF_URL=$(dx make_download_url "$dxfn")
+		#GVCF_URL=$(dx make_download_url "$dxfn")
 		
 		#GVCF_URL=$(dx describe --json "$dxfn" | jq .id | sed 's/"//g')
 		# I had some issues w/ unsorted VCFs, so take a shortcus and sort by the
@@ -189,7 +191,7 @@ function dl_merge_interval() {
 		RERUN=1
 		MAX_RETRY=5
 		while test $RERUN -ne 0 -a $MAX_RETRY -gt 0; do
-			download_part.py -f "$GVCF_URL" -i "$GVCF_IDX" -L "$INTERVAL_FILE" | vcf-sort | bgzip -c > $GVCF_BASE.$INTERVAL.vcf.gz
+			download_part.py -f "$GVCF_DXID" -i "$GVCF_IDX" -L "$INTERVAL_STR" -o $GVCF_BASE.$INTERVAL.vcf.gz -H
 			RERUN="$?"
 			MAX_RETRY=$((MAX_RETRY - 1))
 		done
@@ -252,7 +254,7 @@ function merge_intervals(){
 	
 	# To reduce startup overhead of GATK, let's do multiple intervals at a time
 	# This variable tells us to use $OVERSUB * $(nproc) different GATK runs
-	OVERSUB=4
+	OVERSUB=2
 	SPLIT_DIR=$(mktemp -d)
 	cd $SPLIT_DIR
 	NPROC=$(nproc --all)
@@ -260,12 +262,11 @@ function merge_intervals(){
 	N_BATCHES=$((OVERSUB * NPROC))
 	split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $TARGET_FILE "interval_split."
 	
-	cd -
+	cd - >/dev/null
 	MASTER_TARGET_LIST=$(mktemp)
 	ls -1 $SPLIT_DIR/interval_split.* > $MASTER_TARGET_LIST	
 	
 	# iterate over the intervals in TARGET_FILE, downloading only what is needed
-	#TODO: make this robust against GATK resource-related crashing
 	OUTDIR=$(mktemp -d)
 	OUTDIR_PREF="$OUTDIR/combined"
 
@@ -398,21 +399,24 @@ function single_merge_subjob() {
 	ORIG_INTERVALS=$(mktemp)
 	if test "$target"; then
 		OVER_SUB=512
-		INTV_FN=$(mktemp)
-		INTV_NUMERIC=$(mktemp)
-		INTV_OTHER=$(mktemp)
-		dx cat "$target" | tee $ORIG_INTERVALS | interval_pad.py $padding | tr ' ' '\t' > $INTV_FN
 		
-		# Now, split into INTV_NUMERIC and INTV_OTHER; they need to be sorted
-		# separately (grumble..)
-		grep -e '^[0-9]*\s' $INTV_FN > $INTV_NUMERIC
-		join -v 1 -t '\0' <(sort $INTV_FN) <(sort $INTV_NUMERIC) > $INTV_OTHER
+		TARGET_FILE=$(mktemp)
+		dx download "$target" -f -o $TARGET_FILE
+		CHROM_LIST=$(mktemp)
+		cut -f1 $TARGET_FILE  | sort -u > $CHROM_LIST
+		# first, do the numeric chromosomes, in order
+		for chr in $(grep '^[0-9]' $CHROM_LIST | sort -n); do
+			grep "^$chr\W" $TARGET_FILE | interval_pad.py $padding | tr ' ' '\t' | sort -n -k2,3 >> $INTERVAL_LIST
+		done
 		
-		cat <(sort -n -k1,2 $INTV_NUMERIC) <(sort -k1,1 -k2,2n $INTV_OTHER) > $INTERVAL_LIST
-		rm $INTV_FN
-		rm $INTV_NUMERIC
-		rm $INTV_OTHER
+		# Now do the non-numeric chromosomes in order
+		for chr in $(grep '^[^0-9]' $CHROM_LIST | sort); do
+			grep "^$chr\W" $TARGET_FILE | interval_pad.py $padding | tr ' ' '\t' | sort -n -k2,3 >> $INTERVAL_LIST
+		done
 		
+		rm $CHROM_LIST
+		rm $TARGET_FILE
+				
 	else
 		TMPWKDIR=$(mktemp -d)
 		cd $TMPWKDIR
@@ -534,8 +538,10 @@ function merge_subjob() {
 		N_JOBS=$((N_JOBS - 1))
 	done
 	
-
-	
+	# We need to be certain that nothing remains to be merged!
+	if test "$N_CHUNKS" -ne 0; then
+		dx-jobutil-report-error "ERROR: Could not merge one or more interval chunks; try an instance with more memory!"
+	fi	
 	
 	CIDX=1
 	

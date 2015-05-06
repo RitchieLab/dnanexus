@@ -61,6 +61,11 @@ function download_resources() {
 	
 }
 
+function get_dxids() {
+	dx describe "$1" --json | jq .id | sed 's/\"//g' >> $2
+}
+export -f get_dxids
+
 function parallel_download() {
 	#set -x
 	cd $2
@@ -568,6 +573,8 @@ main() {
 	if test -z "$project"; then
 		project=$DX_PROJECT_CONTEXT_ID
 	fi	
+	
+	export SHELL="/bin/bash"
 
     echo "Value of project: '$project'"  
     echo "Value of folder: '$folder'"
@@ -598,10 +605,7 @@ main() {
 		fi
 		
 	elif test "$folder"; then
-	    for f in $(dx ls $project:$folder | grep '\.gz$'); do
-	    	dx describe $project:$folder/$f --json | jq .id
-	    done > $GVCF_LIST
-	    
+		parallel -u --gnu -j $(nproc --all) get_dxids :::: <(dx ls $project:$folder | grep '\.gz$' | sed "s|^|$project:$folder/|") ::: $GVCF_LIST
 	else
 		dx-jobutil-report-error "ERROR: you must provide either a list of gvcfs OR a directory containing gvcfs"
 	fi

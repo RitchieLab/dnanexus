@@ -41,6 +41,7 @@ function dl_part_index() {
 	fn=$(dx describe --name "$1")
 	fn_base=$(echo "$fn" | sed 's/.vcf.gz$//')
 	file_url=$(dx make_download_url "$1")
+	file_dxid=$(dx describe --json "$1" | jq .id | sed 's/\"//g')
 	idxfn=$(ls "$2/$fn.tbi")
 	
 	set -o 'pipefail'
@@ -48,7 +49,7 @@ function dl_part_index() {
 	RERUN=1
 	MAX_RETRY=5
 	while test $RERUN -ne 0 -a $MAX_RETRY -gt 0; do
-		download_part.py -f "$file_url" -i "$idxfn" -L "$3" | bgzip -c > "$4/$fn_base.$3.vcf.gz"
+		download_part.py -f "$file_dxid" -i "$idxfn" -L "$3" -o "$4/$fn_base.$3.vcf.gz" -H
 		RERUN="$?"
 		MAX_RETRY=$((MAX_RETRY - 1))
 	done
@@ -120,7 +121,7 @@ main() {
 	pparg=""
 	while read chrom; do
 		process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$chrom -ichrom=$chrom -ivcf_files:file="$GVCF_LIST" -ivcfidx_files:file="$GVCFIDX_LIST" $SUBJOB_ARGS)
-		pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out"
+		pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out -ivcf_hdr_files=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidx_hdr_files=${process_jobs[$CIDX]}:vcfidx_hdr_out"
 		CIDX=$((CIDX + 1))
 	done < $CHROM_LIST
 	
@@ -128,6 +129,8 @@ main() {
 	postprocess=$(dx-jobutil-new-job merge_vcf $pparg -iPREFIX:string="$PREFIX" --depends-on ${process_jobs[@]})
 	dx-jobutil-add-output vcf "$postprocess:vcf_out" --class=jobref
 	dx-jobutil-add-output vcfidx "$postprocess:vcfidx_out" --class=jobref
+    dx-jobutil-add-output vcf_header "$postprocess:vcf_hdr_out" --class=jobref
+    dx-jobutil-add-output vcfidx_header "$postprocess:vcfidx_hdr_out" --class=jobref
 }
 
 genotype_gvcfs() {
@@ -208,23 +211,22 @@ genotype_gvcfs() {
 	--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
 	-o "$VCF_TMPDIR/$PREFIX.vcf.gz"
 	
+	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+	pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/$PREFIX.header.vcf.gz"
+	tabix -p vcf "$VCF_TMPDIR/$PREFIX.header.vcf.gz"	
 	
-    # The following line(s) use the dx command-line tool to upload your file
-    # outputs after you have created them on the local file system.  It assumes
-    # that you have used the output field name for the filename for each output,
-    # but you can change that behavior to suit your needs.  Run "dx upload -h"
-    # to see more options to set metadata.
-
 	vcf_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz" --brief)
     vcf_idx_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" --brief)
 
-    # The following line(s) use the utility dx-jobutil-add-output to format and
-    # add output variables to your job's output as appropriate for the output
-    # class.  Run "dx-jobutil-add-output -h" for more information on what it
-    # does.
-
     dx-jobutil-add-output vcf_out "$vcf_fn" --class=file
     dx-jobutil-add-output vcfidx_out "$vcf_idx_fn" --class=file
+    
+   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.header.vcf.gz" --brief)
+    vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.header.vcf.gz.tbi" --brief)
+
+    dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
+    dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+
 }
 
 merge_vcf() {
@@ -236,22 +238,37 @@ merge_vcf() {
 	fi
 
 	WKDIR=$(mktemp -d)
+	HDR_WKDIR=$(mktemp -d)
 	GVCF_LIST=$(mktemp)
 	DXGVCF_LIST=$(mktemp)
 	DXGCVFIDX_LIST=$(mktemp)
-	
+	GVCF_HDR_LIST=$(mktemp)
+	DXGVCF_HDR_LIST=$(mktemp)
+	DXGCVFIDX_HDR_LIST=$(mktemp)
+
 
 	for i in "${!vcfidx_files[@]}"; do	
 		echo "${vcfidx_files[$i]}" >> $DXGCVFIDX_LIST
 	done
-	
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_LIST ::: $WKDIR
-	
-	cd $WKDIR
-		
 	for i in "${!vcf_files[@]}"; do
 		echo "${vcf_files[$i]}" >> $DXGVCF_LIST
 	done
+	
+	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_LIST ::: $WKDIR
+	# download the already split VCFs
+	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_LIST
+
+	for i in "${!vcfidx_hdr_files[@]}"; do	
+		echo "${vcfidx_files[$i]}" >> $DXGCVFIDX_HDR_LIST
+	done
+	for i in "${!vcf_hdr_files[@]}"; do
+		echo "${vcf_files[$i]}" >> $DXGVCF_HDR_LIST
+	done
+	
+	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_HDR_LIST ::: $HDR_WKDIR
+	# download the already split VCFs
+	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_HDR_LIST ::: $HDR_WKDIR ::: $GVCF_HDR_LIST
+	
 			
 	# get the resources we need in /usr/share/GATK
 	sudo mkdir -p /usr/share/GATK/resources
@@ -262,9 +279,7 @@ merge_vcf() {
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta.fai" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
 	dx download $(dx find data --name "human_g1k_v37_decoy.dict" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 		
-	# download the already split VCFs
-	GVCF_LIST=$(mktemp)
-	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_LIST
+	cd $WKDIR
 	
 	FINAL_DIR=$(mktemp -d)
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
@@ -274,11 +289,27 @@ merge_vcf() {
 	$(ls -1 $WKDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
 	-genotypeMergeOptions UNSORTED \
 	-o $FINAL_DIR/$PREFIX.vcf.gz
-				
+
 	VCF_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.vcf.gz --brief)
 	VCFIDX_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.vcf.gz.tbi --brief)
 		
 	# and upload it and we're done!
 	dx-jobutil-add-output vcf_out "$VCF_DXFN" --class=file
 	dx-jobutil-add-output vcfidx_out "$VCFIDX_DXFN" --class=file
+
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
+	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+	$(ls -1 $HDR_WKDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
+	-genotypeMergeOptions UNSORTED \
+	-o $FINAL_DIR/$PREFIX.header.vcf.gz
+	
+	VCF_HDR_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.header.vcf.gz --brief)
+	VCFIDX_HDR_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.header.vcf.gz.tbi --brief)
+		
+	# and upload it and we're done!
+	dx-jobutil-add-output vcf_hdr_out "$VCF_HDR_DXFN" --class=file
+	dx-jobutil-add-output vcfidx_hdr_out "$VCFIDX_HDR_DXFN" --class=file
+
+		
 }

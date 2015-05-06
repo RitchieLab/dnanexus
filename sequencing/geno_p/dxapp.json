@@ -46,6 +46,14 @@
     {
       "name": "vcfidx",
       "class": "file"
+    },
+    {
+       "name" : "vcf_header",
+       "class": "file"
+    },
+    {
+       "name" : "vcf_header_idx",
+       "class" : "file"
     }
   ],
   "runSpec": {
@@ -71,5 +79,5 @@
      "allProjects": "VIEW"
   },
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger"]
 }

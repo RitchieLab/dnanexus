@@ -23,7 +23,7 @@
       "patterns": [
         "*.tbi"
       ]
-    },
+    },    
     {
       "name": "target_file",
       "class": "file",
@@ -36,7 +36,14 @@
       "name": "PREFIX",
       "class": "string",
       "optional": true
+    },
+    {
+      "name": "padding",
+      "class": "int",
+      "optional": true,
+      "default" : 0
     }
+
   ],
   "outputSpec": [
     {
@@ -52,7 +59,23 @@
        "class": "file"
     },
     {
-       "name" : "vcf_header_idx",
+       "name" : "vcfidx_header",
+       "class" : "file"
+    },
+    {
+      "name": "vcf_pad",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx_pad",
+      "class": "file"
+    },
+    {
+       "name" : "vcf_pad_header",
+       "class": "file"
+    },
+    {
+       "name" : "vcfidx_pad_header",
        "class" : "file"
     }
   ],
@@ -69,6 +92,11 @@
         "name": "tabix"
       }
     ],
+    "systemRequirements": {
+      "merge_vcf": {
+        "instanceType": "mem2_hdd2_x4"
+      }
+    },
     "file": "src/geno_p.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",

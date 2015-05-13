@@ -53,6 +53,7 @@ function download_resources() {
 	sudo chmod -R a+rwX /usr/share/GATK
 
 	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -75,54 +76,61 @@ function parallel_download() {
 export -f parallel_download
 
 function merge_gvcf() {
-	set -x
+	#set -x
 	f=$1
 
 	WKDIR=$3
+	CPWD="$PWD"
 	cd $WKDIR
 
 	GVCF_LIST=$(mktemp)
 		
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 	N_PROC=$4
+	ADDED_TBI=0
 	
 	while read dx_gvcf; do
 		gvcf_fn=$(dx describe --name "$dx_gvcf")
 		dx download "$dx_gvcf"
 		
-		if test "$(echo $gvcf_fn | grep '\.gz$')" -a -z "$(ls $gvcf_fn.tbi)"; then
+		if test "$(echo $gvcf_fn | grep '\.gz$')" -a -z "$(ls $gvcf_fn.tbi 2>/dev/null)"; then
 			tabix -p vcf $gvcf_fn
+			ADDED_TBI=1
 		fi
 		
-		echo $gvcf_fn >> $GVCF_LIST
+		echo $PWD/$gvcf_fn >> $GVCF_LIST
 	done < $f
 	
-	
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	GATK_LOG=$(mktemp)
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 	-T CombineGVCFs \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
-	-o "$f.vcf.gz"
+	-o "$f.vcf.gz" 2>$GATK_LOG
 	
 	if test "$?" -ne 0; then
 		# Please add this to the list to be re-run
 		echo $f >> $5
+		echo "Error running GATK, log below:"
+		cat $GATK_LOG
+		rm $GATK_LOG
+		sleep 5
 		rm "$f.vcf.gz" || true
 		rm "$f.vcf.gz.tbi" || true
 	else
 		echo "$f.vcf.gz" >> $2
 	fi
 	
-	rm $GVCF_LIST
-		
 	# clean up the working directory
 	for tmpfn in $(cat $GVCF_LIST); do
 		rm $tmpfn
-		rm $tmpfn.tbi || true
+		if test "$ADDED_TBI" -ne 0; then 
+			rm $tmpfn.tbi || true
+		fi
 	done
 	
-	cd - >/dev/null
-	
+	rm $GVCF_LIST
+	cd "$CPWD"
 }
 export -f merge_gvcf
 
@@ -139,7 +147,7 @@ function dl_index() {
 export -f dl_index
 
 function upload_files() {
-	set -x
+	#set -x
 	fn_list=$1
 	
 	VCF_TMPF=$(mktemp)
@@ -160,8 +168,22 @@ export -f upload_files
 function dl_merge_interval() {
 	#set -x
 	INTERVAL_FILE=$1
+	
+	# If we have no intervals, just exit
+	if test "$(cat $INTERVAL_FILE | wc -l)" -eq 0; then
+		exit 0
+	fi
+	
+	#echo "Interval File Contents:"
+	#cat $INTERVAL_FILE
+	
 	# $INTERVAL holds the overall interval from 1st to last
 	INTERVAL="$(head -1 $INTERVAL_FILE | cut -f1-2 | tr '\t' '.')_$(tail -1 $INTERVAL_FILE | cut -f3)"
+	if test "$(echo $INTERVAL | grep -v '\.')"; then
+		#If we're here, we're parallelizing by chromosome, not by regions
+		INTERVAL=$(head -1 $INTERVAL_FILE | cut -f1)
+	fi
+	echo "Interval: $INTERVAL"
 	INTERVAL_STR="$(echo $INTERVAL | tr '.' ':' | tr '_' '-' | sed 's/[:-]*$//')"
 	CHR="$(echo $INTERVAL | sed 's/\..*//')"
 	DX_GVCF_FILES=$2
@@ -211,21 +233,27 @@ function dl_merge_interval() {
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 	#N_PROC=$(nproc --all)
 
+	GATK_LOG=$(mktemp)
+
 	# Ask for 95% of total per-core memory
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 	-T CombineGVCFs \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -L $CHR\
 	$(ls *.vcf.gz | sed "s|^|-V |" | tr '\n' ' ') \
-	-o "$PREFIX.$INTERVAL.vcf.gz"
+	-o "$PREFIX.$INTERVAL.vcf.gz" 2>$GATK_LOG
 	
 	# If GATK failed for any reason, add this interval file to the re-run list
 	if test "$?" -ne 0; then
+		echo "GATK Failed: Log below"
+		cat $GATK_LOG
 		echo "$1" >> $RERUN_FILE
 	fi
 }
 export -f dl_merge_interval
 
 function merge_intervals(){
+
+	echo "Resources: $DX_RESOURCES_ID"
 
 	# set the shell to work w/ GNU parallel
 	export SHELL="/bin/bash"
@@ -259,13 +287,20 @@ function merge_intervals(){
 	
 	# To reduce startup overhead of GATK, let's do multiple intervals at a time
 	# This variable tells us to use $OVERSUB * $(nproc) different GATK runs
-	OVERSUB=2
+	OVERSUB=1
 	SPLIT_DIR=$(mktemp -d)
 	cd $SPLIT_DIR
 	NPROC=$(nproc --all)
 	
-	N_BATCHES=$((OVERSUB * NPROC))
-	split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $TARGET_FILE "interval_split."
+	# if we are given a list of intervals, "targeted" will be defined, o/w, we assume the target list will be by chromosome
+	# and in that case, we only want one line per file
+	if test "$targeted"; then
+		N_BATCHES=$((OVERSUB * NPROC))
+		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $TARGET_FILE "interval_split."
+	else
+		N_BATCHES=$(cat $TARGET_FILE | wc -l)	
+		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l 1 $TARGET_FILE "interval_split."
+	fi
 	
 	cd - >/dev/null
 	MASTER_TARGET_LIST=$(mktemp)
@@ -308,7 +343,7 @@ function merge_intervals(){
 	# OK, at this point everything should be merged, so we'll go ahead and concatenate everything in $OUTDIR
 	FINAL_DIR=$(mktemp -d)
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
 	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
@@ -330,6 +365,8 @@ function merge_intervals(){
 }	
 
 function concatenate_gvcfs(){
+
+	echo "Resources: $DX_RESOURCES_ID"
 	# set the shell to work w/ GNU parallel
 	export SHELL="/bin/bash"
 
@@ -370,7 +407,7 @@ function concatenate_gvcfs(){
 	# Now, merge the gVCFs into a single gVCF
 	FINAL_DIR=$(mktemp -d)
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
 	$(cat $GVCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
@@ -390,6 +427,8 @@ function concatenate_gvcfs(){
 # entry point for merging into a single gVCF
 function single_merge_subjob() {
 
+	echo "Resources: $DX_RESOURCES_ID"
+
 	# set the shell to work w/ GNU parallel
 	export SHELL="/bin/bash"
 	
@@ -402,8 +441,12 @@ function single_merge_subjob() {
 	OVER_SUB=1
 	INTERVAL_LIST=$(mktemp)
 	ORIG_INTERVALS=$(mktemp)
+	SPLIT_DIR=$(mktemp -d)
+	MERGE_ARGS=""
+
 	if test "$target"; then
 		OVER_SUB=512
+		MERGE_ARGS="$MERGE_ARGS -itarget:int=1"
 		
 		TARGET_FILE=$(mktemp)
 		dx download "$target" -f -o $TARGET_FILE
@@ -421,7 +464,26 @@ function single_merge_subjob() {
 		
 		rm $CHROM_LIST
 		rm $TARGET_FILE
-				
+		
+		# OK, now split the interval list into files of OVER_SUB * # proc
+		cd $SPLIT_DIR
+		NPROC=$(nproc --all)
+	
+		#N_INT=$(cat $INTERVAL_LIST | wc -l)
+		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
+	
+		# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
+		# also, all the chromosomes should be together, so no need to sort
+		# this may allow us to use CatVariants later on...
+		for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
+			CHR_LIST=$(mktemp)
+			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
+			N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
+			N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
+			split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
+			rm $CHR_LIST
+		done
+						
 	else
 		TMPWKDIR=$(mktemp -d)
 		cd $TMPWKDIR
@@ -430,36 +492,29 @@ function single_merge_subjob() {
 		dx download "$idxfn"
 		# get a list of chromosomes, but randomize
 		tabix -l $vcf_name | shuf > $INTERVAL_LIST
+		N_CHR=$(cat $INTERVAL_LIST | wc -l)
 		cd -
+		
+		cd $SPLIT_DIR
+		NPROC=$(nproc --all)
+	
+		#N_INT=$(cat $INTERVAL_LIST | wc -l)
+		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
+		N_BATCHES=$((N_CHR / (NPROC) + 1 ))			
+		
+		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l $NPROC $INTERVAL_LIST "interval_split."	
+		
 		rm -rf $TMPWKDIR
 	fi
-	
-	# OK, now split the interval list into files of OVER_SUB * # proc
-	SPLIT_DIR=$(mktemp -d)
-	cd $SPLIT_DIR
-	NPROC=$(nproc --all)
-	
-	#N_INT=$(cat $INTERVAL_LIST | wc -l)
-	#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
-	
-	# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
-	# also, all the chromosomes should be together, so no need to sort
-	# this may allow us to use CatVariants later on...
-	for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
-		CHR_LIST=$(mktemp)
-		cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
-		N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
-		N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
-		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
-		rm $CHR_LIST
-	done
 	
 	CIDX=0
 	CONCAT_ARGS=""
 	for f in interval_split.*; do
+		echo "interval file:"
+		cat $f
 		int_fn=$(dx upload $f --brief)
 		# run a subjob that merges the input VCFs on the given target file
-		merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
+		merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
 		CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_job[$CIDX]}:vcf_list"			
 		CIDX=$((CIDX + 1))
 	done
@@ -474,6 +529,8 @@ function single_merge_subjob() {
 
 # entry point for merging VCFs
 function merge_subjob() {
+
+	echo "Resources: $DX_RESOURCES_ID"
 	
 	# set the shell to work w/ GNU parallel
 	export SHELL="/bin/bash"
@@ -503,10 +560,8 @@ function merge_subjob() {
 	if test "$gvcfidxs"; then
 		DX_GVCFIDX_LIST=$(mktemp)
 		dx download "$gvcfidxs" -f -o $DX_GVCFIDX_LIST
-		
-		while read dxfn; do
-			dx download "$dxfn"
-		done < $DX_GVCFIDX_LIST
+	
+		parallel --gnu -j $(nproc --all) parallel_download :::: $DX_GVCFIDX_LIST ::: $GVCF_TMPDIR
 	fi
 		
 	GVCF_LIST_SHUF=$(mktemp)
@@ -532,7 +587,7 @@ function merge_subjob() {
 		# make sure we have a minimum of 1 job, please!
 		N_JOBS=$((N_JOBS > 0 ? N_JOBS : 1))
 	
-		parallel -u -j $N_JOBS --gnu merge_gvcf :::: $TMP_GVCF_LIST ::: $(echo $GVCF_TMP) ::: $(echo "$project:$folder") ::: $N_JOBS ::: $RERUN_FILE
+		parallel -u -j $N_JOBS --gnu merge_gvcf :::: $TMP_GVCF_LIST ::: $GVCF_TMP ::: $GVCF_TMPDIR ::: $N_JOBS ::: $RERUN_FILE
 		
 		PREV_CHUNKS=$N_CHUNKS
 		N_CHUNKS=$(cat $RERUN_FILE | wc -l)
@@ -552,7 +607,11 @@ function merge_subjob() {
 	
 	FINAL_DIR=$(mktemp -d)
 	
-	for l in $(cat $GVCF_TMP); do
+	GVCF_SORTED=$(mktemp)
+	sed -i 's|^.*/gvcflist\.\([^.]*\)\.vcf\.gz$|\1\t&|' $GVCF_TMP 
+	sort -k1,1 -n $GVCF_TMP | cut -f2 > $GVCF_SORTED
+	
+	for l in $(cat $GVCF_SORTED); do
 		mv $l ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz
 		mv $l.tbi ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz.tbi
 			
@@ -572,7 +631,9 @@ main() {
 
 	if test -z "$project"; then
 		project=$DX_PROJECT_CONTEXT_ID
-	fi	
+	fi
+	
+	echo "Resources: $DX_RESOURCES_ID"
 	
 	export SHELL="/bin/bash"
 
@@ -605,7 +666,7 @@ main() {
 		fi
 		
 	elif test "$folder"; then
-		parallel -u --gnu -j $(nproc --all) get_dxids :::: <(dx ls $project:$folder | grep '\.gz$' | sed "s|^|$project:$folder/|") ::: $GVCF_LIST
+		parallel -u --gnu -j $(nproc --all) get_dxids :::: <(dx ls "$project:$folder" | grep '\.gz$' | sed "s|^|$project:$folder/|") ::: $GVCF_LIST
 	else
 		dx-jobutil-report-error "ERROR: you must provide either a list of gvcfs OR a directory containing gvcfs"
 	fi
@@ -626,13 +687,11 @@ main() {
 
 	# assume that the master instance will filter down to the children    
    	N_CORE_SUBJOB=$(nproc --all)
-    N_TEST_BATCHES=$((N_BATCHES / N_CORE_SUBJOB))
-    if test $N_TEST_BATCHES -ne 0; then
-        N_BATCHES=$N_TEST_BATCHES
-    else
-    	# o/w, we should use the # of cores to match the # of batches
-    	# Note, if N_BATCHES is 1, this will trigger a special logic in the subjob
-    	N_CORE_SUBJOB=$N_BATCHES
+    N_SUBJOB=$((N_BATCHES / N_CORE_SUBJOB))
+    if test $N_SUBJOB -eq 0; then
+    	# minimum of 1 subjob, please!
+        N_SUBJOB=1
+        N_CORE_SUBJOB=$N_BATCHES
     fi
     
     # move the special logic testing N_BATCHES==1 here
@@ -652,7 +711,7 @@ main() {
 		cd  $GVCF_TMPDIR
 		GVCF_LIST_SHUF=$(mktemp)
 		cat $GVCF_LIST | shuf > $GVCF_LIST_SHUF
-		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -n l/$N_BATCHES -d $GVCF_LIST_SHUF "gvcflist."
+		split -a $(echo "scale=0; 1+l($N_SUBJOB)/l(10)" | bc -l) -n l/$N_SUBJOB -d $GVCF_LIST_SHUF "gvcflist."
 		cd -
 	
 	

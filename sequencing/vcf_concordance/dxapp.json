@@ -1,0 +1,78 @@
+{
+  "name": "vcf_concordance",
+  "title": "VCF Concordance",
+  "summary": "vcf_concordance",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf1",
+      "label": "Input VCF File",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "vcf1_idx",
+      "label": "Input VCF Index File",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "vcf2",
+      "label": "Truth VCF File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "vcf2_idx",
+      "label": "Truth VCF Index File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "id_mapping",
+      "label": "Sample-Subject ID Mapping",
+      "class": "file",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "summary_output",
+      "label": "Summary Concordance Output",
+      "class": "file"
+    },
+    {
+      "name": "detail_output",
+      "label": "Detailed Concordance Output",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+      "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "file": "src/vcf_concordance.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger", "user-azo121"]
+}

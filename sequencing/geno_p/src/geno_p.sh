@@ -82,10 +82,17 @@ main() {
 	export SHELL="/bin/bash"
 	ADDL_CMD=""
 
+	PADDED=0
+
 	SUBJOB_ARGS=""
 	if test "$target_file"; then
 		tgt_id=$(dx describe "$target_file" --json | jq .id | sed 's/"//g')
 		SUBJOB_ARGS="$SUBJOB_ARGS -itarget_file:file=$tgt_id"
+		
+		if [ -n "$padding" ] && [ "$padding" -ne 0 ] ; then 
+			SUBJOB_ARGS="$SUBJOB_ARGS -ipadding:int=$padding"
+			PADDED=1
+		fi
 	fi
 	
 	if test -z "$PREFIX"; then
@@ -119,9 +126,11 @@ main() {
 	# Kick off each of those subjobs
 	CIDX=0
 	pparg=""
+	pp_pad_arg=""
 	while read chrom; do
 		process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$chrom -ichrom=$chrom -ivcf_files:file="$GVCF_LIST" -ivcfidx_files:file="$GVCFIDX_LIST" $SUBJOB_ARGS)
 		pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out -ivcf_hdr_files=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidx_hdr_files=${process_jobs[$CIDX]}:vcfidx_hdr_out"
+		pp_pad_arg="$pp_pad_arg -ivcf_files=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_pad_out -ivcf_hdr_files=${process_jobs[$CIDX]}:vcf_pad_hdr_out -ivcfidx_pad_hdr_files=${process_jobs[$CIDX]}:vcfidx_hdr_out"
 		CIDX=$((CIDX + 1))
 	done < $CHROM_LIST
 	
@@ -131,17 +140,40 @@ main() {
 	dx-jobutil-add-output vcfidx "$postprocess:vcfidx_out" --class=jobref
     dx-jobutil-add-output vcf_header "$postprocess:vcf_hdr_out" --class=jobref
     dx-jobutil-add-output vcfidx_header "$postprocess:vcfidx_hdr_out" --class=jobref
+    
+    if test "$PADDED" -ne 0; then
+    	postprocess_pad=$(dx-jobutil-new-job merge_vcf $pp_pad_arg -iPREFIX:string="$PREFIX.padded" --depends-on ${process_jobs[@]})
+		dx-jobutil-add-output vcf_pad "$postprocess_pad:vcf_out" --class=jobref
+		dx-jobutil-add-output vcfidx_pad "$postprocess_pad:vcfidx_out" --class=jobref
+    	dx-jobutil-add-output vcf_pad_header "$postprocess_pad:vcf_hdr_out" --class=jobref
+    	dx-jobutil-add-output vcfidx_pad_header "$postprocess_pad:vcfidx_hdr_out" --class=jobref
+    else
+		dx-jobutil-add-output vcf_pad "$postprocess:vcf_out" --class=jobref
+		dx-jobutil-add-output vcfidx_pad "$postprocess:vcfidx_out" --class=jobref
+    	dx-jobutil-add-output vcf_pad_header "$postprocess:vcf_hdr_out" --class=jobref
+    	dx-jobutil-add-output vcfidx_pad_header "$postprocess:vcfidx_hdr_out" --class=jobref
+    fi
+    	
 }
 
 genotype_gvcfs() {
 
 	export SHELL="/bin/bash"
 	ADDL_CMD=""
+	
+	PADDED=0
 
 	if test "$target_file"; then
 		dx download "$target_file" -o targets_raw.bed
 		sed -n "/^$chrom[ \t].*/p" targets_raw.bed > targets.bed
-		ADDL_CMD="-L $PWD/targets.bed"
+		if test "$padding"; then
+			cat targets.bed | interval_pad.py $padding | tr ' ' '\t' | sort -n -k2,3 > targets.padded.bed
+			ADDL_CMD="-L $PWD/targets.padded.bed"
+			PADDED=1
+		else
+			ADDL_CMD="-L $PWD/targets.bed"
+		fi
+
 	else
 		ADDL_CMD="-L $chrom"
 	fi
@@ -179,6 +211,7 @@ genotype_gvcfs() {
 	sudo chmod -R a+rwX /usr/share/GATK
 		
 	dx download $(dx find data --name "GenomeAnalysisTK-3.2-2.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -210,8 +243,39 @@ genotype_gvcfs() {
 	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
 	--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
 	-o "$VCF_TMPDIR/$PREFIX.vcf.gz"
-	
-	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+	  
+    # Now, if we padded the intervals, get an on-target VCF through the use of SelectVariants
+    if test "$PADDED" -ne 0; then
+    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz"
+    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi"
+    
+    	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+			-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
+			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+			-nt $(nproc --all) \
+			-V "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" \
+			-o "$VCF_TMPDIR/$PREFIX.vcf.gz" 
+			
+		# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+		pigz -dc "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz"
+		tabix -p vcf "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz"
+		
+		# upload all of the padded files
+		
+		vcf_pad_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" --brief)
+	    vcf_idx_pad_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi" --brief)
+
+		dx-jobutil-add-output vcf_pad_out "$vcf_pad_fn" --class=file
+		dx-jobutil-add-output vcfidx_pad_out "$vcf_idx_pad_fn" --class=file
+		
+	   	vcf_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz" --brief)
+		vcf_idx_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz.tbi" --brief)
+
+		dx-jobutil-add-output vcf_pad_hdr_out "$vcf_pad_hdr_fn" --class=file
+		dx-jobutil-add-output vcfidx_pad_hdr_out "$vcf_idx_pad_hdr_fn" --class=file
+	fi
+	  	
+   	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
 	pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/$PREFIX.header.vcf.gz"
 	tabix -p vcf "$VCF_TMPDIR/$PREFIX.header.vcf.gz"	
 	
@@ -226,6 +290,7 @@ genotype_gvcfs() {
 
     dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
     dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+
 
 }
 
@@ -259,10 +324,10 @@ merge_vcf() {
 	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_LIST
 
 	for i in "${!vcfidx_hdr_files[@]}"; do	
-		echo "${vcfidx_files[$i]}" >> $DXGCVFIDX_HDR_LIST
+		echo "${vcfidx_hdr_files[$i]}" >> $DXGCVFIDX_HDR_LIST
 	done
 	for i in "${!vcf_hdr_files[@]}"; do
-		echo "${vcf_files[$i]}" >> $DXGVCF_HDR_LIST
+		echo "${vcf_hdr_files[$i]}" >> $DXGVCF_HDR_LIST
 	done
 	
 	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_HDR_LIST ::: $HDR_WKDIR

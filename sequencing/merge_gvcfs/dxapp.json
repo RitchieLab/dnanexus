@@ -90,6 +90,11 @@
       	"name": "vcftools"
       }
     ],
+    "systemRequirements": {
+      "concatenate_gvcfs": {
+        "instanceType": "mem2_hdd2_x4"
+      }
+    },
     "interpreter": "bash",
     "file": "src/merge_gvcfs.sh"
   },

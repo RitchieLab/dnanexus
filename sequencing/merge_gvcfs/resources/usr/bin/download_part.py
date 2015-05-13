@@ -9,6 +9,7 @@ import cStringIO
 import struct
 import gzip
 import bisect
+from collections import deque
 
 _bgzf_magic = b"\x1f\x8b\x08\x04"
 _bgzf_header = b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\x06\x00\x42\x43\x02\x00"
@@ -55,6 +56,8 @@ class bgzopen(object):
 		'''
 	
 		self._filePtr = filePtr
+		self._foq = deque([])
+		self._boq = deque([])
 		self._fo = filePtr.tell()
 		self._bo = 0
 		self._dcFilePtr = cStringIO.StringIO()
@@ -120,12 +123,10 @@ class bgzopen(object):
 			datalen=len(data)
 			if data:
 				self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
-				# whenever we reset the compression block, reset the block offset
-				self._bo = 0
 								
-							
-			# the file offset is the current file ptr minus the size of the data we have
-			self._fo = self._filePtr.tell() - len(data)
+			if len(self._foq) == 0:							
+				# Append the file offset to the file offset queue
+				self._foq.append(self._filePtr.tell() - len(data)) 
 				
 			# If we're here and we have no data, we've likely hit the end of 
 			# the compressed file
@@ -140,7 +141,9 @@ class bgzopen(object):
 					newText += self._dc.decompress(newDat)
 								
 				procDataLen = datalen - len(self._dc.unused_data)
-				newLen = len(newText)	
+				newLen = len(newText)
+				self._boq.append(newLen)
+				self._foq.append(self._foq[-1] + procDataLen)
 				self._text += newText
 				data = None
 				#print "decompressing!, added", newLen, "bytes from", procDataLen, "data"
@@ -148,16 +151,24 @@ class bgzopen(object):
 				newText = self._dc.flush()
 				newLen = len(newText)
 				procDataLen = datalen
+				self._boq.append(newLen)
+				self._foq.append(self._foq[-1] + procDataLen)
 				self._text += newText
 				self._dc = None
 				#print "No data to be had, flushed and got", newLen, "bytes from", procDataLen, "data"
 			else:
 				# break out with no data read!
+				# also kill the _foq added previously
+				self._foq.popleft()
 				newText = ""
 				newLen = 0
 				procDataLen = 0
 	
-		# end while loop		
+		# end while loop
+		
+		#print >> sys.stderr, "Cached chunk"
+		#print >> sys.stderr, "FOQ:", self._foq
+		#print >> sys.stderr, "BOQ:", self._boq
 				
 		# return the # of bytes decompressed
 		return newLen
@@ -167,9 +178,21 @@ class bgzopen(object):
 		retstr = self._text[:retlen]
 		self._text = self._text[retlen:]
 		
+		##print >> sys.stderr, "returning string of length", retlen
+		
 		# add the block offset
+		#self._bo += retlen
+		popped = False
+		
+		while len(self._boq) > 0 and self._bo + retlen >= self._boq[0]:
+			retlen -= self._boq.popleft() - self._bo
+			self._bo = 0	
+			self._fo = self._foq.popleft()
+			if len(self._foq) > 0:
+				self._fo = self._foq[0]
+		
 		self._bo += retlen
-	
+		
 		return retstr
 	
 	def tellvfp(self):
@@ -185,13 +208,24 @@ class bgzopen(object):
 		'''
 		# If we're seeking, we need to throw away our decompression object
 		self._dc = None
+		#print >> sys.stderr, "Seeking to", convert_vfp(vfp)
+		
+		# clear the foq and boq
+		self._foq.clear()
+		self._boq.clear()
+		
 		(fo, bo) = convert_vfp(vfp)
 		self._filePtr.seek(fo)
 		self._fo = fo
+		self._bo = 0
 		self._text=""
 		
+		txt = self.read(bo)
+		#print >> sys.stderr, "Seeking, throwing away:", (len(txt) == bo)
+		#print >> sys.stderr, txt
+		
 		# return "True" if successful
-		return (len(self.read(bo)) == bo)
+		return (len(txt) == bo)
 		
 	def readUntil(self, vfp):
 		'''
@@ -216,8 +250,9 @@ class bgzopen(object):
 		if len(self._text) == 0:
 			self._cacheChunk()
 			
-		toret = self._returnString(len(self._text))
-		self._cacheChunk()
+		
+		toret = self._returnString(self._boq[0] - self._bo)
+		#self._cacheChunk()
 		return toret
 		
 	def read(self, nbytes):
@@ -261,7 +296,15 @@ class bgzopen(object):
 			if firstpos +1 < len(self._text) and self._text[firstpos+1] == '\n':
 				firstpos+=1
 		
-		return self._returnString(firstpos+1)
+		
+		pbo = self._bo
+		#print >> sys.stderr, "Current bo:", self._bo
+		txt = self._returnString(firstpos+1)
+		#print >> sys.stderr, "New bo:", self._bo
+		
+		#print >>sys.stderr, "Diff and len:", self._bo - pbo, len(txt)
+		
+		return txt
 
 	def next(self):
 		return self.__next__()
@@ -322,6 +365,9 @@ class tbi_data(object):
 		if len(qword) == 8:
 			self.n_no_coor = struct.unpack('<Q', qword)[0]
 			
+		self.linearIndex=[0] + [i for o in self.ref for i in o.ioff if i>0]
+		self.linearIndex.sort()
+
 	def getNextChrom(self, vfp):
 		'''
 		Gets the offset of the first record in the next chromosome after the 
@@ -550,23 +596,82 @@ if __name__ =="__main__":
 			data_start_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[st_index])
 	
 	# Seek to the start of the bin
+	#print >> sys.stderr, "Seeking to beginning of bin"
 	vcf_zfile.seek(data_start_vfp)
 	cvfp = vcf_zfile.tellvfp()
+	cvfp_idx = bisect.bisect_left(vcfidx_data.linearIndex, cvfp)
 	curr_pos = 0
 	curr_line = ""
+	
+	# Make sure that we have a good start position (apparently, the tabix index 
+	# gets corrupted sometimes)
+	currchr_str=vcf_zfile.readline("\t")
+	currpos_str=vcf_zfile.readline("\t")
+	curr_line = currchr_str + currpos_str
+	checked=False
+	
+	while not checked:
+		try:
+			curr_chr = currchr_str.strip()
+			curr_pos = int(currpos_str.strip())
+			
+			#print >> sys.stderr, "Current line reads:", currchr_str + currpos_str
+			
+			# Uh-oh! our tabix index led us astray, so we'll need to back up one 
+			# index block and start all over again!
+			
+			# I'm assuming that the chromosome is sufficiently large that
+			# if we are off of it, we've walked off the front end!
+			if (intv_start is not None and curr_pos > intv_start) or curr_chr != intv_chr:
+				print >> sys.stderr, "WARNING: Start Tabix index looks corrupted, backing up one linear index"
+				# find the linear index that is less than cvfp
+				cvfp_idx -= 1
+				vcf_zfile.seek(vcfidx_data.linearIndex[max(cvfp_idx, 0)])
+				currchr_str=vcf_zfile.readline("\t")
+				currpos_str=vcf_zfile.readline("\t")
+				curr_line = currchr_str + currpos_str
+				cvfp = vcf_zfile.tellvfp()
+			else:
+				# If we're here, then curr_pos <= intv_start, and we're golden!
+				checked = True
+			
+		except ValueError:
+			print >> sys.stderr, "Corrupt tabix file?  Reading until next line"
+			curr_line = currchr_str + currpos_str + vcf_zfile.readline()
+		
+	
 	# Now, read lines until we get a line with a position that is >= our interval start
-	while intv_start is not None and curr_pos < intv_start:
-		cvfp = vcf_zfile.tellvfp()
+	while intv_start is not None and (curr_chr != intv_chr or curr_pos < intv_start):
+		# I need to read the rest of the line to throw away
 		curr_line=vcf_zfile.readline()
-		#print >> sys.stderr, "Start Line value (1st 30 chars):", curr_line[:30]
-		p1 = curr_line.find('\t')
-		p2 = curr_line.find('\t',p1+1)
-		curr_pos = int(curr_line[p1+1:p2])
+		
+		currchr_str=vcf_zfile.readline("\t")
+		currpos_str=vcf_zfile.readline("\t")
+		cvfp = vcf_zfile.tellvfp()
+		
+		#print >> sys.stderr, "Start Line chr/pos value:", currchr_str + currpos_str
+		curr_chr = currchr_str.strip()
+		# Note: this should NEVER throw an error!
+		curr_pos = int(currpos_str.strip())
+		
+		curr_line = currchr_str+currpos_str
+		
 		
 	# Now, cvfp is the offset of the beginning of the region of interest
 	# Note: we have already read a line of data, so vcf_zfile.tellvfp() will
 	# show something different from cvfp
 	
+	#print >> sys.stderr, "First line reads:", curr_line
+	#print >> sys.stderr, "Current position:", convert_vfp(vcf_zfile.tellvfp())
+	#print >> sys.stderr, "Cvfp position:   ", convert_vfp(cvfp)
+	
+	start_chunk = vcf_zfile.readChunk()
+	
+	#print >> sys.stderr, curr_line + start_chunk
+	block_vfp=vcf_zfile.tellvfp()
+	
+	#print >> sys.stderr, "Current position:", convert_vfp(vcf_zfile.tellvfp())
+	#print >> sys.stderr, "Cvfp position:   ", convert_vfp(cvfp)
 	
 	# Also, let's get the start position of the bin containing the end of our
 	# interval
@@ -580,32 +685,61 @@ if __name__ =="__main__":
 		else:
 			# make sure to not get a "0" offset!
 			data_end_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[end_index])
+			
+	# Now, let's make sure that the tabix index isn't corrupted for the 
+	# ending index(grumble...)
+	
+	if data_end_vfp is not None and data_end_vfp > cvfp:
+		#print >> sys.stderr, "Seeking to check", convert_vfp(data_end_vfp)
+		vcf_zfile.seek(data_end_vfp)
+		evfp_idx = bisect.bisect_left(vcfidx_data.linearIndex, data_end_vfp)
+		
+		currchr_str=vcf_zfile.readline("\t")
+		currpos_str=vcf_zfile.readline("\t")
+		end_line = currchr_str + currpos_str
+		curr_chr = currchr_str.strip()
+		curr_pos = int(currpos_str.strip())
+				
+	
+	# OK, at this point, I should have the following:
+	# curr_line = "chrom<TAB>pos<TAB>" for 1st record >= starting position
+	# start_chunk = remainder of chunk after 1st record
+	# data_end_vfp = virtual file offset, guaranteed to start at a record <= intv_end
+	# cvfp = virtual file offset of position right after curr_line
+	# block_vfp = virtual file offset of position right after start_chunk
+	
+	#print >> sys.stderr, "st. vfp", convert_vfp(cvfp)
+	#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
+	#print >> sys.stderr, "End vfp", convert_vfp(data_end_vfp)
 	
 	#print >> sys.stderr, "Start offsets:", convert_vfp(data_start_vfp)
 	#if data_end_vfp is not None:
 	#	print >> sys.stderr, "End offsets:", convert_vfp(data_end_vfp)
 	
 
-	
-	if intv_end is not None and curr_pos < intv_end:
-		start_data+=curr_line
-		
-	# Assuming that the data_end_vfp is yet to be reached, read the rest of the chunk
-	if data_end_vfp is None or vcf_zfile.tellvfp() < data_end_vfp:
-		start_data += vcf_zfile.readChunk()
-	
 	# Get the current virtual file offset
-	curr_vfp = vcf_zfile.tellvfp()
-	cfo, cbo = convert_vfp(curr_vfp)
-	
+	#cfo, cbo = convert_vfp(block_vfp)
+		
 	# block-gzip our intermediate data and write that to our file
 	end_data = ""
-	if data_end_vfp is None or curr_vfp < data_end_vfp:
-		block_gzip(out_f, start_data)
+			
+	cfo, cbo = convert_vfp(cvfp)
+	bfo, bbo = convert_vfp(block_vfp)
+	
+	if data_end_vfp is None or convert_vfp(data_end_vfp)[0] > cfo:
+		block_gzip(out_f, start_data + curr_line + start_chunk)
+		
+		#print >> sys.stderr, "Gzipping data:"
+		#print >> sys.stderr, start_data + curr_line + start_chunk
 	else:
-		# If we're here, then we're already into the final block, so just 
-		# tack what we find onto the "end_data"
-		end_data = start_data
+		vcf_zfile.seek(cvfp)
+
+		if cvfp >= data_end_vfp:
+			end_data = start_data + curr_line + vcf_zfile.readline()
+			#print >> sys.stderr, "+++ADDING to end_data:"
+			#print >> end_data
+			data_end_vfp=vcf_zfile.tellvfp()
+			cvfp=data_end_vfp
 
 	# try to match a DXFile read buffer size, else fall back to 64MB
 	try:
@@ -614,7 +748,7 @@ if __name__ =="__main__":
 		dl_block=64*1024*1024
 	
 	if data_end_vfp is None:
-		vcf_f.seek(cfo)
+		vcf_f.seek(bfo)
 		newDat = vcf_f.read(dl_block)
 		#print >> sys.stderr, "Reading", len(newDat), "bytes to end of file"
 		while len(newDat) > 0:
@@ -628,46 +762,77 @@ if __name__ =="__main__":
 		end_seek = False
 		
 		if(efo-cfo) > 0:
-			vcf_f.seek(cfo)
+			vcf_f.seek(bfo)
 			end_seek=True
 		
 		addlDat=1
-		while efo-cfo > 0 and addlDat>0:
-			newDat = vcf_f.read(min(efo-cfo,dl_block))
+		while efo-bfo > 0 and addlDat>0:
+			newDat = vcf_f.read(min(efo-bfo,dl_block))
 			#print >> sys.stderr, "Reading", len(newDat), "bytes to next offset"
 			out_f.write(newDat)
 			addlDat=len(newDat)
-			cfo+=addlDat
+			bfo+=addlDat
 		
 		# If we did any writing of raw compressed chunks, let's move to where 
 		# we need to start decompressing again
 		if end_seek:
 			vcf_zfile.seek(convert_offsets(efo,0))
 			end_data = vcf_zfile.read(ebo)
+			#print >> sys.stderr, "Read", len(end_data), "bytes to end block offset:"
+			#print >> sys.stderr, end_data
+		elif data_end_vfp > cvfp:
+			# here, we did NOT seek, but there's a gap between the cvfp and 
+			#where we are now, so let's seek to the cvfp and read until the 
+			# data_end_vfp
+			
+			#print >> sys.stderr, "++st. vfp", convert_vfp(cvfp)
+			#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
+			#print >> sys.stderr, "++End vfp", convert_vfp(data_end_vfp)
+			vcf_zfile.seek(cvfp)
+			curr_line += vcf_zfile.read(convert_vfp(data_end_vfp)[1] - convert_vfp(cvfp)[1])
+			#print start_data + curr_line + end_data
+			
+			end_data = start_data + curr_line + end_data
 			
 			
 	# At this point, vcf_zfile should be at the correct position to start 
 	# reading records to add to the end
 	
+		
 	curr_pos = 0
-	curr_line = ""
 	curr_chr = intv_chr
+	
+	#print >> sys.stderr, "--st. vfp", convert_vfp(cvfp)
+	#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
+	#if data_end_vfp is not None:
+	#	print >> sys.stderr, "--End vfp", convert_vfp(data_end_vfp)
+	#print >> sys.stderr, "--Cur vfp", convert_vfp(vcf_zfile.tellvfp())
+	
+	#print >> sys.stderr, "Cur vfp", convert_vfp(vcf_zfile.tellvfp())
+	#print >> sys.stderr, "Line:", currchr_str + currpos_str
+
 	# Now, read lines until we get a line with a position that is >= our interval start
 	while data_end_vfp is not None and intv_end is not None and curr_pos <= intv_end and curr_chr==intv_chr:
-		end_data += curr_line
-		curr_line=vcf_zfile.readline()
-		
+		currchr_str=vcf_zfile.readline("\t")
+		currpos_str=vcf_zfile.readline("\t")
+
 		# Make sure that we actually read a line! (this can happen at EOF)
-		if len(curr_line) > 0:
-			#print >> sys.stderr, "End Line value (1st 30 chars):", curr_line[:30]
-			p1 = curr_line.find('\t')
-			p2 = curr_line.find('\t',p1+1)
-			curr_pos = int(curr_line[p1+1:p2])
-			curr_chr=curr_line[:p1]
+		if len(currchr_str + currpos_str) > 0:
+			#p1 = curr_line.find('\t')
+			#p2 = curr_line.find('\t',p1+1)
+			curr_pos = int(currpos_str.strip())
+			curr_chr=currchr_str.strip()
 			#print >> sys.stderr, "End Position:", curr_pos, "Exit:", (curr_pos <= intv_end)
 		else:
+			#print >> sys.stderr, "Saw EOF!"
 			# break out of the loop, please!
 			curr_pos = intv_end + 1
+			
+		if curr_pos <= intv_end and curr_chr==intv_chr:
+			end_data += currchr_str + currpos_str + vcf_zfile.readline()
+
+	
+	#print "Gzipping end_data:\n", end_data
 	
 	# block-gzip the end of the data
 	block_gzip(out_f, end_data)

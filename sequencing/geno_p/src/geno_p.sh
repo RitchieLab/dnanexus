@@ -229,7 +229,7 @@ genotype_gvcfs() {
     TOT_MEM=$((TOT_MEM * 9 / 10))
 	VCF_TMPDIR=$(mktemp -d)
 	# OK, now we can call the GATK genotypeGVCFs
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar \
+	java -d64 -Xms512m -Xmx${TOT_MEM}m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 	-T GenotypeGVCFs \
 	-A QualByDepth \
 	-A HaplotypeScore \
@@ -255,7 +255,7 @@ genotype_gvcfs() {
     	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz"
     	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi"
     
-    	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+    	java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
 			-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
 			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 			-nt $(nproc --all) \

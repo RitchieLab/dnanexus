@@ -1,0 +1,75 @@
+{
+  "name": "combine_variants",
+  "title": "combine_variants",
+  "summary": "combine_variants",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcfs",
+      "label": "VCF Files",
+      "class": "array:file",
+      "optional": false
+    },
+    {
+      "name": "vcfidxs",
+      "label": "VCF Index Files",
+      "class": "array:file",
+      "optional": false
+    },
+    {
+      "name": "prefix",
+      "label": "Prefix",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Combined VCF",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Combined VCF Index File",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {
+        "name": "pigz"
+      },
+      {
+        "name": "openjdk-7-jre-headless"
+      },
+      {
+        "name": "tabix"
+      },
+      {
+      	"name": "vcftools"
+      }
+    ],
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem2_hdd2_x4"
+      }
+    },
+    "interpreter": "bash",
+    "file": "src/combine_variants.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW",
+     "project": "CONTRIBUTE"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger"]
+}

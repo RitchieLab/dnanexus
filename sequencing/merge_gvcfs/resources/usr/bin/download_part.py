@@ -647,7 +647,6 @@ if __name__ =="__main__":
 		
 		currchr_str=vcf_zfile.readline("\t")
 		currpos_str=vcf_zfile.readline("\t")
-		cvfp = vcf_zfile.tellvfp()
 		
 		#print >> sys.stderr, "Start Line chr/pos value:", currchr_str + currpos_str
 		curr_chr = currchr_str.strip()
@@ -656,7 +655,8 @@ if __name__ =="__main__":
 		
 		curr_line = currchr_str+currpos_str
 		
-		
+
+	cvfp = vcf_zfile.tellvfp()	
 	# Now, cvfp is the offset of the beginning of the region of interest
 	# Note: we have already read a line of data, so vcf_zfile.tellvfp() will
 	# show something different from cvfp
@@ -735,11 +735,19 @@ if __name__ =="__main__":
 		vcf_zfile.seek(cvfp)
 
 		if cvfp >= data_end_vfp:
-			end_data = start_data + curr_line + vcf_zfile.readline()
+			#print >> sys.stderr, "++st. vfp", convert_vfp(cvfp)
+			#print >> sys.stderr, "++blk vfp", convert_vfp(block_vfp)
+			#print >> sys.stderr, "++End vfp", convert_vfp(data_end_vfp)
+			
+			#print >> sys.stderr, "diff:", data_end_vfp - cvfp
+			
+			rem_data = vcf_zfile.readline()
+			#print >> sys.stderr, "Rem line:", rem_data
+			end_data = start_data + curr_line + rem_data
 			#print >> sys.stderr, "+++ADDING to end_data:"
 			#print >> end_data
-			data_end_vfp=vcf_zfile.tellvfp()
-			cvfp=data_end_vfp
+			#data_end_vfp=vcf_zfile.tellvfp()
+			#cvfp=data_end_vfp
 
 	# try to match a DXFile read buffer size, else fall back to 64MB
 	try:
@@ -779,6 +787,9 @@ if __name__ =="__main__":
 			vcf_zfile.seek(convert_offsets(efo,0))
 			end_data = vcf_zfile.read(ebo)
 			#print >> sys.stderr, "Read", len(end_data), "bytes to end block offset:"
+			#print >> sys.stderr, "##st. vfp", convert_vfp(cvfp)
+			#print >> sys.stderr, "##blk vfp", convert_vfp(block_vfp)
+			#print >> sys.stderr, "##End vfp", convert_vfp(data_end_vfp)
 			#print >> sys.stderr, end_data
 		elif data_end_vfp > cvfp:
 			# here, we did NOT seek, but there's a gap between the cvfp and 
@@ -788,6 +799,7 @@ if __name__ =="__main__":
 			#print >> sys.stderr, "++st. vfp", convert_vfp(cvfp)
 			#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
 			#print >> sys.stderr, "++End vfp", convert_vfp(data_end_vfp)
+			#print >> sys.stderr, "Adding more to end line!"
 			vcf_zfile.seek(cvfp)
 			curr_line += vcf_zfile.read(convert_vfp(data_end_vfp)[1] - convert_vfp(cvfp)[1])
 			#print start_data + curr_line + end_data
@@ -829,6 +841,7 @@ if __name__ =="__main__":
 			curr_pos = intv_end + 1
 			
 		if curr_pos <= intv_end and curr_chr==intv_chr:
+			#print >> sys.stderr, "Adding a line!"
 			end_data += currchr_str + currpos_str + vcf_zfile.readline()
 
 	

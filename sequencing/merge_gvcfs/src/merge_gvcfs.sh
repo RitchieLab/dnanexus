@@ -350,17 +350,11 @@ function merge_intervals(){
 	-genotypeMergeOptions UNSORTED \
 	-o $FINAL_DIR/$PREFIX.vcf.gz
 	
-	VCF_OUT_FN=$(mktemp)
-	VCFIDX_OUT_FN=$(mktemp)
+	VCF_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz --brief)
+	VCFIDX_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz.tbi --brief)
 	
-	dx upload $FINAL_DIR/$PREFIX.vcf.gz --brief > $VCF_OUT_FN
-	dx upload $FINAL_DIR/$PREFIX.vcf.gz.tbi --brief > $VCFIDX_OUT_FN
-	
-	VCF_OUT=$(dx upload $VCF_OUT_FN --brief)
-	VCFIDX_OUT=$(dx upload $VCFIDX_OUT_FN --brief)
-	
-	dx-jobutil-add-output vcf_list "$VCF_OUT"
-	dx-jobutil-add-output vcfidx_list "$VCFIDX_OUT"
+	dx-jobutil-add-output vcf "$VCF_OUT"
+	dx-jobutil-add-output vcfidx "$VCFIDX_OUT"
 
 }	
 
@@ -446,7 +440,7 @@ function single_merge_subjob() {
 
 	if test "$target"; then
 		OVER_SUB=512
-		MERGE_ARGS="$MERGE_ARGS -itarget:int=1"
+		MERGE_ARGS="$MERGE_ARGS -itargeted:int=1"
 		
 		TARGET_FILE=$(mktemp)
 		dx download "$target" -f -o $TARGET_FILE
@@ -515,16 +509,14 @@ function single_merge_subjob() {
 		int_fn=$(dx upload $f --brief)
 		# run a subjob that merges the input VCFs on the given target file
 		merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
-		CONCAT_ARGS="$CONCAT_ARGS -igvcfidxs:array:file=${merge_job[$CIDX]}:vcfidx_list -igvcfs:array:file=${merge_job[$CIDX]}:vcf_list"			
+		CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs=${merge_job[$CIDX]}:vcfidx -ivcfs=${merge_job[$CIDX]}:vcf"
 		CIDX=$((CIDX + 1))
 	done
 	# concatenate the results
+	concat_job=$(dx run combine_variants -iprefix="$PREFIX" $CONCAT_ARGS --brief)
 
-	concat_job=$(dx-jobutil-new-job concatenate_gvcfs --depends-on ${merge_job[@]} -iPREFIX="$PREFIX" $CONCAT_ARGS)
-
-	dx-jobutil-add-output gvcf "$concat_job:gvcf" --class=jobref
-	dx-jobutil-add-output gvcfidx "$concat_job:gvcfidx" --class=jobref
-	
+	dx-jobutil-add-output gvcf "$concat_job:vcf_out" --class=jobref
+	dx-jobutil-add-output gvcfidx "$concat_job:vcfidx_out" --class=jobref	
 }
 
 # entry point for merging VCFs

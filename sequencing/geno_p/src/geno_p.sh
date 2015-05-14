@@ -126,32 +126,38 @@ main() {
 	# Kick off each of those subjobs
 	CIDX=0
 	pparg=""
+	pp_hdr_arg=""
 	pp_pad_arg=""
+	pp_pad_hdr_arg=""
 	while read chrom; do
 		process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$chrom -ichrom=$chrom -ivcf_files:file="$GVCF_LIST" -ivcfidx_files:file="$GVCFIDX_LIST" $SUBJOB_ARGS)
-		pparg="$pparg -ivcf_files=${process_jobs[$CIDX]}:vcf_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_out -ivcf_hdr_files=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidx_hdr_files=${process_jobs[$CIDX]}:vcfidx_hdr_out"
-		pp_pad_arg="$pp_pad_arg -ivcf_files=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidx_files=${process_jobs[$CIDX]}:vcfidx_pad_out -ivcf_hdr_files=${process_jobs[$CIDX]}:vcf_pad_hdr_out -ivcfidx_pad_hdr_files=${process_jobs[$CIDX]}:vcfidx_hdr_out"
+		pparg="$pparg -ivcfs=${process_jobs[$CIDX]}:vcf_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_out"
+		pp_hdr_arg="$pp_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_hdr_out"
+		pp_pad_arg="$pp_pad_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_out"
+		pp_pad_hdr_arg="$pp_pad_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_hdr_out"
 		CIDX=$((CIDX + 1))
 	done < $CHROM_LIST
 	
 	# OK, now we simply have to merge all of the VCF files together
-	postprocess=$(dx-jobutil-new-job merge_vcf $pparg -iPREFIX:string="$PREFIX" --depends-on ${process_jobs[@]})
+	postprocess=$(dx run combine_variants $pparg -iprefix="$PREFIX" --brief)
 	dx-jobutil-add-output vcf "$postprocess:vcf_out" --class=jobref
 	dx-jobutil-add-output vcfidx "$postprocess:vcfidx_out" --class=jobref
-    dx-jobutil-add-output vcf_header "$postprocess:vcf_hdr_out" --class=jobref
-    dx-jobutil-add-output vcfidx_header "$postprocess:vcfidx_hdr_out" --class=jobref
+	postprocess_hdr=$(dx run combine_variants $pp_hdr_arg -iprefix="$PREFIX.header" --brief)
+    dx-jobutil-add-output vcf_header "$postprocess_hdr:vcf_out" --class=jobref
+    dx-jobutil-add-output vcfidx_header "$postprocess_hdr:vcfidx_out" --class=jobref
     
     if test "$PADDED" -ne 0; then
-    	postprocess_pad=$(dx-jobutil-new-job merge_vcf $pp_pad_arg -iPREFIX:string="$PREFIX.padded" --depends-on ${process_jobs[@]})
+    	postprocess_pad=$(dx run combine_variants $pp_pad_arg -iprefix="$PREFIX.padded" --brief)
 		dx-jobutil-add-output vcf_pad "$postprocess_pad:vcf_out" --class=jobref
 		dx-jobutil-add-output vcfidx_pad "$postprocess_pad:vcfidx_out" --class=jobref
-    	dx-jobutil-add-output vcf_pad_header "$postprocess_pad:vcf_hdr_out" --class=jobref
-    	dx-jobutil-add-output vcfidx_pad_header "$postprocess_pad:vcfidx_hdr_out" --class=jobref
+    	postprocess_pad_hdr=$(dx run combine_variants $pp_pad_hdr_arg -iprefix="$PREFIX.padded.header" --brief)
+    	dx-jobutil-add-output vcf_pad_header "$postprocess_pad_hdr:vcf_out" --class=jobref
+    	dx-jobutil-add-output vcfidx_pad_header "$postprocess_pad_hdr:vcfidx_out" --class=jobref
     else
 		dx-jobutil-add-output vcf_pad "$postprocess:vcf_out" --class=jobref
 		dx-jobutil-add-output vcfidx_pad "$postprocess:vcfidx_out" --class=jobref
-    	dx-jobutil-add-output vcf_pad_header "$postprocess:vcf_hdr_out" --class=jobref
-    	dx-jobutil-add-output vcfidx_pad_header "$postprocess:vcfidx_hdr_out" --class=jobref
+    	dx-jobutil-add-output vcf_pad_header "$postprocess_hdr:vcf_out" --class=jobref
+    	dx-jobutil-add-output vcfidx_pad_header "$postprocess_hdr:vcfidx_out" --class=jobref
     fi
     	
 }

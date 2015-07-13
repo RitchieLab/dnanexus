@@ -1,7 +1,7 @@
 {
-  "name": "call_hc",
-  "title": "Haplotype Caller",
-  "summary": "call_hc",
+  "name": "call_bqsr",
+  "title": "Base Quality Score Recalibration",
+  "summary": "Call GATK BQSR and return the tables for use in HaplotypeCaller",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -10,7 +10,7 @@
   "inputSpec": [
     {
       "name": "bam",
-      "label": "BAM File",
+      "label": "BAM Files",
       "class": "array:file",
       "optional": false,
       "patterns": [
@@ -19,20 +19,11 @@
     },
     {
       "name": "bam_idx",
-      "label": "BAM Index file",
+      "label": "BAM Index Files",
       "class": "array:file",
       "optional": true,
       "patterns": [
         "*.bai"
-      ]
-    },
-    {
-      "name": "bqsr_table",
-      "label": "BQSR Table file",
-      "class": "array:file",
-      "optional": true,
-      "patterns": [
-        "*.table"
       ]
     },
     {
@@ -46,32 +37,28 @@
     },
     {
       "name": "padding",
+      "label": "Interval Padding",
       "class": "int",
       "optional": true,
-      "default" : 0
+      "default": 50
     }
   ],
   "outputSpec": [
     {
-      "name": "vcf_fn",
-      "label": "VCF File(s)",
-      "class": "array:file"
-    },
-    {
-      "name": "vcfidx_fn",
-      "label": "VCF Index file(s)",
+      "name": "bqsr_tables",
+      "label": "BQSR Tables",
       "class": "array:file"
     }
   ],
   "runSpec": {
     "interpreter": "bash",
-      "execDepends": [
+    "execDepends": [
       { "name": "pigz" },
       { "name": "openjdk-7-jre-headless" },
       { "name": "tabix" },
       { "name": "samtools" }
     ],
-    "file": "src/call_hc.sh"
+    "file": "src/call_bqsr.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "access": {

@@ -52,8 +52,9 @@ function download_resources() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
+	#dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	#dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -102,7 +103,7 @@ function merge_gvcf() {
 	done < $f
 	
 	GATK_LOG=$(mktemp)
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T CombineGVCFs \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	$(cat $GVCF_LIST | sed "s|^|-V |" | tr '\n' ' ') \
@@ -236,7 +237,7 @@ function dl_merge_interval() {
 	GATK_LOG=$(mktemp)
 
 	# Ask for 95% of total per-core memory
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T CombineGVCFs \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -L $CHR\
 	$(ls *.vcf.gz | sed "s|^|-V |" | tr '\n' ' ') \
@@ -248,6 +249,10 @@ function dl_merge_interval() {
 		cat $GATK_LOG
 		echo "$1" >> $RERUN_FILE
 	fi
+	
+	# I need to clean up the working directory here - no longer needed!
+	cd - >/dev/null
+	rm -rf $WKDIR
 }
 export -f dl_merge_interval
 
@@ -343,7 +348,7 @@ function merge_intervals(){
 	# OK, at this point everything should be merged, so we'll go ahead and concatenate everything in $OUTDIR
 	FINAL_DIR=$(mktemp -d)
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
 	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
@@ -357,66 +362,6 @@ function merge_intervals(){
 	dx-jobutil-add-output vcfidx "$VCFIDX_OUT"
 
 }	
-
-function concatenate_gvcfs(){
-
-	echo "Resources: $DX_RESOURCES_ID"
-	# set the shell to work w/ GNU parallel
-	export SHELL="/bin/bash"
-
-	# Arguments:
-	# gvcfidxs (optional)
-	# array of files, each containing a "dx download"-able file, one per line
-	# and the files are tbi indexes of the gvcf.gz files
-	# gvcfs (mandatory)
-	# array of files, as above, where each line is a single gvcf file
-	# PREFIX (mandatory)
-	# the prefix to use for the single resultant gvcf
-
-	download_resources
-	
-	# download my gvcfidx_list
-	DX_GVCFIDX_LIST=$(mktemp)
-	WKDIR=$(mktemp -d)
-
-	for i in "${!gvcfidxs[@]}"; do	
-		dx cat "${gvcfidxs[$i]}" >> $DX_GVCFIDX_LIST
-	done
-	
-	cd $WKDIR
-	
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DX_GVCFIDX_LIST ::: $WKDIR
-	
-	# OK, now all of the gvcf indexes are in $WKDIR, time to download
-	# all of the GVCFs in parallel
-	DX_GVCF_LIST=$(mktemp)
-	for i in "${!gvcfs[@]}"; do	
-		dx cat "${gvcfs[$i]}" >> $DX_GVCF_LIST
-	done
-	
-	# download (and index if necessary) all of the gVCFs
-	GVCF_LIST=$(mktemp)	
-	parallel -u --gnu -j $(nproc --all) dl_index :::: $DX_GVCF_LIST ::: $WKDIR ::: $GVCF_LIST
-	
-	# Now, merge the gVCFs into a single gVCF
-	FINAL_DIR=$(mktemp -d)
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
-	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
-	$(cat $GVCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	-genotypeMergeOptions UNSORTED \
-	-o $FINAL_DIR/$PREFIX.vcf.gz
-	
-	# and upload it and we're done!
-	DX_GVCF_UPLOAD=$(dx upload "$FINAL_DIR/$PREFIX.vcf.gz" --brief)
-	DX_GVCFIDX_UPLOAD=$(dx upload "$FINAL_DIR/$PREFIX.vcf.gz.tbi" --brief)
-	
-	dx-jobutil-add-output gvcf $DX_GVCF_UPLOAD --class=file
-	dx-jobutil-add-output gvcfidx $DX_GVCFIDX_UPLOAD --class=file
-	
-}
-
 
 # entry point for merging into a single gVCF
 function single_merge_subjob() {
@@ -439,7 +384,7 @@ function single_merge_subjob() {
 	MERGE_ARGS=""
 
 	if test "$target"; then
-		OVER_SUB=512
+		OVER_SUB=256
 		MERGE_ARGS="$MERGE_ARGS -itargeted:int=1"
 		
 		TARGET_FILE=$(mktemp)

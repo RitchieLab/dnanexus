@@ -61,6 +61,13 @@
       "name": "PREFIX",
       "class": "string",
       "optional": true
+    },
+    {
+      "name" : "by_chrom",
+      "label" : "Output Chromosomal merged gVCFs (single merge only)",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : "false"
     }
   ],
   "outputSpec": [

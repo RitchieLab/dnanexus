@@ -117,9 +117,7 @@ class bgzopen(object):
 			# If this is true, we likely have a partial block
 			if self._dc and self._dc.unused_data:
 				data = self._dc.unused_data
-				#print >> sys.stderr, "looking at unused data", repr(data[:10])
 			else:
-				#print >> sys.stderr, "current ptr:", self._filePtr.tell()
 				data = self._filePtr.read(self._chunkSize)
 			
 			datalen=len(data)
@@ -133,12 +131,7 @@ class bgzopen(object):
 			# If we're here and we have no data, we've likely hit the end of 
 			# the compressed file
 			if data:
-				try:
-					newText = self._dc.decompress(data)
-				except:
-					print >> sys.stderr, "ERROR decompressing:"
-					#print >> sys.stderr, repr(data[:50])
-					raise
+				newText = self._dc.decompress(data)
 				
 				dlMore = True
 				while len(self._dc.unused_data) == 0 and dlMore:
@@ -153,7 +146,7 @@ class bgzopen(object):
 				self._foq.append(self._foq[-1] + procDataLen)
 				self._text += newText
 				data = None
-				#print >> sys.stderr, "decompressing!, added", newLen, "bytes from", procDataLen, "data"
+				#print "decompressing!, added", newLen, "bytes from", procDataLen, "data"
 			elif self._dc:
 				newText = self._dc.flush()
 				newLen = len(newText)
@@ -214,8 +207,7 @@ class bgzopen(object):
 		the block and reading the given number of characters
 		'''
 		# If we're seeking, we need to throw away our decompression object
-		self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
-		
+		self._dc = None
 		#print >> sys.stderr, "Seeking to", convert_vfp(vfp)
 		
 		# clear the foq and boq
@@ -223,16 +215,7 @@ class bgzopen(object):
 		self._boq.clear()
 		
 		(fo, bo) = convert_vfp(vfp)
-		if self._filePtr.tell() != fo:
-			self._filePtr.seek(fo)
-		else:
-			pass
-			#print >> sys.stderr, "No need to seek!"
-
-			#print >> sys.stderr, "let's peek, though:"
-			#print >> sys.stderr, repr(self._filePtr.read(10))
-			#self._filePtr.seek(fo)
-		
+		self._filePtr.seek(fo)
 		self._fo = fo
 		self._bo = 0
 		self._text=""
@@ -391,12 +374,47 @@ class tbi_data(object):
 		given offset.  Returns None if the given offset is in the final 
 		chromosome
 		'''
-		gt_offsets=[r.first_pos for r in self.ref if r.first_pos>vfp]
+		gt_offsets=[r.first_pos for r in vcfidx_data.ref if r.first_pos>vfp]
 		if len(gt_offsets) == 0:
 			return None
 		else:
 			return min(gt_offsets)
 		
+
+def getNonOverlap(interval_in):
+	
+	curr_interval = None
+	interval_out = []
+	for interval in interval_in:
+		if curr_interval is None:
+			curr_interval = interval
+		elif curr_interval[0] == interval[0]:
+			if curr_interval[1] is None:
+				pass
+			elif curr_interval[1][1] >= interval[1][0]:
+				curr_interval = (curr_interval[0], (curr_interval[1][0], interval[1][1]))
+			else:
+				interval_out.append(curr_interval)
+				curr_interval = interval
+		else:
+			interval_out.append(curr_interval)
+			curr_interval = interval
+	
+	interval_out.append(curr_interval)
+	
+	return interval_out
+
+def readIntervals(interval_f):
+	intervals = []
+	for l in interval_f:
+		curr_l = l.strip().split()
+		try:
+			intervals.append((curr_l[0], (int(curr_l[1]), int(curr_l[2])) ))
+		except ValueError:
+			print >> sys.stderr, "WARNING, cound not parse line '%s', ignoring" % l.strip()
+	
+	return intervals
+
 def getFile(file_str):
 	retfile = None
 	try:
@@ -413,6 +431,26 @@ def getFile(file_str):
 		
 	return retfile
 
+
+def getIntervals(interval_str):
+	intervals = []
+	interval_f = getFile(interval_str)
+	if interval_f is not None:
+		intervals = readIntervals(interval_f)
+	else:
+		for interval in interval_str.split(","):
+			try:
+				curr_int = interval.split(':')
+				if len(curr_int) > 1:
+					curr_bound = curr_int[1].split("-")
+					intervals.append((curr_int[0], (int(curr_bound[0]), int(curr_bound[1]))))
+				else:
+					intervals.append((curr_int[0], None))
+			except:
+				print >> sys.stderr, "WARNING: could not parse interval: '%s', ignoring" % interval
+	
+	return intervals
+	
 def get_bgzf_block(block, block_len=(2**16-1)):
     # print("Saving %i bytes" % len(block))
     
@@ -526,11 +564,9 @@ if __name__ =="__main__":
 		#print >> sys.stderr, "Print the header, please!"
 		start_vfp = vcfidx_data.getNextChrom(0) 
 		start_fo, start_bo = convert_vfp(start_vfp)
-		#print >> sys.stderr, "Starting vfp:", start_vfp
-		#print >> sys.stderr, "Starting off:", convert_vfp(start_vfp)
+		#print >> sys.stderr, "Starting offset:", start_vfp
 		if start_fo > 0:
 			out_f.write(vcf_f.read(start_fo))
-			vcf_f.flush()
 			vcf_zfile.seek(convert_offsets(start_fo, 0))
 
 		start_data += vcf_zfile.read(start_bo)
@@ -555,7 +591,7 @@ if __name__ =="__main__":
 		st_index = intv_start/(16*1024)
 		if st_index >= len(chrom_ref.ioff):
 			print >> sys.stderr, "WARNING: start position not in linear index; interval not in VCF?"
-			data_start_vfp = chrom_ref.ioff[-1]
+			data_start_vfp = None
 		else:
 			data_start_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[st_index])
 	
@@ -572,9 +608,38 @@ if __name__ =="__main__":
 	currchr_str=vcf_zfile.readline("\t")
 	currpos_str=vcf_zfile.readline("\t")
 	curr_line = currchr_str + currpos_str
-	curr_chr = currchr_str.strip()
-	curr_pos = int(currpos_str.strip())
+	checked=False
+	
+	while not checked:
+		try:
+			curr_chr = currchr_str.strip()
+			curr_pos = int(currpos_str.strip())
+			
+			#print >> sys.stderr, "Current line reads:", currchr_str + currpos_str
+			
+			# Uh-oh! our tabix index led us astray, so we'll need to back up one 
+			# index block and start all over again!
+			
+			# I'm assuming that the chromosome is sufficiently large that
+			# if we are off of it, we've walked off the front end!
+			if (intv_start is not None and curr_pos > intv_start) or curr_chr != intv_chr:
+				print >> sys.stderr, "WARNING: Start Tabix index looks corrupted, backing up one linear index"
+				# find the linear index that is less than cvfp
+				cvfp_idx -= 1
+				vcf_zfile.seek(vcfidx_data.linearIndex[max(cvfp_idx, 0)])
+				currchr_str=vcf_zfile.readline("\t")
+				currpos_str=vcf_zfile.readline("\t")
+				curr_line = currchr_str + currpos_str
+				cvfp = vcf_zfile.tellvfp()
+			else:
+				# If we're here, then curr_pos <= intv_start, and we're golden!
+				checked = True
+			
+		except ValueError:
+			print >> sys.stderr, "Corrupt tabix file?  Reading until next line"
+			curr_line = currchr_str + currpos_str + vcf_zfile.readline()
 		
+	
 	# Now, read lines until we get a line with a position that is >= our interval start
 	while intv_start is not None and (curr_chr != intv_chr or curr_pos < intv_start):
 		# I need to read the rest of the line to throw away
@@ -591,7 +656,6 @@ if __name__ =="__main__":
 		curr_line = currchr_str+currpos_str
 		
 
-	st_pos = curr_pos
 	cvfp = vcf_zfile.tellvfp()	
 	# Now, cvfp is the offset of the beginning of the region of interest
 	# Note: we have already read a line of data, so vcf_zfile.tellvfp() will
@@ -622,10 +686,13 @@ if __name__ =="__main__":
 			# make sure to not get a "0" offset!
 			data_end_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[end_index])
 			
-
+	# Now, let's make sure that the tabix index isn't corrupted for the 
+	# ending index(grumble...)
+	
 	if data_end_vfp is not None and data_end_vfp > cvfp:
 		#print >> sys.stderr, "Seeking to check", convert_vfp(data_end_vfp)
 		vcf_zfile.seek(data_end_vfp)
+		evfp_idx = bisect.bisect_left(vcfidx_data.linearIndex, data_end_vfp)
 		
 		currchr_str=vcf_zfile.readline("\t")
 		currpos_str=vcf_zfile.readline("\t")
@@ -743,53 +810,48 @@ if __name__ =="__main__":
 	# At this point, vcf_zfile should be at the correct position to start 
 	# reading records to add to the end
 	
-	if intv_end is not None and st_pos > intv_end:
-		print >> sys.stderr, "WARNING: Interval not found in VCF file, exiting!"
-		end_data = start_data
-	else:
 		
-		curr_pos = 0
-		curr_chr = intv_chr
+	curr_pos = 0
+	curr_chr = intv_chr
 	
-		#print >> sys.stderr, "--st. vfp", convert_vfp(cvfp)
-		#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
-		#if data_end_vfp is not None:
-		#	print >> sys.stderr, "--End vfp", convert_vfp(data_end_vfp)
-		#print >> sys.stderr, "--Cur vfp", convert_vfp(vcf_zfile.tellvfp())
+	#print >> sys.stderr, "--st. vfp", convert_vfp(cvfp)
+	#print >> sys.stderr, "blk vfp", convert_vfp(block_vfp)
+	#if data_end_vfp is not None:
+	#	print >> sys.stderr, "--End vfp", convert_vfp(data_end_vfp)
+	#print >> sys.stderr, "--Cur vfp", convert_vfp(vcf_zfile.tellvfp())
 	
-		#print >> sys.stderr, "Cur vfp", convert_vfp(vcf_zfile.tellvfp())
-		#print >> sys.stderr, "Line:", currchr_str + currpos_str
+	#print >> sys.stderr, "Cur vfp", convert_vfp(vcf_zfile.tellvfp())
+	#print >> sys.stderr, "Line:", currchr_str + currpos_str
 
-		# Now, read lines until we get a line with a position that is >= our interval start
-		while data_end_vfp is not None and intv_end is not None and curr_pos <= intv_end and curr_chr==intv_chr:
-			currchr_str=vcf_zfile.readline("\t")
-			currpos_str=vcf_zfile.readline("\t")
+	# Now, read lines until we get a line with a position that is >= our interval start
+	while data_end_vfp is not None and intv_end is not None and curr_pos <= intv_end and curr_chr==intv_chr:
+		currchr_str=vcf_zfile.readline("\t")
+		currpos_str=vcf_zfile.readline("\t")
 
-			# Make sure that we actually read a line! (this can happen at EOF)
-			if len(currchr_str + currpos_str) > 0:
-				#p1 = curr_line.find('\t')
-				#p2 = curr_line.find('\t',p1+1)
-				curr_pos = int(currpos_str.strip())
-				curr_chr=currchr_str.strip()
-				#print >> sys.stderr, "End Position:", curr_pos, "Exit:", (curr_pos <= intv_end)
-			else:
-				#print >> sys.stderr, "Saw EOF!"
-				# break out of the loop, please!
-				curr_pos = intv_end + 1
+		# Make sure that we actually read a line! (this can happen at EOF)
+		if len(currchr_str + currpos_str) > 0:
+			#p1 = curr_line.find('\t')
+			#p2 = curr_line.find('\t',p1+1)
+			curr_pos = int(currpos_str.strip())
+			curr_chr=currchr_str.strip()
+			#print >> sys.stderr, "End Position:", curr_pos, "Exit:", (curr_pos <= intv_end)
+		else:
+			#print >> sys.stderr, "Saw EOF!"
+			# break out of the loop, please!
+			curr_pos = intv_end + 1
 			
-			if curr_pos <= intv_end and curr_chr==intv_chr:
-				#print >> sys.stderr, "Adding a line!"
-				end_data += currchr_str + currpos_str + vcf_zfile.readline()
+		if curr_pos <= intv_end and curr_chr==intv_chr:
+			#print >> sys.stderr, "Adding a line!"
+			end_data += currchr_str + currpos_str + vcf_zfile.readline()
 
 	
 	#print "Gzipping end_data:\n", end_data
 	
 	# block-gzip the end of the data
-	if end_data:
-		block_gzip(out_f, end_data)
+	block_gzip(out_f, end_data)
 	
 	# if we didn't read to the end, block-gzip an empty block and close
-	if not args.keep_open and data_end_vfp is not None:
+	if args.keep_open and data_end_vfp is not None:
 		block_gzip(out_f, "")
 	
 	out_f.close()

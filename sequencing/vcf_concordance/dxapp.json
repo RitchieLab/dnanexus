@@ -37,6 +37,13 @@
       "label": "Sample-Subject ID Mapping",
       "class": "file",
       "optional": true
+    },
+    {
+      "label": "Prefix",
+      "optional": false,
+      "name": "PREFIX",
+      "class": "string",
+      "default" : "concordance"
     }
   ],
   "outputSpec": [

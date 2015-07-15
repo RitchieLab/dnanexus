@@ -67,23 +67,29 @@ function call_bqsr(){
 	
 	ulimit -m $((TOT_MEM * 9 / (N_PROC * 10) ))
 	
+	LOG_FN=$(mktemp)
+	
 	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / (N_PROC * 10) ))k -jar  /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T BaseRecalibrator \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	-I $fn_base.bam $TARGET_CMD \
 	-knownSites /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
 	-knownSites /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz \
-	-o $WKDIR/$fn_base.table
+	-o $WKDIR/$fn_base.table >$LOG_FN 2>&1
 	
 	if test "$?" -eq 0; then
 		BQSR_DXFN=$(dx upload "$WKDIR/$fn_base.table" --brief) 
 		echo "$BQSR_DXFN" >> $3
 	else
+		echo "Error running sample ${fn_base} with $N_PROC simultaneous jobs" | dx-log-stream -l critical -s DX_APP
+		echo "BQSR Error.  Log file follows"
+		cat $LOG_FN
 		echo "$bam_in" >> $RERUN_FILE
 	fi
 	
 	# Go ahead and delete the BAM file; I'm done with it now!
 	rm $fn_base.bam
+	rm $LOG_FN
 
 
 }
@@ -177,7 +183,7 @@ main() {
 	
 	# We need to be certain that nothing remains to be merged!
 	if test "$N_CHUNKS" -ne 0; then
-		dx-jobutil-report-error "ERROR: Could not merge one or more interval chunks; try an instance with more memory!"
+		echo "WARNING: Some samples not called, see CRITICAL log for details" | dx-log-stream -l critical -s DX_APP
 	fi
 	
 	while read bqsr_fn; do

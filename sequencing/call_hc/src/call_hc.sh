@@ -45,7 +45,7 @@ function call_hc(){
 		TARGET_CMD="-L $TARGET_FN"
 	fi
 
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+	TOT_MEM=$(free -k | grep "Mem" | awk '{print $2}')
 	#N_PROC=$(nproc --all)
 	
 	cd $WKDIR
@@ -70,9 +70,11 @@ function call_hc(){
 		BQSR_CMD="-BQSR $fn_base.table"
 	fi
 	
+	LOG_FN=$(mktemp)
+	ulimit -m $((TOT_MEM * 19 / (N_PROC * 20) ))
 	
 	# run HC to get a gVCF
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))m -jar  /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))k -jar  /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T HaplotypeCaller \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz $TARGET_CMD $BQSR_CMD \
@@ -84,7 +86,7 @@ function call_hc(){
 	-ERC GVCF \
 	-pairHMM VECTOR_LOGLESS_CACHING \
 	-variant_index_type LINEAR \
-	-variant_index_parameter 128000
+	-variant_index_parameter 128000 >$LOG_FN 2>&1
 	
 	if test "$?" -eq 0; then
 		# upload the results and put the resultant dx IDs into a file
@@ -93,6 +95,9 @@ function call_hc(){
 		VCFIDX_DXFN=$(dx upload "${OUTDIR}/${fn_base}.vcf.gz.tbi" --brief)
 		echo "$VCFIDX_DXFN" >> $5
 	else
+		echo "Error running sample ${fn_base} with $N_PROC simultaneous jobs" | dx-log-stream -l critical -s DX_APP
+		echo "Error Running HaplotypeCaller, log follows"
+		cat $LOG_FN
 		echo "$bam_in" >> $RERUN_FILE
 	fi
 	
@@ -201,6 +206,10 @@ main() {
 		# just to make N_JOBS 0 at the conditional when we ran only a single job!
 		N_JOBS=$((N_JOBS - 1))
 	done	
+	
+	if test $N_CHUNKS -ne 0; then
+		echo "WARNING: Some samples not called, see CRITICAL log for details" | dx-log-stream -l critical -s DX_APP
+	fi
 	
 	while read vcf_fn; do
 		dx-jobutil-add-output vcf_fn "$vcf_fn" --class=array:file

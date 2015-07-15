@@ -10,7 +10,12 @@
       "optional": true,
       "name": "sleep_time",
       "class": "string"
-    }
+    },
+	{
+	  "name" : "files",
+	  "class" : "array:file",
+	  "optional" : true
+	}
   ],
   "outputSpec": [],
   "runSpec": {
@@ -19,7 +24,8 @@
       {"name": "libgsl0-dev"},
       {"name": "tabix"},
       {"name": "openjdk-7-jre-headless"},
-      {"name": "pigz"}	
+      {"name": "pigz"},
+	  {"name": "vcftools"}
     ],
     "file": "src/code.sh",
     "interpreter": "bash"

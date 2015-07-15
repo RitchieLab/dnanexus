@@ -20,6 +20,13 @@ sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get install --yes parallel
 
+RERUN=1
+
+while test $RERUN -ne 0; do
+	sudo pip install pytabix
+	RERUN="$?"
+done
+
 main() {
 
     echo "Value of sleep_time: '$sleep_time'"

@@ -16,7 +16,7 @@
 #
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
-#set -x
+set -x
 
 sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
@@ -90,11 +90,11 @@ function run_imputation {
 	# try to avoid a race condition by waiting a random amount of time (NTE 30 seconds)
 	sleep $((RANDOM % 30))
 	
-	NPROC=$(nproc)
+	N_PROC=$8
 	# spin-lock while we don't have enough memory, defined as 1/(# processors) fraction free
 	# Also, if I'm not running an impute2 job, go ahead and try (and probably fail...)
 	echo "Memory Fraction used: $(free | tail -2 | head -1 | sed 's/  */\t/g' | cut -f 3,4 | awk '{print $1 / ($1 + $2)}')"
-	while test "$(free | tail -2 | head -1 | sed 's/  */\t/g' | cut -f 3,4 | awk -v ncpu="$NPROC" '{print (($1 / ($1 + $2)) > (1-1/ncpu))}')" -gt 0 \
+	while test "$(free | tail -2 | head -1 | sed 's/  */\t/g' | cut -f 3,4 | awk -v ncpu="$N_PROC" '{print (($1 / ($1 + $2)) > (1-1/ncpu))}')" -gt 0 \
 	      -a "$(ps -elf | grep impute2 | grep -v grep | wc -l)" -gt 0; do
 		# wait at least 10 minutes, and up to an hour
 		echo "Sleeping due to low memory:"
@@ -102,9 +102,12 @@ function run_imputation {
 	done
 		
 	# Run impute2, and if it failed, write the chunk to a file to re-run
+	TOT_MEM=$(free -k | grep "Mem" | awk '{print $2}')
+	ulimit -m $((TOT_MEM * 19 / (20 * N_PROC) ))
+	
 	impute2 -m "$2" -use_prephased_g -known_haps_g "$5" -h "$3" -l "$4" -Ne $NE -int ${CHUNK_START} ${CHUNK_END} \
     	-buffer 250kb -call_thresh 0.9 -allow_large_regions -o $OUTPUT_FILE || echo "$1" >> $7
-
+    
 }
 
 export -f run_imputation
@@ -170,15 +173,22 @@ imputation() {
 	RERUN_FILE=$(mktemp)
 	N_RUNS=1
 	N_CORES=$(nproc)
+	N_JOBS=$(nproc)
 	
 	# each run, we will decrease the number of cores available until we're at a single core at a time (using ALL the memory)
-	while test $N_CHUNKS -gt 0 -a $((PREV_CHUNKS - N_CHUNKS)) -gt 0 -a $N_RUNS -lt $((N_CORES / 2 + 2)); do	
-		cat chunk_file | parallel -j $((N_CORES/N_RUNS)) --gnu run_imputation "{}" genetic_map ref_haplotypes ref_legend sample_haps "$CHUNK_DIR/$prefix" $RERUN_FILE
+	while test $N_CHUNKS -gt 0 -a $((PREV_CHUNKS - N_CHUNKS)) -gt 0 -a $N_JOBS -gt 0; do	
+		N_JOBS=$(echo "$N_CORES/2^($N_RUNS - 1)" | bc)
+		# make sure we have a minimum of 1 job, please!
+		N_JOBS=$((N_JOBS > 0 ? N_JOBS : 1))
+
+		cat chunk_file | parallel -j $((N_CORES/N_RUNS)) --gnu run_imputation "{}" genetic_map ref_haplotypes ref_legend sample_haps "$CHUNK_DIR/$prefix" $RERUN_FILE $N_JOBS
+
 		PREV_CHUNKS=$N_CHUNKS
 		N_CHUNKS=$(cat $RERUN_FILE | wc -l)
 		mv $RERUN_FILE chunk_file
 		RERUN_FILE=$(mktemp)
 		N_RUNS=$((N_RUNS + 1))
+		N_JOBS=$((N_JOBS - 1))
 	done
 	
 	if test $N_CHUNKS -gt 0; then

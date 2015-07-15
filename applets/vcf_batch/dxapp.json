@@ -1,0 +1,81 @@
+{
+  "name": "vcf_batch",
+  "title": "VCF Batch effect tester",
+  "summary": "vcf_batch",
+  "tags": [
+    "Statistics"
+  ],
+  "dxapi": "1.0.0",
+  "inputSpec": [
+    {
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "label": "VCF File",
+      "optional": false,
+      "name": "vcf_fn",
+      "class": "file"
+    },
+    {
+      "patterns": [
+        "*.tbi"
+      ],
+      "label": "VCF Index File",
+      "optional": true,
+      "name": "vcfidx_fn",
+      "class": "file"
+    },
+    {
+      "label": "List of IDs that are Cases",
+      "optional": true,
+      "name": "pheno_file",
+      "class": "file"
+    },
+    {
+      "label": "List of IDs to drop",
+      "optional": true,
+      "name": "drop_file",
+      "class": "file"
+    },
+    {
+      "label": "Covariates",
+      "optional": true,
+      "name": "input_covars",
+      "class": "file"
+    },
+    {
+      "label": "List of region(s) to test",
+      "optional": true,
+      "name": "input_regions",
+      "class": "file"
+    },
+    {
+      "label": "Prefix",
+      "optional": false,
+      "name": "PREFIX",
+      "class": "string",
+      "default" : "assoc"
+    }
+  ],
+  "outputSpec": [
+    {
+      "label": "Association Output",
+      "name": "assoc_out",
+      "class": "file"
+    },
+    {
+      "label": "P value list",
+      "name": "pval_list",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "tabix"
+      }
+    ],
+    "file": "src/code.sh",
+    "interpreter": "bash"
+  }
+}

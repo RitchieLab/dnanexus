@@ -1,0 +1,67 @@
+{
+  "name": "binning_step0",
+  "title": "Binning Pipeline (Step 0)",
+  "summary": "Binning Pipeline (Step 0)",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "access": {
+    "network": [ "*" ],
+    "allProjects": "VIEW"
+  },
+  "inputSpec": [
+    {
+      "name": "vcf_file",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.vcf","*.vcf.gz"]
+    },
+    {
+      "name": "vcf_tbi_file",
+      "label": "VCF TBI Index File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.vcf.tbi","*.vcf.gz.tbi"]
+    },
+    {
+      "name": "sample_file",
+      "label": "Sample File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "region_file",
+      "label": "Region File",
+      "class": "file",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "log_file",
+      "label": "Log File",
+      "class": "file"
+    },
+    {
+      "name": "vcf_output",
+      "label": "VCF Output",
+      "class": "file"
+    },
+    {
+      "name": "vcf_tbi_output",
+      "label": "VCF TBI Index Output",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/main.sh",
+    "execDepends": [
+      { "name": "libgsl0ldbl" },
+      { "name": "openjdk-7-jre-headless" },
+      { "name": "tabix" }
+    ]
+  },
+  "authorizedUsers": []
+}

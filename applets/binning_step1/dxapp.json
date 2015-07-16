@@ -1,0 +1,97 @@
+{
+  "name": "binning_step1",
+  "title": "Binning Pipeline (Step 1)",
+  "summary": "Binning Pipeline (Step 1)",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "access": {
+    "network": [ "*" ],
+    "allProjects": "VIEW"
+  },
+  "inputSpec": [
+    {
+      "name": "vcf_file",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.vcf","*.vcf.gz"]
+    },
+    {
+      "name": "vcf_tbi_file",
+      "label": "VCF TBI Index File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.vcf.tbi","*.vcf.gz.tbi"]
+    },
+    {
+      "name": "phenotype_file",
+      "label": "Phenotype File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.phe*"]
+    },
+    {
+      "name": "covariate_file",
+      "label": "Covariate File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.cov*"]
+    },
+    {
+      "name": "sample_file",
+      "label": "Sample File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "region_file",
+      "label": "Region File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "regression_type",
+      "label": "Regression Type",
+      "class": "string",
+      "choices": ["linear","logistic"],
+      "optional": true,
+      "default": "linear"
+    },
+    {
+      "name": "biobin_args",
+      "label": "BioBin Arguments",
+      "class": "string",
+      "optional": true,
+      "default": "--weight-loci Y  --bin-pathways N  --bin-regions Y  --bin-minimum-size 1"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "log_file",
+      "label": "Log File",
+      "class": "file"
+    },
+    {
+      "name": "biobin_output",
+      "label": "BioBin Output",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/main.sh",
+    "execDepends": [
+      { "name": "gawk" },
+      { "name": "libsqlite3-0" },
+      { "name": "python-apsw" },
+      { "name": "python-suds" },
+      { "name": "libgsl0ldbl" },
+      { "name": "openjdk-7-jre-headless" },
+      { "name": "vcftools" },
+      { "name": "plink" },
+      { "name": "tabix" }
+    ]
+  },
+  "authorizedUsers": []
+}

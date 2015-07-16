@@ -1,0 +1,94 @@
+{
+  "name": "binning_step3",
+  "title": "Binning Pipeline (Step 3)",
+  "summary": "Binning Pipeline (Step 3)",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "access": {
+    "network": [ "*" ],
+    "allProjects": "VIEW"
+  },
+  "inputSpec": [
+    {
+      "name": "checkpoint_biobin",
+      "label": "BioBin Checkpoint Archive",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.tar.bz*"]
+    },
+    {
+      "name": "checkpoint_vcftools",
+      "label": "VCFtools Checkpoint Archive",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.tar.bz*"]
+    },
+    {
+      "name": "checkpoint_plink",
+      "label": "Plink Checkpoint Archive",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.tar.bz*"]
+    },
+    {
+      "name": "covariate_file",
+      "label": "Covariate File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.cov*"]
+    },
+    {
+      "name": "regression_type",
+      "label": "Regression Type",
+      "class": "string",
+      "choices": ["linear","logistic"],
+      "optional": true,
+      "default": "linear"
+    },
+    {
+      "name": "missing_code",
+      "label": "Code for missing values in phenotype and covariate files",
+      "class": "string",
+      "optional": true,
+      "default": "NA"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "log_file",
+      "label": "Log File",
+      "class": "file"
+    },
+    {
+      "name": "debug_file",
+      "label": "Debug Archive",
+      "class": "file"
+    },
+    {
+      "name": "skat_files",
+      "label": "SKAT Output File(s)",
+      "class": "array:file"
+    },
+    {
+      "name": "plato_files",
+      "label": "PLATO Output File(s)",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/main.sh",
+    "execDepends": [
+      { "name": "gawk" },
+      { "name": "libsqlite3-0" },
+      { "name": "python-apsw" },
+      { "name": "python-suds" },
+      { "name": "libgsl0ldbl" },
+      { "name": "openjdk-7-jre-headless" },
+      { "name": "vcftools" },
+      { "name": "plink" }
+    ]
+  },
+  "authorizedUsers": []
+}

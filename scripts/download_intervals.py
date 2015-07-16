@@ -400,8 +400,8 @@ class tbi_data(object):
 def getFile(file_str):
 	retfile = None
 	try:
-		retfile = file(file_str, 'r')
-	except IOError:
+		retfile = file(file_str, 'r')		
+	except IOError, e:
 		try:
 			retfile = urllib.urlopen(file_str)
 		except IOError:
@@ -412,6 +412,77 @@ def getFile(file_str):
 				pass
 		
 	return retfile
+
+def getNonOverlap(interval_in):
+	
+	curr_interval = None
+	interval_out = []
+	for interval in interval_in:
+		if curr_interval is None:
+			curr_interval = interval
+		elif curr_interval[0] == interval[0]:
+			if curr_interval[1] is None:
+				pass
+			elif curr_interval[1][1] >= interval[1][0]:
+				curr_interval = (curr_interval[0], (curr_interval[1][0], interval[1][1]))
+			else:
+				interval_out.append(curr_interval)
+				curr_interval = interval
+		else:
+			interval_out.append(curr_interval)
+			curr_interval = interval
+	
+	interval_out.append(curr_interval)
+	
+	return interval_out
+
+def parseInterval(interval_str):
+	intv_chr_reg=interval_str.split(':')
+	intv_chr = intv_chr_reg[0]
+	intv_start = None
+	intv_end = None
+	if len(intv_chr_reg) > 1:
+		intv_bounds=intv_chr_reg[1].split('-')
+		intv_start=int(intv_bounds[0])
+		intv_end=intv_start
+		if len(intv_bounds) > 1:
+			intv_end=int(intv_bounds[1])
+		
+		return (intv_chr, tuple(sorted([intv_start, intv_end])))
+		
+	else:
+		return (intv_chr, None)
+
+def readIntervals(interval_f):
+	intervals = []
+	for l in interval_f:
+		try:
+			intervals.append( parseInterval(l.strip()) )
+		except ValueError:
+			print >> sys.stderr, "WARNING, cound not parse line '%s', ignoring" % l.strip()
+	
+	return intervals
+
+
+def getIntervals(interval_str):
+	intervals = []
+	interval_f = getFile(interval_str)
+	if interval_f is not None:
+		intervals = readIntervals(interval_f)
+	else:
+		for interval in interval_str.split(","):
+			try:
+				curr_int = interval.split(':')
+				if len(curr_int) > 1:
+					curr_bound = curr_int[1].split("-")
+					intervals.append((curr_int[0], (int(curr_bound[0]), int(curr_bound[1]))))
+				else:
+					intervals.append((curr_int[0], None))
+			except:
+				print >> sys.stderr, "WARNING: could not parse interval: '%s', ignoring" % interval
+
+	return intervals
+	
 
 def get_bgzf_block(block, block_len=(2**16-1)):
     # print("Saving %i bytes" % len(block))
@@ -471,80 +542,22 @@ def block_gzip(filePtr, data_in, block_len=(2**16-1)):
 	if nblocks==0:
 		filePtr.write(_bgzf_eof)
 
-	
-if __name__ =="__main__":
+def writeInterval(vcf_zfile, vcfidx_data, intv, start_data, out_f):
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-L", "--interval", help="Single interval of the file to download")
-	parser.add_argument("-H", "--header", help="Print VCF header", action="store_true", default=False)
-	parser.add_argument("-f", "--vcf", help="The VCF file to split.  Can be either a HTTP/FTP link or a DNANexus file string or a local filename")
-	parser.add_argument("-i", "--index", help="The tabix index of the VCF file.  Can be HTTP/FTP link, DNANexus file string or local filename")
-	parser.add_argument("-o", "--output", help="Output file")
-	parser.add_argument("-K", "--keep-open", help="Do not write the final EOF block (unless reading until end of file)", action="store_true", default=False)
-	parser.add_argument("-a", "--append", help="Append to output file (implies no --header)", action="store_true", default=False)
-	
-	args = parser.parse_args()
-	
-	intv_chr_reg=args.interval.split(':')
-	intv_chr = intv_chr_reg[0]
+	intv_chr = intv[0]
+	intv_bounds = intv[1]
 	intv_start = None
 	intv_end = None
-	if len(intv_chr_reg) > 1:
-		intv_bounds=intv_chr_reg[1].split('-')
-		intv_start=int(intv_bounds[0])
-		intv_end=intv_start
-		if len(intv_bounds) > 1:
-			intv_end=int(intv_bounds[1])
+	if intv_bounds is not None:
+		intv_start = intv_bounds[0]
+		intv_end = intv_bounds[1]
 		
-		intv_start, intv_end = sorted([intv_start, intv_end])
-			
-	# OK, we now have intv_chr, intv_start and intv_end
-	
-	
-	# make sure the intervals are sorted and non-overlapping
-	#intervals.sort()
-	#intervals = getNonOverlap(intervals)
-	
-	# OK, now I have vcf_f, idx_f, and a list of intervals
-	# First, print the header of the file
-	vcf_f = getFile(args.vcf)
-	vcfidx_f = getFile(args.index)
-	
-	vcf_zfile = bgzopen(vcf_f)
-	vcfidx_zf=bgzopen(vcfidx_f)
-	vcfidx_data = tbi_data(vcfidx_zf)
-	mode = 'wb'
-	if args.append:
-		mode = 'ab'
-	out_f = file(args.output, mode)
-	
-	start_data = ""
-	
-	# So, we're going to do this with the vcf_zfile and vcfidx_data objects
-	# if we want to print the header, 
-	if args.header and not args.append:
-		#print >> sys.stderr, "Print the header, please!"
-		start_vfp = vcfidx_data.getNextChrom(0) 
-		start_fo, start_bo = convert_vfp(start_vfp)
-		#print >> sys.stderr, "Starting vfp:", start_vfp
-		#print >> sys.stderr, "Starting off:", convert_vfp(start_vfp)
-		if start_fo > 0:
-			out_f.write(vcf_f.read(start_fo))
-			vcf_f.flush()
-			vcf_zfile.seek(convert_offsets(start_fo, 0))
+	vcf_f = vcf_zfile._filePtr
 
-		start_data += vcf_zfile.read(start_bo)
-	#else:
-	#	print >> sys.stderr, "No header!"
-
-	# at this point, we've written any full header blocks and the final
-	# partial header block is in start_data, so let's go find the starting
-	# position of the bin containing the start of our interval
-	
 	if intv_chr not in vcfidx_data.name_map:
-		print >> sys.stderr, "ERROR: Chromosome not in target VCF, exiting"
-		sys.exit(1)
-		
+		print >> sys.stderr, "ERROR: Chromosome", intv_chr, " not in target VCF, exiting"
+		return start_data
+	
 	chrom_ref = vcfidx_data.ref[vcfidx_data.name_map[intv_chr]]
 	
 	if intv_start is None:
@@ -558,7 +571,7 @@ if __name__ =="__main__":
 			data_start_vfp = chrom_ref.ioff[-1]
 		else:
 			data_start_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[st_index])
-	
+
 	# Seek to the start of the bin
 	#print >> sys.stderr, "Seeking to beginning of bin"
 	vcf_zfile.seek(data_start_vfp)
@@ -782,7 +795,76 @@ if __name__ =="__main__":
 				end_data += currchr_str + currpos_str + vcf_zfile.readline()
 
 	
+	return (end_data, data_end_vfp)
 	#print "Gzipping end_data:\n", end_data
+
+if __name__ =="__main__":
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-L", "--interval", help="Single interval of the file to download")
+	parser.add_argument("-H", "--header", help="Print VCF header", action="store_true", default=False)
+	parser.add_argument("-f", "--vcf", help="The VCF file to split.  Can be either a HTTP/FTP link or a DNANexus file string or a local filename")
+	parser.add_argument("-i", "--index", help="The tabix index of the VCF file.  Can be HTTP/FTP link, DNANexus file string or local filename")
+	parser.add_argument("-o", "--output", help="Output file")
+	parser.add_argument("-K", "--keep-open", help="Do not write the final EOF block (unless reading until end of file)", action="store_true", default=False)
+	parser.add_argument("-a", "--append", help="Append to output file (implies no --header)", action="store_true", default=False)
+	
+	args = parser.parse_args()
+			
+	# OK, we now have intv_chr, intv_start and intv_end
+	
+	# OK, now I have vcf_f, idx_f, and a list of intervals
+	# First, print the header of the file
+	vcf_f = getFile(args.vcf)
+	vcfidx_f = getFile(args.index)
+	
+	vcf_zfile = bgzopen(vcf_f)
+	vcfidx_zf=bgzopen(vcfidx_f)
+	vcfidx_data = tbi_data(vcfidx_zf)
+	
+	# make sure the intervals are sorted and non-overlapping
+	intervals = getIntervals(args.interval)
+	
+	# sort the intervals according to the same order as the input VCF file
+	# (as determined by the tabix index)
+	
+	#chrom_order=vcfidx_data.name_map
+	intervals.sort(key=lambda x: ( (vcfidx_data.name_map.get(x[0], sys.maxint), x[0]), x[1]) )
+	
+	intervals = getNonOverlap(intervals)
+		
+	mode = 'wb'
+	if args.append:
+		mode = 'ab'
+	out_f = file(args.output, mode)
+	
+	start_data = ""
+	
+	# So, we're going to do this with the vcf_zfile and vcfidx_data objects
+	# if we want to print the header, 
+	if args.header and not args.append:
+		#print >> sys.stderr, "Print the header, please!"
+		start_vfp = vcfidx_data.getNextChrom(0) 
+		start_fo, start_bo = convert_vfp(start_vfp)
+		#print >> sys.stderr, "Starting vfp:", start_vfp
+		#print >> sys.stderr, "Starting off:", convert_vfp(start_vfp)
+		if start_fo > 0:
+			out_f.write(vcf_f.read(start_fo))
+			vcf_f.flush()
+			vcf_zfile.seek(convert_offsets(start_fo, 0))
+
+		start_data += vcf_zfile.read(start_bo)
+	#else:
+	#	print >> sys.stderr, "No header!"
+
+	# at this point, we've written any full header blocks and the final
+	# partial header block is in start_data, so let's go find the starting
+	# position of the bin containing the start of our interval
+	
+	
+	for intv in intervals:
+		(end_data, data_end_vfp) = writeInterval(vcf_zfile, vcfidx_data, intv, start_data, out_f)
+		start_data = end_data
 	
 	# block-gzip the end of the data
 	if end_data:

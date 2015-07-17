@@ -11,7 +11,7 @@
     {
       "name": "vcf_fn",
       "label": "VCF File",
-      "class": "file",
+      "class": "array:file",
       "optional": false,
       "patterns": [
         "*.vcf.gz"
@@ -20,7 +20,7 @@
     {
       "name": "vcfidx_fn",
       "label": "VCF Index File",
-      "class": "file",
+      "class": "array:file",
       "optional": false,
       "patterns": [
         "*.tbi"
@@ -87,12 +87,12 @@
     {
       "name": "vcf_out",
       "label": "Filtered VCF file",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
-      "class": "file"
+      "class": "array:file"
     }
   ],
   "runSpec": {

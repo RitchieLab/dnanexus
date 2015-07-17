@@ -19,6 +19,62 @@ set -x
 
 main() {
 
+
+    echo "Value of vcf_fn: '$vcf_fn'"
+    echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of SNP_tranches: '$SNP_tranches'"
+    echo "Value of SNP_recal: '$SNP_recal'"
+    echo "Value of INDEL_tranches: '$INDEL_tranches'"
+    echo "Value of INDEL_recal: '$INDEL_recal'"
+    echo "Value of SNP_ts: '$SNP_ts'"
+    echo "Value of INDEL_ts: '$INDEL_ts'"
+    echo "Value of addl_filter: '$addl_filter'"
+
+	# Sanity check - make sure vcf + vcfidx have same # of elements
+	if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
+		dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
+	fi
+
+	# first, we need to match up the VCF and tabix index files
+	# To do that, we'll get files of filename -> dxfile ID
+	VCF_LIST=$(mktemp)
+	for i in "${!vcf_fn[@]}"; do	
+		dx describe --json "${vcf_fn[$i]}" | jq ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+	done
+	
+	VCFIDX_LIST=$(mktemp)
+	for i in "${!vcfidx_fn[@]}"; do	
+		dx describe --json "${vcfidx_fn[$i]}" | jq ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+	done
+	
+	
+	# Now, get the prefix (strip off any .tbi) and join them
+	JOINT_LIST=$(mktemp)
+	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
+		
+	# Ensure that we still have the same number of files; throw an error if not
+	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
+		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
+	fi
+	
+	# and loop through the file, submitting sub-jobs
+	while read VCF_LINE; do
+		VCF_DXFN=$(echo $VCF_LINE | cut -f2)
+		VCFIDX_DXFN=$(echo $VCF_LINE | cut -f3)		
+	
+		SUBJOB=$(dx-jobutil-new-job run_qc -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
+		
+		# for each subjob, add the output to our array
+    	dx-jobutil-add-output vcf_out --array "$SUBJOB:$vcf_out" --class=jobref
+	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:$vcfidx_out" --class=jobref
+		
+	done < $JOINT_LIST
+	
+}
+
+
+run_qc() {
+
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
     echo "Value of SNP_tranches: '$SNP_tranches'"

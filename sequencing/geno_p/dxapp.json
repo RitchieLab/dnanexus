@@ -48,35 +48,35 @@
   "outputSpec": [
     {
       "name": "vcf",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "name": "vcfidx",
-      "class": "file"
+      "class": "array:file"
     },
     {
        "name" : "vcf_header",
-       "class": "file"
+       "class": "array:file"
     },
     {
        "name" : "vcfidx_header",
-       "class" : "file"
+       "class" : "array:file"
     },
     {
       "name": "vcf_pad",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "name": "vcfidx_pad",
-      "class": "file"
+      "class": "array:file"
     },
     {
        "name" : "vcf_pad_header",
-       "class": "file"
+       "class": "array:file"
     },
     {
        "name" : "vcfidx_pad_header",
-       "class" : "file"
+       "class" : "array:file"
     }
   ],
   "runSpec": {

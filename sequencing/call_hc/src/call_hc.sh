@@ -90,9 +90,9 @@ function call_hc(){
 	
 	if test "$?" -eq 0; then
 		# upload the results and put the resultant dx IDs into a file
-		VCF_DXFN=$(dx upload "${OUTDIR}/${fn_base}.vcf.gz" --brief)
+		VCF_DXFN=$(dx upload "${OUTDIR}/${fn_base}.g.vcf.gz" --brief)
 		echo "$VCF_DXFN" >> $4
-		VCFIDX_DXFN=$(dx upload "${OUTDIR}/${fn_base}.vcf.gz.tbi" --brief)
+		VCFIDX_DXFN=$(dx upload "${OUTDIR}/${fn_base}.g.vcf.gz.tbi" --brief)
 		echo "$VCFIDX_DXFN" >> $5
 	else
 		echo "Error running sample ${fn_base} with $N_PROC simultaneous jobs" | dx-log-stream -l critical -s DX_APP

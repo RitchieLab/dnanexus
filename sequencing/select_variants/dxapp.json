@@ -37,7 +37,13 @@
       "label" : "File of samples to exclude (one per line)",
       "optional" : true,
       "class" : "file"
-    },    
+    },
+    {
+      "name": "region_file",
+      "label": "File of regions to include (compaible with GATK)",
+      "optional" : true,
+      "class" : "file"
+    },
     {
       "name": "env",
       "label": "Exclude Non-Variant?",

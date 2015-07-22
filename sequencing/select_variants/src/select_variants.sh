@@ -16,6 +16,49 @@
 # to modify this file.
 
 main() {
+	set -x
+
+	if test -z "$PREFIX"; then
+		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
+	fi
+
+
+	SUBJOB_ARGS="-ief:boolean=$ef -ienv:boolean=$env"
+	if test "$region_file"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iregion_file:file=$region_file"
+	fi
+		
+	if test "$samp_incl"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_incl:file=$samp_incl"
+	fi
+	
+	if test "$samp_excl"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_excl:file=$samp_excl"
+	fi
+	
+	if test "$EXTRA_CMD"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string=$EXTRA_CMD"
+	fi
+
+	# download the tabix index
+	dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
+	
+	# get a list of chromosomes and run SelectVariants on the chromosomes independently
+	CONCAT_ARGS="-iprefix=$PREFIX"
+	for CHR in $(tabix -l raw.vcf.gz); do
+		SUBJOBID=$(eval dx-jobutil-new-job run_qc -iPREFIX:string="$PREFIX.$CHR" "$SUBJOB_ARGS" --brief) 
+		CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
+	done
+	
+	# Concatenate the results
+	CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
+    dx-jobutil-add-output vcf_out "$CONCAT_JOB:vcf_out" --class=jobref
+    dx-jobutil-add-output vcfidx_out "$CONCAT_JOB:vcfidx_out" --class=jobref
+
+}
+
+
+run_sv() {
 
 	set -x
 
@@ -28,6 +71,26 @@ main() {
 	cd $WKDIR
 	
 	SV_ARGS=""
+	if test "$region_file"; then
+		REGION_FN=$(dx describe --name "$region_file");
+		REGION_EXT=$(echo "$REGION_FN" | sed 's|.*\.||')
+		REGION_BASE=$(echo "$REGION_FN" | sed 's|\.[^.]*$||')
+		
+		declare -A ext_list
+		ext_list["list"]=1
+		ext_list["interval_list"]=1
+		ext_list["bed"]=1
+		
+		if [[ ${ext_list[$REGION_EXT]} ]]; then
+			REGION_FN="$REGION_BASE.$REGION_EXT"
+		else
+			REGION_FN="$REGION_BASE.list"
+		fi
+		
+		dx download "$region_file" -o "$REGION_FN"
+		SV_ARGS="$SV_ARGS -L $PWD/$REGION_FN"
+	fi
+	
 	if test "$ef" = "true"; then
 		SV_ARGS="$SV_ARGS -ef"
 	fi
@@ -54,6 +117,10 @@ main() {
 		dx-jobutil-report-error "ERROR: Nothing to do!"
 	fi	
 
+	
+
+	download_part
+
     dx download "$vcf_fn" -o raw.vcf.gz
     dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
     
@@ -61,7 +128,7 @@ main() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 	
-	dx download $(dx find data --name "GenomeAnalysisTK-3.2-2.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -78,11 +145,11 @@ main() {
 		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
 	fi
 
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar \
+	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants \
 		-nt $(nproc --all) \
 		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-V raw.vcf.gz $SV_ARGS \
+		-V raw.vcf.gz $SV_ARGS $REGION_ARGS \
 		-o $OUT_DIR/$PREFIX.vcf.gz
 	
 	vcf_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz --brief)

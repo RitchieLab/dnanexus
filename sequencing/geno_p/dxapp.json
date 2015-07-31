@@ -64,19 +64,23 @@
     },
     {
       "name": "vcf_pad",
-      "class": "array:file"
+      "class": "array:file",
+      "optional" : true
     },
     {
       "name": "vcfidx_pad",
-      "class": "array:file"
+      "class": "array:file",
+      "optional" : true
     },
     {
        "name" : "vcf_pad_header",
-       "class": "array:file"
+       "class": "array:file",
+      "optional" : true
     },
     {
        "name" : "vcfidx_pad_header",
-       "class" : "array:file"
+       "class" : "array:file",
+      "optional" : true
     }
   ],
   "runSpec": {

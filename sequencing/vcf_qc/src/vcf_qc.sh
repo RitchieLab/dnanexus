@@ -39,14 +39,13 @@ main() {
 	# To do that, we'll get files of filename -> dxfile ID
 	VCF_LIST=$(mktemp)
 	for i in "${!vcf_fn[@]}"; do	
-		dx describe --json "${vcf_fn[$i]}" | jq ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 	done
 	
 	VCFIDX_LIST=$(mktemp)
 	for i in "${!vcfidx_fn[@]}"; do	
-		dx describe --json "${vcfidx_fn[$i]}" | jq ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 	done
-	
 	
 	# Now, get the prefix (strip off any .tbi) and join them
 	JOINT_LIST=$(mktemp)
@@ -59,14 +58,14 @@ main() {
 	
 	# and loop through the file, submitting sub-jobs
 	while read VCF_LINE; do
-		VCF_DXFN=$(echo $VCF_LINE | cut -f2)
-		VCFIDX_DXFN=$(echo $VCF_LINE | cut -f3)		
+		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
+		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
 	
 		SUBJOB=$(dx-jobutil-new-job run_qc -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
 		
 		# for each subjob, add the output to our array
-    	dx-jobutil-add-output vcf_out --array "$SUBJOB:$vcf_out" --class=jobref
-	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:$vcfidx_out" --class=jobref
+    	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
+	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
 		
 	done < $JOINT_LIST
 	

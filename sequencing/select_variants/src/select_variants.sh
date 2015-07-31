@@ -25,15 +25,19 @@ main() {
 
 	SUBJOB_ARGS="-ief:boolean=$ef -ienv:boolean=$env"
 	if test "$region_file"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -iregion_file:file=$region_file"
+		SUBJOB_ARGS="$SUBJOB_ARGS -iregion_file:file=$(dx describe --json "$region_file" | jq -r .id)"
 	fi
 		
 	if test "$samp_incl"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_incl:file=$samp_incl"
+		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_incl:file=$(dx describe --json "$samp_incl" | jq -r .id)"
 	fi
 	
 	if test "$samp_excl"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_excl:file=$samp_excl"
+		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_excl:file=$(dx describe --json "$samp_excl" | jq -r .id)"
+	fi
+	
+	if test "$concat_vcf"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iconcat_vcf:file=$(dx describe --json "$concat_vcf" | jq -r .id)"
 	fi
 	
 	if test "$EXTRA_CMD"; then
@@ -46,7 +50,7 @@ main() {
 	# get a list of chromosomes and run SelectVariants on the chromosomes independently
 	CONCAT_ARGS="-iprefix=$PREFIX"
 	for CHR in $(tabix -l raw.vcf.gz); do
-		SUBJOBID=$(eval dx-jobutil-new-job run_qc -iPREFIX:string="$PREFIX.$CHR" "$SUBJOB_ARGS" --brief) 
+		SUBJOBID=$(eval dx-jobutil-new-job run_sv -ivcf_fn:file=$(dx describe --json "$vcf_fn" | jq -r .id) -ivcfidx_fn:file=$(dx describe --json "$vcfidx_fn" | jq -r .id) -iCHR:string="$CHR" -iPREFIX:string="$PREFIX.$CHR" "$SUBJOB_ARGS") 
 		CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
 	done
 	
@@ -112,18 +116,11 @@ run_sv() {
 	if test "$EXTRA_CMD"; then
 		SV_ARGS="$SV_ARGS $EXTRA_CMD"
 	fi
-
-	if test -z "$SV_ARGS"; then
-		dx-jobutil-report-error "ERROR: Nothing to do!"
-	fi	
-
 	
-
-	download_part
-
-    dx download "$vcf_fn" -o raw.vcf.gz
-    dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
-    
+	if test -z "$SV_ARGS" -a -z "$concord_vcf"; then
+		dx-jobutil-report-error "ERROR: Nothing to do!"
+	fi
+	
 	# get the resources we need in /usr/share/GATK
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
@@ -140,16 +137,45 @@ run_sv() {
     # only ask for 90% of total system memory
     TOT_MEM=$((TOT_MEM * 9 / 10))
 
+	if test "$concord_vcf"; then
+	
+		# NOTE: This is only here because some of the VCFs may be unsorted... grumble...
+		# This REALLY should just be a check for compression, then tabix if necessary
+		CAT_CMD="cat"
+		if test $(dx describe --name | grep '\.gz$' | wc -l) ne 0; then
+			CAT_CMD="zcat"
+		fi
+		
+		dx cat "$concord_vcf" | $CAT_CMD | vcf-sort | bgzip -c > concord_all.vcf.gz
+		tabix -p vcf concord_all.vcf.gz
+		
+		# Restrict the concord_all.$EXT to the chromosome of interest only!
+		java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+		-T SelectVariants \
+		-nt $(nproc --all) \
+		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+		-V concord_all.vcf.gz -L $CHR -o concord_chr.vcf.gz
+		
+		SV_ARGS="$SV_ARGS -conc concord_chr.vcf.gz"
+	fi	
+
+	download_part.py -f $(dx describe --json "$vcf_fn" | jq -r .id) -i $(dx describe --json "$vcfidx_fn" | jq -r .id) -L $CHR -H -o raw.vcf.gz
+	tabix -p vcf raw.vcf.gz
+	
+ #   dx download "$vcf_fn" -o raw.vcf.gz
+ #   dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
+    
+
 	OUT_DIR=$(mktemp -d)
 	if test -z "$PREFIX"; then
 		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
 	fi
 
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants \
 		-nt $(nproc --all) \
 		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-V raw.vcf.gz $SV_ARGS $REGION_ARGS \
+		-V raw.vcf.gz "$SV_ARGS" \
 		-o $OUT_DIR/$PREFIX.vcf.gz
 	
 	vcf_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz --brief)

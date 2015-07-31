@@ -38,7 +38,7 @@ function download_resources() {
 function parallel_download() {
 	set -x
 	cd $2
-	dx download "$(dx describe --json "$1" | jq .id | sed 's/\"//g')"
+	dx download "$(dx describe --json "$1" | jq -r .id)"
 	cd - >/dev/null
 }
 export -f parallel_download

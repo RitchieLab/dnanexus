@@ -313,7 +313,7 @@ function merge_intervals(){
 	
 	# iterate over the intervals in TARGET_FILE, downloading only what is needed
 	OUTDIR=$(mktemp -d)
-	OUTDIR_PREF="$OUTDIR/combined"
+	OUTDIR_PREF="$OUTDIR/$PREFIX"
 
 	N_CHUNKS=$(cat $MASTER_TARGET_LIST | wc -l)	
 	RERUN_FILE=$(mktemp)
@@ -344,22 +344,31 @@ function merge_intervals(){
 		dx-jobutil-report-error "ERROR: Could not merge one or more interval chunks; try an instance with more memory!"
 	fi
 
+	# No merging! just upload the pieces individually - we'll reassemble them later!
+	for f in $(ls $OUTDIR/*.vcf.gz); do
+		VCF_OUT=$(dx upload $f --brief)
+		VCFIDX_OUT=$(dx upload $f.tbi --brief)
+	
+		dx-jobutil-add-output vcf --array "$VCF_OUT"
+		dx-jobutil-add-output vcfidx --array "$VCFIDX_OUT"
+		
+	done
 	
 	# OK, at this point everything should be merged, so we'll go ahead and concatenate everything in $OUTDIR
-	FINAL_DIR=$(mktemp -d)
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
-	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	-genotypeMergeOptions UNSORTED \
-	-o $FINAL_DIR/$PREFIX.vcf.gz
+	#FINAL_DIR=$(mktemp -d)
+	#TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+	#java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+	#-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
+	#$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
+	#-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+	#-genotypeMergeOptions UNSORTED \
+	#-o $FINAL_DIR/$PREFIX.vcf.gz
 	
-	VCF_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz --brief)
-	VCFIDX_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz.tbi --brief)
+	#VCF_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz --brief)
+	#VCFIDX_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz.tbi --brief)
 	
-	dx-jobutil-add-output vcf "$VCF_OUT"
-	dx-jobutil-add-output vcfidx "$VCFIDX_OUT"
+	#dx-jobutil-add-output vcf "$VCF_OUT"
+	#dx-jobutil-add-output vcfidx "$VCFIDX_OUT"
 
 }	
 
@@ -374,8 +383,8 @@ function single_merge_subjob() {
 	# If we are working with both GVCFs and their index files, let's break it up by interval
 	# If no interval given, just break up by chromosome
 
-	gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq .id | sed 's/"//g')
-	gvcffn=$(dx describe "$gvcflist" --json | jq .id | sed 's/"//g')
+	gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq -r .id)
+	gvcffn=$(dx describe "$gvcflist" --json | jq -r .id )
 
 	OVER_SUB=1
 	INTERVAL_LIST=$(mktemp)
@@ -420,6 +429,21 @@ function single_merge_subjob() {
 			N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
 			N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
 			split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
+			
+			CONCAT_ARGS=""
+			for f in interval_split.$CHR.*; do
+				echo "interval file:"
+				cat $f
+				int_fn=$(dx upload $f --brief)
+				# run a subjob that merges the input VCFs on the given target file
+				merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX")
+				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${merge_jobid}:vcfidx -ivcfs:array:file=${merge_jobid}:vcf"
+			done
+			# concatenate the results
+			concat_job=$(dx run cat_variants -iprefix="$PREFIX.$CHR" $CONCAT_ARGS --brief)
+			dx-jobutil-add-output gvcf --array "$concat_job:vcf_out" --class=jobref
+			dx-jobutil-add-output gvcfidx --array "$concat_job:vcfidx_out" --class=jobref	
+			
 			rm $CHR_LIST
 		done
 						
@@ -442,26 +466,20 @@ function single_merge_subjob() {
 		N_BATCHES=$((N_CHR / (NPROC) + 1 ))			
 		
 		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l $NPROC $INTERVAL_LIST "interval_split."	
+		CONCAT_ARGS=""
+		for f in interval_split.*; do
+			echo "interval file:"
+			cat $f
+			int_fn=$(dx upload $f --brief)
+			# run a subjob that merges the input VCFs on the given target file
+			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX")
+			dx-jobutil-add-output gvcf --array "${merge_jobid}:vcf" --class=jobref
+			dx-jobutil-add-output gvcfidx --array "${merge_jobid}:vcfidx" --class=jobref	
+
+		done
 		
 		rm -rf $TMPWKDIR
 	fi
-	
-	CIDX=0
-	CONCAT_ARGS=""
-	for f in interval_split.*; do
-		echo "interval file:"
-		cat $f
-		int_fn=$(dx upload $f --brief)
-		# run a subjob that merges the input VCFs on the given target file
-		merge_job[$CIDX]=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX.$CIDX")
-		CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs=${merge_job[$CIDX]}:vcfidx -ivcfs=${merge_job[$CIDX]}:vcf"
-		CIDX=$((CIDX + 1))
-	done
-	# concatenate the results
-	concat_job=$(dx run combine_variants -iprefix="$PREFIX" $CONCAT_ARGS --brief)
-
-	dx-jobutil-add-output gvcf "$concat_job:vcf_out" --class=jobref
-	dx-jobutil-add-output gvcfidx "$concat_job:vcfidx_out" --class=jobref	
 }
 
 # entry point for merging VCFs
@@ -638,9 +656,16 @@ main() {
 	
 		single_job=$(dx-jobutil-new-job single_merge_subjob -iPREFIX="$PREFIX" -igvcflist="$dx_gvcflist" $SUBJOB_ARGS)
 		
-		# and upload it and we're done!
-		dx-jobutil-add-output vcf_fn --array "$single_job:gvcf" --class=jobref
-		dx-jobutil-add-output vcf_idx_fn --array "$single_job:gvcfidx" --class=jobref
+		# If we wanted a single VCF, we now need to merge all of the output
+		if test "$by_chrom" = "false"; then
+			merge_subjob=$(dx run cat_variants -iprefix="$PREFIX" -ivcfidxs:array:file=${single_job}:gvcfidx -ivcfs:array:file=${single_job}:gvcf --brief)
+			dx-jobutil-add-output vcf_fn --array "$merge_subjob:vcf_out" --class=jobref
+			dx-jobutil-add-output vcf_idx_fn --array "$merge_subjob:vcfidx_out" --class=jobref
+		else
+			# and upload it and we're done!
+			dx-jobutil-add-output vcf_fn --array "$single_job:gvcf" --class=jobref
+			dx-jobutil-add-output vcf_idx_fn --array "$single_job:gvcfidx" --class=jobref
+		fi
     
     else
    

@@ -12,25 +12,37 @@
       "name": "vcf1",
       "label": "Input VCF File",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcf1_idx",
       "label": "Input VCF Index File",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "name": "vcf2",
       "label": "Truth VCF File",
       "class": "file",
-      "optional": true
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcf2_idx",
       "label": "Truth VCF Index File",
       "class": "file",
-      "optional": true
+      "optional": true,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "name": "id_mapping",

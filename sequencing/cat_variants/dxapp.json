@@ -12,13 +12,19 @@
       "name": "vcfs",
       "label": "VCF Files",
       "class": "array:file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidxs",
       "label": "VCF Index Files",
       "class": "array:file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "name": "prefix",

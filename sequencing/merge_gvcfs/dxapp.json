@@ -67,7 +67,7 @@
       "label" : "Output Chromosomal merged gVCFs (single merge only)",
       "class" : "boolean",
       "optional" : false,
-      "default" : "false"
+      "default" : false
     }
   ],
   "outputSpec": [

@@ -34,14 +34,20 @@ function parallel_download() {
 }
 export -f parallel_download
 
+function parallel_name_dxid() {
+	dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $2
+}
+export -f parallel_name_dxid
+
 function dl_part_index() {
 	set -x
 	echo "'$1', '$2', '$3', '$4'"
 	cd "$2"
-	fn=$(dx describe --name "$1")
+	fn_id=$(dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$//')
+	
+	fn=$(echo "$fn_id" | cut -f1)
 	fn_base=$(echo "$fn" | sed 's/.vcf.gz$//')
-	file_url=$(dx make_download_url "$1")
-	file_dxid=$(dx describe --json "$1" | jq .id | sed 's/\"//g')
+	file_dxid=$(echo "$fn_id" | cut -f2)
 	idxfn=$(ls "$2/$fn.tbi")
 	
 	set -o 'pipefail'
@@ -106,23 +112,57 @@ main() {
 	
 	cd $WKDIR
 	
-	# Get a list of chromosomes
-	dx download "${gvcfidxs[0]}" -o test.vcf.gz.tbi
-	CHROM_LIST=$(mktemp)
-	tabix -l test.vcf.gz > $CHROM_LIST
+	# Get a list of chromosomes 
 	
-	
+	# Let's first download all of the tabix indices
 	for i in "${!gvcfidxs[@]}"; do	
 		echo "${gvcfidxs[$i]}" >> $DXGVCFIDX_LIST
 	done
+
+	parallel -u -j $(nproc) --gnu parallel_download :::: $DXGVCFIDX_LIST ::: $WKDIR
 	
+	CHR_VCF_LIST=$(mktemp)
+	for f in $( ls $WKDIR/*.tbi); do
+		VCF_FN="$(echo $f | sed -e 's/\.tbi//' -e 's|.*/||')"
+		#echo -en "$(echo $VCF_FN | sed 's|.*/||')\t:"
+		tabix -l $VCF_FN | sed "s|$|\t$VCF_FN|"
+	done | awk '{arr[$1]=arr[$1] "\t" $2} END {for (x in arr){ print x arr[x]}}' > $CHR_VCF_LIST
+	
+	echo "CHR_VCF_LIST:"
+	cat $CHR_VCF_LIST
+	
+	# OK, now $VCF_CHR_LIST is a list of chromosome <tab> VCF_FN <tab> VCF_FN ...
+
+	CHROM_LIST=$(mktemp)
+		
+	#dx download "${gvcfidxs[0]}" -o test.vcf.gz.tbi
+
+	#tabix -l test.vcf.gz > $CHROM_LIST
 	for i in "${!gvcfs[@]}"; do
 		echo "${gvcfs[$i]}" >> $DXGVCF_LIST
 	done
+		
+	VCF_ID_LIST=$(mktemp)
+	VCFIDX_ID_LIST=$(mktemp)
 	
-	GVCF_LIST=$(dx upload $DXGVCF_LIST --brief)
-	GVCFIDX_LIST=$(dx upload $DXGVCFIDX_LIST --brief)
+	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCF_LIST ::: $VCF_ID_LIST
+	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCFIDX_LIST ::: $VCFIDX_ID_LIST
 	
+	# remove the tbi extension on the VCFIDX list
+	sed -i 's/\.tbi\t/\t/' $VCFIDX_ID_LIST
+	
+	#OK, now join everything together
+	JOINT_ID_LIST=$(mktemp)
+	join -t$'\t' -j1 <(sort -k1,1 $VCF_ID_LIST) <(sort -k1,1 $VCFIDX_ID_LIST) > $JOINT_ID_LIST
+	
+	# sanity check, should have same # of lines!
+	if test "$(cat $VCF_ID_LIST | wc -l)" -ne "$(cat $VCFIDX_ID_LIST | wc -l)" -o "$(cat $JOINT_ID_LIST | wc -l)" -ne "$(cat $VCF_ID_LIST | wc -l)"; then
+		dx-jobutil-report-error "ERROR: VCF and VCF Index arrays do not match!"
+	fi
+	
+	echo "JOINT_ID_LIST:"
+	cat $JOINT_ID_LIST
+		
 	# Kick off each of those subjobs
 	CIDX=0
 	pparg=""
@@ -130,34 +170,54 @@ main() {
 	pp_pad_arg=""
 	pp_pad_hdr_arg=""
 	while read chrom; do
-		process_jobs[$CIDX]=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$chrom -ichrom=$chrom -ivcf_files:file="$GVCF_LIST" -ivcfidx_files:file="$GVCFIDX_LIST" $SUBJOB_ARGS)
-		pparg="$pparg -ivcfs=${process_jobs[$CIDX]}:vcf_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_out"
-		pp_hdr_arg="$pp_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_hdr_out"
-		pp_pad_arg="$pp_pad_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_out"
-		pp_pad_hdr_arg="$pp_pad_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_hdr_out"
-		CIDX=$((CIDX + 1))
+		# get the filename of the 
+		CHR_FN_LIST=$(mktemp)
+		echo "$chrom" | cut -f2- | tr '\t' '\n' > $CHR_FN_LIST
+		CHR=$(echo "$chrom" | cut -f1)
+		SINGLE_VCF_LIST=$(mktemp)
+		join -t$'\t' -j1 <(sort -k1,1 $CHR_FN_LIST) <(sort -k1,1 $JOINT_ID_LIST) | cut -f2 > $SINGLE_VCF_LIST
+		SINGLE_VCFIDX_LIST=$(mktemp)
+		join -t$'\t' -j1 <(sort -k1,1 $CHR_FN_LIST) <(sort -k1,1 $JOINT_ID_LIST) | cut -f3 > $SINGLE_VCFIDX_LIST
+		
+		echo "CHR_FN_LIST":
+		cat $CHR_FN_LIST
+		
+		echo "SINGLE_VCF_LIST:"
+		cat $SINGLE_VCF_LIST
+		
+		echo "SINGLE_VCFIDX_LIST:"
+		cat $SINGLE_VCFIDX_LIST
+		
+		DX_VCF_LIST=$(dx upload $SINGLE_VCF_LIST --brief)
+		DX_VCFIDX_LIST=$(dx upload $SINGLE_VCFIDX_LIST --brief)
+		
+		rm $CHR_FN_LIST
+		rm $SINGLE_VCF_LIST
+		rm $SINGLE_VCFIDX_LIST
+	
+		process_job=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CHR -ichrom=$CHR -ivcf_files:file="$DX_VCF_LIST" -ivcfidx_files:file="$DX_VCFIDX_LIST" $SUBJOB_ARGS)
+		#pparg="$pparg -ivcfs=${process_jobs[$CIDX]}:vcf_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_out"
+		#pp_hdr_arg="$pp_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_hdr_out"
+		#pp_pad_arg="$pp_pad_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_out"
+		#pp_pad_hdr_arg="$pp_pad_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_hdr_out"
 		
 		# We'll just return an array of VCF files here
-		dx-jobutil-add-output vcf --array "${process_jobs[$CIDX]}:vcf_out" --class=jobref
-		dx-jobutil-add-output vcfidx --array "${process_jobs[$CIDX]}:vcfidx_out" --class=jobref
-	    dx-jobutil-add-output vcf_header --array "${process_jobs[$CIDX]}:vcf_hdr_out" --class=jobref
-    	dx-jobutil-add-output vcfidx_header --array "${process_jobs[$CIDX]}:vcfidx_hdr_out" --class=jobref
+		dx-jobutil-add-output vcf --array "${process_job}:vcf_out" --class=jobref
+		dx-jobutil-add-output vcfidx --array "${process_job}:vcfidx_out" --class=jobref
+	    dx-jobutil-add-output vcf_header --array "${process_job}:vcf_hdr_out" --class=jobref
+    	dx-jobutil-add-output vcfidx_header --array "${process_job}:vcfidx_hdr_out" --class=jobref
     
     	# If we're padded, add the pads, o/w just duplicate
 	    if test "$PADDED" -ne 0; then
-			dx-jobutil-add-output vcf_pad --array "${process_jobs[$CIDX]}:vcf_pad_out" --class=jobref
-			dx-jobutil-add-output vcfidx_pad --array "${process_jobs[$CIDX]}:vcfidx_pad_out" --class=jobref
-	    	dx-jobutil-add-output vcf_pad_header --array "${process_jobs[$CIDX]}:vcf_pad_hdr_out" --class=jobref
-	    	dx-jobutil-add-output vcfidx_pad_header --array "${process_jobs[$CIDX]}:vcfidx_pad_hdr_out" --class=jobref
-	    else
-	    	dx-jobutil-add-output vcf_pad --array "${process_jobs[$CIDX]}:vcf_out" --class=jobref
-			dx-jobutil-add-output vcfidx_pad --array "${process_jobs[$CIDX]}:vcfidx_out" --class=jobref
-		    dx-jobutil-add-output vcf_pad_header --array "${process_jobs[$CIDX]}:vcf_hdr_out" --class=jobref
-	    	dx-jobutil-add-output vcfidx_pad_header --array "${process_jobs[$CIDX]}:vcfidx_hdr_out" --class=jobref
+			dx-jobutil-add-output vcf_pad --array "${process_job}:vcf_pad_out" --class=jobref
+			dx-jobutil-add-output vcfidx_pad --array "${process_job}:vcfidx_pad_out" --class=jobref
+	    	dx-jobutil-add-output vcf_pad_header --array "${process_job}:vcf_pad_hdr_out" --class=jobref
+	    	dx-jobutil-add-output vcfidx_pad_header --array "${process_job}:vcfidx_pad_hdr_out" --class=jobref
 		fi
-
+			
+		CIDX=$((CIDX + 1))
 		
-	done < $CHROM_LIST
+	done < $CHR_VCF_LIST
 	
 	# Don't merge here, do it elsewhere in the pipeline
 	# OK, now we simply have to merge all of the VCF files together
@@ -239,8 +299,8 @@ genotype_gvcfs() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 		
-	dx download $(dx find data --name "GenomeAnalysisTK-3.2-2.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+#	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -252,7 +312,7 @@ genotype_gvcfs() {
     TOT_MEM=$((TOT_MEM * 9 / 10))
 	VCF_TMPDIR=$(mktemp -d)
 	# OK, now we can call the GATK genotypeGVCFs
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+	java -d64 -Xms512m -Xmx${TOT_MEM}m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T GenotypeGVCFs \
 	-A QualByDepth \
 	-A HaplotypeScore \
@@ -278,7 +338,7 @@ genotype_gvcfs() {
     	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz"
     	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi"
     
-    	java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0-custom.jar \
+    	java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
 			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 			-nt $(nproc --all) \
@@ -321,89 +381,4 @@ genotype_gvcfs() {
     dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
 
 
-}
-
-merge_vcf() {
-	# set the shell to work w/ GNU parallel
-	export SHELL="/bin/bash"
-	
-	if test -z "$PREFIX"; then
-		PREFIX="combined"
-	fi
-
-	WKDIR=$(mktemp -d)
-	HDR_WKDIR=$(mktemp -d)
-	GVCF_LIST=$(mktemp)
-	DXGVCF_LIST=$(mktemp)
-	DXGCVFIDX_LIST=$(mktemp)
-	GVCF_HDR_LIST=$(mktemp)
-	DXGVCF_HDR_LIST=$(mktemp)
-	DXGCVFIDX_HDR_LIST=$(mktemp)
-
-
-	for i in "${!vcfidx_files[@]}"; do	
-		echo "${vcfidx_files[$i]}" >> $DXGCVFIDX_LIST
-	done
-	for i in "${!vcf_files[@]}"; do
-		echo "${vcf_files[$i]}" >> $DXGVCF_LIST
-	done
-	
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_LIST ::: $WKDIR
-	# download the already split VCFs
-	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_LIST ::: $WKDIR ::: $GVCF_LIST
-
-	for i in "${!vcfidx_hdr_files[@]}"; do	
-		echo "${vcfidx_hdr_files[$i]}" >> $DXGCVFIDX_HDR_LIST
-	done
-	for i in "${!vcf_hdr_files[@]}"; do
-		echo "${vcf_hdr_files[$i]}" >> $DXGVCF_HDR_LIST
-	done
-	
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DXGCVFIDX_HDR_LIST ::: $HDR_WKDIR
-	# download the already split VCFs
-	parallel -u -j $(nproc --all) --gnu dl_index :::: $DXGVCF_HDR_LIST ::: $HDR_WKDIR ::: $GVCF_HDR_LIST
-	
-			
-	# get the resources we need in /usr/share/GATK
-	sudo mkdir -p /usr/share/GATK/resources
-	sudo chmod -R a+rwX /usr/share/GATK
-		
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta.fai" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download $(dx find data --name "human_g1k_v37_decoy.dict" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-		
-	cd $WKDIR
-	
-	FINAL_DIR=$(mktemp -d)
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	$(ls -1 $WKDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
-	-genotypeMergeOptions UNSORTED \
-	-o $FINAL_DIR/$PREFIX.vcf.gz
-
-	VCF_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.vcf.gz --brief)
-	VCFIDX_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.vcf.gz.tbi --brief)
-		
-	# and upload it and we're done!
-	dx-jobutil-add-output vcf_out "$VCF_DXFN" --class=file
-	dx-jobutil-add-output vcfidx_out "$VCFIDX_DXFN" --class=file
-
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar \
-	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	$(ls -1 $HDR_WKDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
-	-genotypeMergeOptions UNSORTED \
-	-o $FINAL_DIR/$PREFIX.header.vcf.gz
-	
-	VCF_HDR_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.header.vcf.gz --brief)
-	VCFIDX_HDR_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.header.vcf.gz.tbi --brief)
-		
-	# and upload it and we're done!
-	dx-jobutil-add-output vcf_hdr_out "$VCF_HDR_DXFN" --class=file
-	dx-jobutil-add-output vcfidx_hdr_out "$VCFIDX_HDR_DXFN" --class=file
-
-		
 }

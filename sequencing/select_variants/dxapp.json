@@ -45,6 +45,14 @@
       "class" : "file"
     },
     {
+      "name": "concord_vcf",
+      "label": "VCF File of variants to extract from input",
+      "class" : "file",
+      "optional": true,
+      "patterns" : [
+      	"*.vcf.gz", "*.vcf" ]
+    },
+    {
       "name": "env",
       "label": "Exclude Non-Variant?",
       "class": "boolean",

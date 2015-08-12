@@ -70,6 +70,7 @@
     "file": "src/impute2plink.sh",
     "interpreter": "bash"
   },
+  "openSource":true,
   "developers": ["user-johnwallace123", "user-auv13"],
   "authorizedUsers" : ["org-geisinger"]
 }

@@ -72,7 +72,7 @@ main() {
 }
 
 function run_imputation {
-	#set -x
+	set -x
 
 	CHUNK_START=$(echo $1 | awk '{print $1}'); 
 	CHUNK_END=$(echo $1 | awk '{print $2}'); 
@@ -103,7 +103,7 @@ function run_imputation {
 		
 	# Run impute2, and if it failed, write the chunk to a file to re-run
 	TOT_MEM=$(free -k | grep "Mem" | awk '{print $2}')
-	ulimit -m $((TOT_MEM * 19 / (20 * N_PROC) ))
+	ulimit -v $((TOT_MEM * 19 / (20 * N_PROC) ))
 	
 	impute2 -m "$2" -use_prephased_g -known_haps_g "$5" -h "$3" -l "$4" -Ne $NE -int ${CHUNK_START} ${CHUNK_END} \
     	-buffer 250kb -call_thresh 0.9 -allow_large_regions -o $OUTPUT_FILE || echo "$1" >> $7
@@ -176,12 +176,12 @@ imputation() {
 	N_JOBS=$(nproc)
 	
 	# each run, we will decrease the number of cores available until we're at a single core at a time (using ALL the memory)
-	while test $N_CHUNKS -gt 0 -a $((PREV_CHUNKS - N_CHUNKS)) -gt 0 -a $N_JOBS -gt 0; do	
+	while test $N_CHUNKS -gt 0 -a $N_JOBS -gt 0; do	
 		N_JOBS=$(echo "$N_CORES/2^($N_RUNS - 1)" | bc)
 		# make sure we have a minimum of 1 job, please!
 		N_JOBS=$((N_JOBS > 0 ? N_JOBS : 1))
 
-		cat chunk_file | parallel -j $((N_CORES/N_RUNS)) --gnu run_imputation "{}" genetic_map ref_haplotypes ref_legend sample_haps "$CHUNK_DIR/$prefix" $RERUN_FILE $N_JOBS
+		cat chunk_file | parallel -j $N_JOBS --gnu run_imputation "{}" genetic_map ref_haplotypes ref_legend sample_haps "$CHUNK_DIR/$prefix" $RERUN_FILE $N_JOBS
 
 		PREV_CHUNKS=$N_CHUNKS
 		N_CHUNKS=$(cat $RERUN_FILE | wc -l)

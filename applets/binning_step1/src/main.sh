@@ -3,14 +3,8 @@
 set -e -x -o pipefail
 
 main() {
-	# update to newer boost (for biobin)
-	# Don't need this now!!
-	#sudo rm -f /etc/apt/apt.conf.d/99dnanexus
-	#sudo add-apt-repository ppa:boost-latest/ppa --yes
-	#sudo apt-get update --yes
-	#sudo apt-get install --yes libboost1.54-all-dev
-	
-	
+
+	ulimit -c unlimited	
 	# switch to a temp directory and download all non-VCF user input files
 	
 	NUM_CORES="$(nproc --all)"
@@ -49,62 +43,38 @@ main() {
 		)" -o shared/loki.db
 	
 	
-	# if there's a regions file, make sure it's not too big
+	# if there's a regions file, use download_intervals.py to get what we need
+	# (note: still not good for small, sparse regions)
 	
 	if [[ -f input/input.regions ]]; then
-		if [[ $(cat input/input.regions | wc -l) -gt 100 ]]; then
-			mv input/input.regions input/input.list
-		fi
-	fi
-	
-	
-	# if there's still a (small) regions file, run download_part.py to grab only the parts we need
-	
-	if [[ -f input/input.regions ]]; then
-		VCF_HASH="$(dx describe "$vcf_file" --json | jq -r .id)"
-		TBI_HASH="$(dx describe "$vcf_tbi_file" --json | jq -r .id)"
-		
-		VCF_FILE="input/input.vcf.gz"
-		TBI_FILE=""
-		
-		PART_ARG="--header --keep-open"
-		for INTERVAL in $(head -n -1 input/input.regions) ; do
-			python /usr/share/download_part.py \
-				--interval "$INTERVAL" \
-				--vcf "$VCF_HASH" \
-				--index "$TBI_HASH" \
-				$PART_ARG \
-				--output "$VCF_FILE" \
-			2>&1 | tee -a output.log
-			PART_ARG="--append --keep-open"
-		done
-		INTERVAL="$(tail -n 1 input/input.regions)"
-		if [[ -f "$VCF_FILE" ]]; then
-			PART_ARG="--append"
-		else
-			PART_ARG="--header"
-		fi
-		python /usr/share/download_part.py \
-			--interval "$INTERVAL" \
-			--vcf "$VCF_HASH" \
-			--index "$TBI_HASH" \
-			$PART_ARG \
-			--output "$VCF_FILE" \
-		2>&1 | tee -a output.log
-	else
-		if [[ "$(dx describe "$vcf_file" --name)" == *".gz" ]]; then
-			VCF_FILE="input/input.vcf.gz"
-		else
-			VCF_FILE="input/input.vcf"
-		fi
+        VCF_HASH="$(dx describe "$vcf_file" --json | jq -r .id)"
+        TBI_HASH="$(dx describe "$vcf_tbi_file" --json | jq -r .id)"
+
+        VCF_FILE="input/input.vcf.gz"
+        TBI_FILE=""
+
+        python /usr/share/download_intervals.py \
+                --interval "input/input.regions" \
+                --vcf "$VCF_HASH" \
+                --index "$TBI_HASH" \
+				--header \
+                --output "$VCF_FILE" \
+            2>&1 | tee -a output.log
+ 
+ 		tabix -p vcf "$VCF_FILE" 2>&1 | tee -a output.log
+ 		TBI_FILE="$VCF_FILE.tbi"
+ 		
+ 	else
+ 
+ 		VCF_FILE="input/input.vcf.gz"
+		TBI_FILE="$VCF_FILE.tbi"
 		dx download "$vcf_file" -o "$VCF_FILE"
 		
 		if [[ -n "$vcf_tbi_file" ]]; then
-			TBI_FILE="$VCF_FILE.tbi"
 			dx download "$vcf_tbi_file" -o "$TBI_FILE"
-		else
-			TBI_FILE=""
-		fi
+		else 
+	 		tabix -p vcf "$VCF_FILE" 2>&1 | tee -a output.log
+		fi    
 	fi
 	
 	
@@ -114,16 +84,8 @@ main() {
 	if [[ -f input/input.samples ]]; then
 		GATK_SAMPLES_ARG="--sample_file input/input.samples"
 	fi
-	GATK_LIST_ARG=""
-	if [[ -f input/input.list ]]; then
-		GATK_LIST_ARG="--intervals input/input.list"
-	fi
 	if [[ -f input/input.samples || -f input/input.list ]]; then
 		# generate the TBI if we don't have one already
-		if [[ -z "$TBI_FILE" ]]; then
-			tabix -p vcf "$VCF_FILE" 2>&1 | tee -a output.log
-			TBI_FILE="$VCF_FILE.tbi"
-		fi
 		
 		# download GATK files
 		dx download "$(dx find data --brief \
@@ -156,7 +118,6 @@ main() {
 			--excludeFiltered \
 			--ALLOW_NONOVERLAPPING_COMMAND_LINE_SAMPLES \
 			$GATK_SAMPLES_ARG \
-			$GATK_LIST_ARG \
 			--out gatk/output.vcf.gz \
 		2>&1 | tee output.log
 		ls -laR gatk

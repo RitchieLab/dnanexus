@@ -19,6 +19,134 @@ set -x
 
 main() {
 
+
+    echo "Value of vcf_fn: '$vcf_fn'"
+    echo "Value of vcfidx_fn: '$vcfidx_fn'"
+
+	# Sanity check - make sure vcf + vcfidx have same # of elements
+	if [ -n "${vcfidx_fn}" ] && [ "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}" ]; then
+		dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
+	fi
+
+	# first, we need to match up the VCF and tabix index files
+	# To do that, we'll get files of filename -> dxfile ID
+	VCF_LIST=$(mktemp)
+	for i in "${!vcf_fn[@]}"; do	
+		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+	done
+	
+	VCFIDX_LIST=$(mktemp)
+	for i in "${!vcfidx_fn[@]}"; do	
+		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+	done
+	
+	# Now, get the prefix (strip off any .tbi) and join them
+	# However, we may not have a tabix index, so account for that!
+	JOINT_LIST=$(mktemp)
+	join -a1 -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
+		
+	# Ensure that we still have the same number of files; throw an error if not
+	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
+		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
+	fi
+	
+	SUBJOB_ARGS=""
+	# check for the pheno_file
+	if test "$pheno_file"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -ipheno_file:file=$(dx describe --json "$pheno_file" | jq -r .id)"
+	fi
+	
+	# check for the drop_file
+	if test "$drop_file"; then
+		DROP_FILE=$(mktemp)
+	    for i in "${!drop_file[@]}"; do
+	        dx cat "${drop_file[$i]}"
+	    done | sort -u > $DROP_FILE
+		DROP_FILE_DXID=$(dx upload $DROP_FILE --brief)
+
+		SUBJOB_ARGS="$SUBJOB_ARGS -idrop_file:file=$DROP_FILE_DXID"
+	fi
+	
+	# check for the input_covars
+	if test "$input_covars"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iinput_covars:file=$(dx describe --json "$input_covars" | jq -r .id)"
+	fi
+	
+	# check for the drop file
+	if test "$input_regions"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iinput_regions:file=$(dx describe --json "$input_regions" | jq -r .id)"
+	fi
+	
+	# and loop through the file, submitting sub-jobs
+	CONCAT_ARGS=""
+	
+	CIDX=0
+	while read VCF_LINE; do
+		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
+		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
+		
+		FILE_ARGS="-ivcf_fn:file=$VCF_DXFN"
+		if test "$VCFIDX_DXFN"; then
+			FILE_ARGS="$FILE_ARGS -ivcfidx_fn:file=$VCFIDX_DXFN"
+		fi
+	
+		SUBJOB=$(eval dx-jobutil-new-job run_batch "$FILE_ARGS" "$SUBJOB_ARGS" -iPREFIX:string="$PREFIX.$CIDX")
+		
+		CONCAT_ARGS="$CONCAT_ARGS -iassoc_in:array:file=$SUBJOB:assoc_out -ipval_in:array:file=$SUBJOB:pval_list"
+		
+		# for each subjob, add the output to our array
+    	#dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
+	    #dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
+	    
+	    CIDX=$((CIDX + 1))
+		
+	done < $JOINT_LIST
+	
+	# run the concatenation job
+	CONCAT_JOB=$(eval dx-jobutil-new-job run_concat "$CONCAT_ARGS" -iPREFIX:string="$PREFIX")
+	
+	# add the output of the run_concat to the output of this job
+	dx-jobutil-add-output assoc_out "$CONCAT_JOB:assoc_out" --class=jobref
+	dx-jobutil-add-output pval_list "$CONCAT_JOB:pval_list" --class=jobref
+	
+}
+
+run_concat(){
+
+	# will have an array of assoc_in and pval_in
+	# will has a single string PREFIX
+	WKDIR=$(mktemp -d)
+	cd $WKDIR
+	
+	OUTDIR=$(mktemp -d)
+	for i in "${!assoc_in[@]}"; do	
+		dx download "${assoc_in[$i]}" -o assoc.$i
+		head -1 assoc.$i > $OUTDIR/$PREFIX.assoc
+	done
+	
+	for f in assoc.*; do
+		tail -n+2 $f
+	done | sort -k1,1n -k3,3n >> $OUTDIR/$PREFIX.assoc
+	
+	for i in "${!pval_in[@]}"; do	
+		dx download "${pval_in[$i]}" -o pval.$i
+	done
+	
+	cat pval.* | sort -g > $OUTDIR/$PREFIX.pvals
+	
+	#output a single assoc_out and pval_list
+	
+	PVAL_FN=$(dx upload --brief $OUTDIR/$PREFIX.pvals)
+	ASSOC_FN=$(dx upload --brief $OUTDIR/$PREFIX.assoc)
+	
+	dx-jobutil-add-output assoc_out "$ASSOC_FN" --class=file
+	dx-jobutil-add-output pval_list "$PVAL_FN" --class=file
+
+}
+
+
+run_batch() {
+
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
     echo "Value of pheno_file: '$pheno_file'"

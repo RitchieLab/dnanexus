@@ -14,7 +14,7 @@
       "label": "VCF File",
       "optional": false,
       "name": "vcf_fn",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "patterns": [
@@ -23,7 +23,7 @@
       "label": "VCF Index File",
       "optional": true,
       "name": "vcfidx_fn",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "label": "List of IDs that are Cases",
@@ -35,7 +35,7 @@
       "label": "List of IDs to drop",
       "optional": true,
       "name": "drop_file",
-      "class": "file"
+      "class": "array:file"
     },
     {
       "label": "Covariates",

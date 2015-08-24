@@ -13,7 +13,7 @@ import zlib
 
 class zopen(object):
 	
-	def __init__(self, fileName, splitChar="\n", chunkSize=16*1024):
+	def __init__(self, fileName, splitChar="\n", chunkSize=1024*1024):
 		self._filePtr = open(fileName,'rb')
 		self._splitChar = splitChar
 		self._chunkSize = chunkSize
@@ -26,6 +26,7 @@ class zopen(object):
 	def __del__(self):
 		if self._filePtr:
 			self._filePtr.close()
+			self._filePtr = None
 	#__del__()
 	
 	
@@ -53,6 +54,8 @@ class zopen(object):
 			data = self._dc.unused_data
 			if data:
 				self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
+			elif not self._filePtr:
+				raise Exception("cannot read a closed file")
 			else:
 				data = self._filePtr.read(self._chunkSize)
 			if data:
@@ -87,19 +90,29 @@ class zopen(object):
 	
 	
 	def seek(self, offset, whence = 0):
+		if not self._filePtr:
+			raise Exception("cannot seek a closed file")
 		if offset != 0:
 			raise Exception("zfile.seek() does not support offsets != 0")
 		self._filePtr.seek(0, whence)
-		self._dc.flush()
+		self._dc = zlib.decompressobj(zlib.MAX_WBITS | 32) # autodetect gzip or zlib header
 		self._text = ""
 		self._lines = list()
 	#seek()
+	
+	
+	def close(self):
+		if self._filePtr:
+			self._filePtr.close()
+			self._filePtr = None
+	#close()
+	
 	
 #zopen
 
 
 if __name__ == "__main__":
-	versMaj,versMin,versRev,versDate = 0,9,4,'2014-09-25'
+	versMaj,versMin,versRev,versDate = 1,0,0,'2015-01-14'
 	versStr = "%d.%d.%d (%s)" % (versMaj, versMin, versRev, versDate)
 	versDesc = "impute2-to-plink version %s" % versStr
 	
@@ -108,8 +121,7 @@ if __name__ == "__main__":
 		formatter_class=argparse.RawDescriptionHelpFormatter,
 		description=versDesc,
 		epilog="""
-example: %(prog)s -s my.sample -i my.impute2_info.gz -g my.impute2.gz -m 0.9
-         -p output -b -t -d $TMPDIR
+example: %(prog)s -s my.sample -i my.impute2_info.gz -g my.impute2.gz -m 0.9 -p output -b -t -d $TMPDIR
 """
 	)
 	parser.add_argument('-s', '--sample', type=str, metavar='file', required=True,
@@ -137,7 +149,7 @@ example: %(prog)s -s my.sample -i my.impute2_info.gz -g my.impute2.gz -m 0.9
 		help="write compressed plain-text output files (.ped.gz/.map.gz)"
 	)
 	parser.add_argument('-d', '--tempdir', type=str, metavar='directory', default='.',
-		help="directory to write temporary files (default: current directory)"
+		help="directory to write temporary files while transposing data for plain-text output (default: current directory)"
 	)
 	parser.add_argument('--version', action='version', version=versDesc)
 	

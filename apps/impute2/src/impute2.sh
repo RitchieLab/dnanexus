@@ -17,6 +17,7 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 set -x
+set -o pipefail
 
 sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
@@ -165,7 +166,7 @@ imputation() {
 	CONCAT_DIR=$(mktemp -d)
 	
 	# get the prefix of the haplotype file
-	prefix=$(dx describe --name "$haps" | sed 's/\..*//')
+	prefix="$(dx describe --name "$haps" | sed 's/\..*//').$chr"
 	
 	export SHELL="/bin/bash"
 	
@@ -196,9 +197,42 @@ imputation() {
 	fi
 	
 	# merge all of the files in the RESULT_DIR, but sort on the 3rd column, please
-	cat ${CHUNK_DIR}/$prefix.*.impute2 | sort -gk3,3 | pigz > $CONCAT_DIR/$prefix.impute2.gz
-	cat <(head -1 $(ls ${CHUNK_DIR}/$prefix.*.impute2_info | head -1)) <(for f in ${CHUNK_DIR}/$prefix.*.impute2_info; do tail -n+2 $f; done | sort -gk3,3) | pigz > $CONCAT_DIR/$prefix.impute2_info.gz
-	cat ${CHUNK_DIR}/$prefix.*.impute2_summary > $CONCAT_DIR/$prefix.summary
+	# NOTE: we are only sorting files based on the position of the 1st line
+	POS_F=$(mktemp)
+
+	for f in ${CHUNK_DIR}/$prefix.*.impute2; do
+		# Read the 1st 1,000 bytes and print the 3rd field.  Should eliminate 
+		# issues with too many fields for awk to handle
+		echo -e "$(head -c 1000 $f | awk '{print $3}')\t$f"
+	done | tee $POS_F
+
+	POS_SORT_F=$(mktemp)
+	sort -t$'\t' -gk1,1 $POS_F > $POS_SORT_F
+
+	while read f; do
+		cat "$f"
+	done < <(cut -f2- $POS_SORT_F) | pigz > $CONCAT_DIR/$prefix.impute2.gz
+
+	#cat ${CHUNK_DIR}/$prefix.*.impute2 | sort -gk3,3 | pigz > $CONCAT_DIR/$prefix.impute2.gz
+	
+	#OK, make sure this same logic is implemented for the impute2_info files
+	# we MUST match the lines exactly!
+	
+	NLINE=1
+	while read f; do
+		# This should print the header line in the first 
+		tail -n+${NLINE} "$(echo "$f" | sed 's/$/_info/')"
+		NLINE=2
+	done < <(cut -f2- $POS_SORT_F) | pigz > $CONCAT_DIR/$prefix.impute2_info.gz
+
+	#cat <(head -1 $(ls ${CHUNK_DIR}/$prefix.*.impute2_info | head -1)) <(for f in ${CHUNK_DIR}/$prefix.*.impute2_info; do tail -n+2 $f; done | sort -gk3,3) | pigz > $CONCAT_DIR/$prefix.impute2_info.gz
+
+	while read f; do
+		# This should print the header line in the first 
+		cat "$(echo "$f" | sed 's/$/_summary/')"
+	done < <(cut -f2- $POS_SORT_F) > $CONCAT_DIR/$prefix.summary
+
+	#cat ${CHUNK_DIR}/$prefix.*.impute2_summary > $CONCAT_DIR/$prefix.summary
 	
 	impute2_out=$(dx upload $CONCAT_DIR/$prefix.impute2.gz --brief)
 	dx-jobutil-add-output impute2_out "$impute2_out" --class=file

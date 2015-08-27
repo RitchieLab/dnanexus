@@ -71,6 +71,6 @@
     "interpreter": "bash"
   },
   "openSource":true,
-  "developers": ["user-johnwallace123", "user-auv13"],
+  "developers": ["user-johnwallace123", "user-auv13", "user-atf3"],
   "authorizedUsers" : ["org-geisinger"]
 }

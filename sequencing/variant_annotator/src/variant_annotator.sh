@@ -22,13 +22,8 @@ main() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
-    echo "Value of SNP_tranches: '$SNP_tranches'"
-    echo "Value of SNP_recal: '$SNP_recal'"
-    echo "Value of INDEL_tranches: '$INDEL_tranches'"
-    echo "Value of INDEL_recal: '$INDEL_recal'"
-    echo "Value of SNP_ts: '$SNP_ts'"
-    echo "Value of INDEL_ts: '$INDEL_ts'"
-    echo "Value of addl_filter: '$addl_filter'"
+    echo "Value of hdr_only: '$hdr_only'"
+    echo "Value of cmd_params: '$cmd_params'"
 
 	# Sanity check - make sure vcf + vcfidx have same # of elements
 	if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
@@ -61,7 +56,7 @@ main() {
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
 	
-		SUBJOB=$(dx-jobutil-new-job run_qc -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
+		SUBJOB=$(dx-jobutil-new-job run_anno -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -icmd_params:string="$cmd_params" -ihdr_only:boolean=$hdr_only)
 		
 		# for each subjob, add the output to our array
     	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
@@ -72,49 +67,26 @@ main() {
 }
 
 
-run_qc() {
+run_anno() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
-    echo "Value of SNP_tranches: '$SNP_tranches'"
-    echo "Value of SNP_recal: '$SNP_recal'"
-    echo "Value of INDEL_tranches: '$INDEL_tranches'"
-    echo "Value of INDEL_recal: '$INDEL_recal'"
-    echo "Value of SNP_ts: '$SNP_ts'"
-    echo "Value of INDEL_ts: '$INDEL_ts'"
-    echo "Value of addl_filter: '$addl_filter'"
+    echo "Value of hdr_only: '$hdr_only'"
+    echo "Value of cmd_params: '$cmd_params'"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
     # recover the original filenames, you can use the output of "dx describe
     # "$variable" --name".
 
+	SITES_FLAG=""
+	if test "$hdr_only" == "true"; then
+		SITES_FLAG="--sites_only"
+	fi
+
     dx download "$vcf_fn" -o raw.vcf.gz
     dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
     
-    RUN_SNP_RECAL=0
-    if [ -n "$SNP_tranches" ]; then
-        dx download "$SNP_tranches" -o SNP_tranches
-        if [ -n "$SNP_recal" ]; then
-	        dx download "$SNP_recal" -o SNP_recal
-	        RUN_SNP_RECAL=1	        
-	    fi
-    fi
-    
-    RUN_INDEL_RECAL=0
-    if [ -n "$INDEL_tranches" ]; then
-        dx download "$INDEL_tranches" -o INDEL_tranches
-        if [ -n "$INDEL_recal" ]; then
-	        dx download "$INDEL_recal" -o INDEL_recal
-	        RUN_INDEL_RECAL=1
-	    fi
-    fi
-    
-    RUN_FILTERS=0
-    if test -n "$addl_filter"; then
-    	RUN_FILTERS=1
-    fi
-
 	# get the resources we need in /usr/share/GATK
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
@@ -131,56 +103,15 @@ run_qc() {
     TOT_MEM=$((TOT_MEM * 9 / 10))
 
 	BASE_VCF=raw.vcf.gz
-
-	if test $RUN_SNP_RECAL -ne 0; then
-		SNP_RECAL_DIR=$(mktemp -d)
-		java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-		-T ApplyRecalibration \
-		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-input $BASE_VCF \
-		-tranchesFile SNP_tranches \
-		-recalFile SNP_recal \
-		-mode SNP --ts_filter_level $SNP_ts \
-		-o $SNP_RECAL_DIR/filtered.vcf.gz
 		
-		rm $BASE_VCF
-		rm $BASE_VCF.tbi
-		BASE_VCF=$SNP_RECAL_DIR/filtered.vcf.gz
-	fi
-	
-	if test $RUN_SNP_RECAL -ne 0; then
-		INDEL_RECAL_DIR=$(mktemp -d)
-		java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-		-T ApplyRecalibration \
-		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-input $BASE_VCF \
-		-tranchesFile INDEL_tranches \
-		-recalFile INDEL_recal \
-		-mode INDEL --ts_filter_level $INDEL_ts \
-		-o $INDEL_RECAL_DIR/filtered.vcf.gz
-		
-		rm $BASE_VCF
-		rm $BASE_VCF.tbi
-		BASE_VCF=$INDEL_RECAL_DIR/filtered.vcf.gz
-	fi
-	
-	if test $RUN_FILTERS -ne 0; then
-		FILTER_DIR=$(mktemp -d)
-		
-		eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantFiltration -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
-
-		BASE_VCF=$FILTER_DIR/filtered.vcf.gz
-	fi
-	
 	OUT_DIR=$(mktemp -d)
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//')
-	mv $BASE_VCF $OUT_DIR/$PREFIX.filtered.vcf.gz
-	mv $BASE_VCF.tbi $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi
+
+	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantAnnotator -nt $(nproc --all) -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$cmd_params" $SITES_FLAG -o "$OUT_DIR/$PREFIX.annotated.vcf.gz"
+
 	
-	vcf_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz --brief)
-    vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi --brief)
+	vcf_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz" --brief)
+    vcfidx_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz.tbi" --brief)
 
     # The following line(s) use the utility dx-jobutil-add-output to format and
     # add output variables to your job's output as appropriate for the output

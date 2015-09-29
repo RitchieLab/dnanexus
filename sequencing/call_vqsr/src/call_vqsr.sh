@@ -57,7 +57,7 @@ main() {
 	sudo chmod -R a+rwX /usr/share/GATK
 
 	# get the supporting files we need for GATK (and GATK itself)
-	dx download $(dx find data --name "GenomeAnalysisTK-3.2-2.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -101,7 +101,7 @@ main() {
     # OK, now, let's run GATK
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 	# OK, now we can call the GATK genotypeGVCFs
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.2-2.jar \
+	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-nt $(nproc --all) \
 	-T VariantRecalibrator $ANNO_STR $RESOURCE_STR \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
@@ -142,5 +142,7 @@ main() {
     dx-jobutil-add-output recal_idx_file "$recal_idx_file" --class=file
     dx-jobutil-add-output tranches_file "$tranches_file" --class=file
     dx-jobutil-add-output rscript_file "$rscript_file" --class=file
+    
+    sleep 30
 
 }

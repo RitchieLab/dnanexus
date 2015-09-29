@@ -1,7 +1,7 @@
 {
-  "name": "combine_variants",
-  "title": "combine_variants",
-  "summary": "combine_variants",
+  "name": "variant_annotator",
+  "title": "GATK VariantAnnotator",
+  "summary": "Annotate a VCF file using GATK VariantAnnotator",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -9,34 +9,47 @@
   ],
   "inputSpec": [
     {
-      "name": "vcfs",
-      "label": "VCF Files",
+      "name": "vcf_fn",
+      "label": "VCF File",
       "class": "array:file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
-      "name": "vcfidxs",
-      "label": "VCF Index Files",
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
       "class": "array:file",
-      "optional": false
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
-      "name": "prefix",
-      "label": "Prefix",
+      "name": "hdr_only",
+      "label": "Output Sites-only VCF",
+      "class": "boolean",
+      "optional": false,
+      "default" : true
+    },
+    {
+      "name": "cmd_params",
+      "label": "VariantAnnotator Parameters",
       "class": "string",
-      "optional": true
+      "optional": false
     }
   ],
   "outputSpec": [
     {
       "name": "vcf_out",
-      "label": "Combined VCF",
-      "class": "file"
+      "label": "Filtered VCF file",
+      "class": "array:file"
     },
     {
       "name": "vcfidx_out",
-      "label": "Combined VCF Index File",
-      "class": "file"
+      "label": "Filtered VCF Index file",
+      "class": "array:file"
     }
   ],
   "runSpec": {
@@ -49,26 +62,17 @@
       },
       {
         "name": "tabix"
-      },
-      {
-      	"name": "vcftools"
       }
     ],
-    "systemRequirements": {
-      "*": {
-        "instanceType": "mem2_hdd2_x4"
-      }
-    },
     "interpreter": "bash",
-    "file": "src/combine_variants.sh"
+    "file": "src/variant_annotator.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "access": {
     "network": [
       "*"
     ],
-     "allProjects": "VIEW",
-     "project": "CONTRIBUTE"
+     "allProjects": "VIEW"
   },
   "developers": ["user-johnwallace123", "user-auv13"],
   "openSource" : true,

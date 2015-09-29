@@ -68,6 +68,13 @@
       "class" : "boolean",
       "optional" : false,
       "default" : false
+    },
+    {
+      "name" : "split_merge",
+      "label" : "Split merging over multiple jobs (single merge only)",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : true
     }
   ],
   "outputSpec": [
@@ -113,6 +120,7 @@
      "allProjects": "VIEW",
      "project": "CONTRIBUTE"
   },
+  "openSource" : true,
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger"]
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

@@ -18,11 +18,6 @@
 main() {
 	set -x
 
-	if test -z "$PREFIX"; then
-		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
-	fi
-
-
 	SUBJOB_ARGS="-ief:boolean=$ef -ienv:boolean=$env"
 	if test "$region_file"; then
 		SUBJOB_ARGS="$SUBJOB_ARGS -iregion_file:file=$(dx describe --json "$region_file" | jq -r .id)"
@@ -41,23 +36,55 @@ main() {
 	fi
 	
 	if test "$EXTRA_CMD"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string=$EXTRA_CMD"
+		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string='$EXTRA_CMD'"
 	fi
 
-	# download the tabix index
-	dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
-	
-	# get a list of chromosomes and run SelectVariants on the chromosomes independently
-	CONCAT_ARGS="-iprefix=$PREFIX"
-	for CHR in $(tabix -l raw.vcf.gz); do
-		SUBJOBID=$(eval dx-jobutil-new-job run_sv -ivcf_fn:file=$(dx describe --json "$vcf_fn" | jq -r .id) -ivcfidx_fn:file=$(dx describe --json "$vcfidx_fn" | jq -r .id) -iCHR:string="$CHR" -iPREFIX:string="$PREFIX.$CHR" "$SUBJOB_ARGS") 
-		CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
+	WKDIR=$(mktemp -d)
+	cd $WKDIR
+
+	VCFIDX_LIST=$(mktemp)
+	for i in "${!vcfidx_fn[@]}"; do	
+		dx describe --json "${vcfidx_fn[$i]}" | jq -r '"\(.id)\t\(.name)"' >> $VCFIDX_LIST
 	done
 	
-	# Concatenate the results
-	CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
-    dx-jobutil-add-output vcf_out "$CONCAT_JOB:vcf_out" --class=jobref
-    dx-jobutil-add-output vcfidx_out "$CONCAT_JOB:vcfidx_out" --class=jobref
+	
+	for i in "${!vcf_fn[@]}"; do
+	
+		PREFIX="$(dx describe --name "${vcf_fn[$i]}" | sed 's/\.vcf.\(gz\)*$//').subset"
+	
+		VCF_NAME=$(dx describe --name "${vcf_fn[$i]}");
+		VCF_IDX_LINE=$(grep "\W$VCF_NAME.tbi$" $VCFIDX_LIST | cut -f1)
+		# download the tabix index
+		dx download "$VCF_IDX_LINE" -o raw.vcf.gz.tbi
+	
+		# get a list of chromosomes and run SelectVariants on the chromosomes independently
+		CONCAT_ARGS="-iprefix=$PREFIX"
+		
+		N_CHR=$(tabix -l raw.vcf.gz | wc -l)
+		
+		for CHR in $(tabix -l raw.vcf.gz); do
+			NEWPREFIX="$PREFIX"
+			if test $N_CHR -gt 1; then
+				NEWPREFIX="$NEWPREFIX.$CHR"
+			fi
+		
+			SUBJOBID=$(eval dx-jobutil-new-job run_sv -ivcf_fn:file=$(dx describe --json "${vcf_fn[$i]}" | jq -r .id) -ivcfidx_fn:file=$VCF_IDX_LINE -iCHR:string="$CHR" -iPREFIX:string="$NEWPREFIX" "$SUBJOB_ARGS") 
+			
+			CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
+		done
+	
+		if test $N_CHR -gt 1; then
+			# Concatenate the results
+			CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
+    		dx-jobutil-add-output vcf_out --array "$CONCAT_JOB:vcf_out" --class=jobref
+    		dx-jobutil-add-output vcfidx_out --array "$CONCAT_JOB:vcfidx_out" --class=jobref
+    	else
+    		dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
+    		dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
+    	fi
+    	
+    	rm raw.vcf.gz.tbi
+    done
 
 }
 

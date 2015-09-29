@@ -118,5 +118,6 @@
      "allProjects": "VIEW"
   },
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "user-szs14", "user-azo121", "org-geisinger"]
+  "openSource" : true,
+  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "user-szs14", "user-azo121", "org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

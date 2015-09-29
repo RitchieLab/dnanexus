@@ -375,6 +375,8 @@ function merge_intervals(){
 # entry point for merging into a single gVCF
 function single_merge_subjob() {
 
+	set -x
+
 	echo "Resources: $DX_RESOURCES_ID"
 
 	# set the shell to work w/ GNU parallel
@@ -621,13 +623,21 @@ main() {
 		fi
 		
 	elif test "$folder"; then
-		parallel -u --gnu -j $(nproc --all) get_dxids :::: <(dx ls "$project:$folder" | grep '\.gz$' | sed "s|^|$project:$folder/|") ::: $GVCF_LIST
+		FOLDER_LIST=$(mktemp)
+		dx ls -l --delim $'\t' "$project:$folder" | cut -f4,5  > $FOLDER_LIST
+		grep '\.gz\W' $FOLDER_LIST > $GVCF_LIST
+		GVCFIDX_LIST=$(mktemp)
+		grep '\.gz\.tbi\W' $FOLDER_LIST > $GVCFIDX_LIST
+		if test "$(cat $GVCFIDX_LIST | wc -l)" -eq "$(cat $GVCF_LIST | wc -l)"; then
+			dx_gidxlist=$(dx upload $GVCFIDX_LIST --brief)
+			SUBJOB_ARGS="$SUBJOB_ARGS -igvcfidxs:file=$dx_gidxlist"
+		fi
 	else
 		dx-jobutil-report-error "ERROR: you must provide either a list of gvcfs OR a directory containing gvcfs"
 	fi
     
     if test "$target"; then
-    	SUBJOB_ARGS="$SUBJOB_ARGS -itarget:file=$(echo $target | sed 's/.*\(file-[^"]*\)".*/\1/')"
+    	SUBJOB_ARGS="$SUBJOB_ARGS -itarget:file=$(dx describe --json "$target" | jq -r .id)"
     	if test "$padding"; then
     		SUBJOB_ARGS="$SUBJOB_ARGS -ipadding:int=$padding"
     	fi
@@ -650,7 +660,7 @@ main() {
     fi
     
     # move the special logic testing N_BATCHES==1 here
-    if test $N_BATCHES -eq 1; then
+    if test "$split_merge" = "true" -a $N_BATCHES -eq 1; then
     		
 		dx_gvcflist=$(dx upload $GVCF_LIST --brief)
 	

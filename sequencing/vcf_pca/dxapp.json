@@ -1,0 +1,151 @@
+{
+  "name": "vcf_pca",
+  "title": "Calculate PCs from VCF",
+  "summary": "vcf_pca",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling",
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File(s)",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File(s)",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ]
+    },
+    {
+      "name": "prefix",
+      "label": "Prefix for files",
+      "class": "string",
+      "optional": true,
+      "default": "VCF_PCA"
+    },
+    {
+      "name": "maf",
+      "label": "Minimum MAF",
+      "class": "float",
+      "optional": false,
+      "default" : 0.05
+    },
+    {
+      "name": "excl_region",
+      "label": "Exclusion Region(s)",
+      "class": "array:file",
+      "optional": true
+    },
+    {
+      "name": "sel_args",
+      "label": "PLINK Marker selection arguments",
+      "class": "string",
+      "optional": true,
+      "default": "--autosome --hwe 0.000001"
+    },
+    {
+      "name": "ld_args",
+      "label": "PLINK LD pruning arguments",
+      "class": "string",
+      "optional": true,
+      "default": "--indep-pairwise 50 5 0.5"
+    },
+    {
+      "name": "merge_args",
+      "label" : "PLINK Merge arguments (sample drop goes here)",
+      "class" : "string",
+      "optional" : true,
+      "default" : ""
+    },
+    {
+      "name": "fast_pca",
+      "label": "Use Fast Eigenvalue Approx.",
+      "class": "boolean",
+      "optional": false,
+      "default" : false
+    },
+    {
+      "name": "twstats",
+      "label": "Calculate Tracy-Widom Stats",
+      "class": "boolean",
+      "optional": false,
+      "default" : true
+    },
+    {
+      "name": "num_evec",
+      "label": "Number of Eigenvectors",
+      "class": "int",
+      "optional": false,
+      "default" : 20
+    },
+    {
+      "name": "ldregress",
+      "label": "LD Regression Parameter",
+      "class": "int",
+      "optional": true,
+      "default": 0
+    },
+    {
+      "name": "numoutlier",
+      "label": "Number of Outlier Removal Iterations",
+      "class": "int",
+      "optional": true,
+      "default": 5
+    },
+    {
+      "name": "pca_opts",
+      "label": "Other Eigensoft Options (comma-separated)",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "evec_out",
+      "label": "Eigenvectors",
+      "class": "file"
+    },
+    {
+      "name": "eval_out",
+      "label": "Eigenvalues",
+      "class": "file"
+    },
+    {
+      "name": "twstats_out",
+      "label": "TW Statistics",
+      "class": "file",
+      "optional" : true
+    },
+    {
+      "name": "samp_excl",
+      "label": "Samples Excluded from Analysis",
+      "class": "file",
+      "optional" : true
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {"name": "libgsl0ldbl"},
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"}
+    ],
+    "interpreter": "bash",
+    "file": "src/vcf_pca.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

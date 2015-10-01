@@ -119,7 +119,7 @@ run_qc() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 	
-	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46-custom.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
 	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
@@ -169,7 +169,7 @@ run_qc() {
 	if test $RUN_FILTERS -ne 0; then
 		FILTER_DIR=$(mktemp -d)
 		
-		eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantFiltration -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
+		eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantFiltration -nt $(nproc --all) -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
 
 		BASE_VCF=$FILTER_DIR/filtered.vcf.gz
 	fi

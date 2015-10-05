@@ -23,6 +23,10 @@ main() {
 
     echo "Value of vcf_fn: '${vcf_fn[@]}'"
     echo "Value of vcfidx_fn: '${vcfidx_fn[@]}'"
+    echo "Value of bed_fn: '${bed_fn[@]}'"
+    echo "Value of bim_fn: '${bim_fn[@]}'"
+    echo "Value of fam_fn: '${fam_fn[@]}'"
+
     echo "Value of excl_region: '${excl_region[@]}'"
     echo "Value of sel_args: '$sel_args'"
     echo "Value of maf: '$maf'"
@@ -40,50 +44,112 @@ main() {
     # recover the original filenames, you can use the output of "dx describe
     # "$variable" --name".
 
-	# Sanity check - make sure vcf + vcfidx have same # of elements
-	if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
-		dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
-	fi
+	# Sanity checks:
 
-	# first, we need to match up the VCF and tabix index files
-	# To do that, we'll get files of filename -> dxfile ID
-	VCF_LIST=$(mktemp)
-	for i in "${!vcf_fn[@]}"; do	
-		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
-	done
-	
-	VCFIDX_LIST=$(mktemp)
-	for i in "${!vcfidx_fn[@]}"; do	
-		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
-	done
-	
-	# Now, get the prefix (strip off any .tbi) and join them
-	JOINT_LIST=$(mktemp)
-	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
-		
-	# Ensure that we still have the same number of files; throw an error if not
-	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
-		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
+	USE_VCF=1
+	if test -z "${vcf_fn[@]}" -o -z "${vcfidx_fn[@]}"; then
+		# If here, either VCF/TBI is empty
+		USE_VCF=0
+		if test -z "${bed_fn[@]}" -o -z "${bim_fn[@]}" -o -z "${fam_fn[@]}" ; then
+			dx-jobutil-report-error "ERROR: You must provide VCF/TBI files or BED/BIM/FAM files"
+		fi
 	fi
 	
-	SUBJOB_ARGS="-imaf:float=\"$maf\" -ild_args:string=\"$ld_args\" -isel_args:string=\"$sel_args\""
-	if test "${excl_region[@]}"; then
-		for i in "${!excl_region[@]}"; do
-			SUBJOB_ARGS="$SUBJOB_ARGS -iexcl_region:array:file=$(dx describe --json "${excl_region[$i]}" | jq -r .id)"
-		done
-	fi
-	
-	# and loop through the file, submitting sub-jobs
 	PCA_ARGS="-inum_evec:int=$num_evec -imerge_args:string=\"$merge_args\" -ifast_pca:boolean=$fast_pca -itwstats:boolean=$twstats -ildregress:int=$ldregress -inumoutlier:int=$numoutlier -ipca_opts:string=\"$pca_opts\" -iprefix:string=$prefix"
-	while read VCF_LINE; do
-		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
-		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
+	SUBJOB_ARGS="-imaf:float=\"$maf\" -ild_args:string=\"$ld_args\" -isel_args:string=\"$sel_args\""
+
+	if test $USE_VCF -gt 0; then
+		# - make sure vcf + vcfidx have same # of elements
+		if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
+			dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
+		fi
+
+		# first, we need to match up the VCF and tabix index files
+		# To do that, we'll get files of filename -> dxfile ID
+		VCF_LIST=$(mktemp)
+		for i in "${!vcf_fn[@]}"; do	
+			dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+		done
 	
-		SUBJOB=$(eval dx-jobutil-new-job downsample_file "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
+		VCFIDX_LIST=$(mktemp)
+		for i in "${!vcfidx_fn[@]}"; do	
+			dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+		done
+	
+		# Now, get the prefix (strip off any .tbi) and join them
+		JOINT_LIST=$(mktemp)
+		join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
 		
-		PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
+		# Ensure that we still have the same number of files; throw an error if not
+		if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
+			dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
+		fi
+
+
+		if test "${excl_region[@]}"; then
+			for i in "${!excl_region[@]}"; do
+				SUBJOB_ARGS="$SUBJOB_ARGS -iexcl_region:array:file=$(dx describe --json "${excl_region[$i]}" | jq -r .id)"
+			done
+		fi
+	
+		# and loop through the file, submitting sub-jobs
+		while read VCF_LINE; do
+			VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
+			VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
+	
+			SUBJOB=$(eval dx-jobutil-new-job downsample_file "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
 		
-	done < $JOINT_LIST
+			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
+		
+		done < $JOINT_LIST
+	
+	else
+		# We're using bed/bim/fam here!
+	
+		# - make sure vcf + vcfidx have same # of elements
+		if test "${#bed_fn[@]}" -ne "${#bim_fn[@]}" -o "${#bed_fn[@]}" -ne "${#fam_fn[@]}"; then
+			dx-jobutil-report-error "ERROR: Number of BED/BIM/FAM files do NOT match!"
+		fi
+
+		# first, we need to match up the VCF and tabix index files
+		# To do that, we'll get files of filename -> dxfile ID
+		BED_LIST=$(mktemp)
+		for i in "${!bed_fn[@]}"; do	
+			dx describe --json "${bed_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.bed\t/\t/' >> $BED_LIST
+		done
+		
+		BIM_LIST=$(mktemp)
+		for i in "${!bim_fn[@]}"; do	
+			dx describe --json "${bim_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.bim\t/\t/' >> $BIM_LIST
+		done
+
+		FAM_LIST=$(mktemp)
+		for i in "${!fam_fn[@]}"; do	
+			dx describe --json "${fam_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.fam\t/\t/' >> $FAM_LIST
+		done
+
+	
+		# Now, get the prefix (strip off any .tbi) and join them
+		JOINT_LIST=$(mktemp)
+		join -t$'\t' -j1 <(sort -k1,1 $BED_LIST) <(join -t$'\t' -j1 <(sort -k1,1 $BIM_LIST) <(sort -k1,1 $FAM_LIST) ) > $JOINT_LIST
+		
+		# Ensure that we still have the same number of files; throw an error if not
+		if test $(cat $JOINT_LIST | wc -l) -ne "${#bed_fn[@]}"; then
+			dx-jobutil-report-error "ERROR: BED/BIM/FAM files do not match!"
+		fi
+		
+		while read PLINK_LINE; do
+			BED_DXFN=$(echo "$PLINK_LINE" | cut -f2)
+			BIM_DXFN=$(echo "$PLINK_LINE" | cut -f3)
+			FAM_DXFN=$(echo "$PLINK_LINE" | cut -f4)
+	
+			SUBJOB=$(eval dx-jobutil-new-job downsample_plink "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
+		
+			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
+		
+		done < $JOINT_LIST
+
+	fi	
 
     pcarun=$(eval dx-jobutil-new-job run_pca "$PCA_ARGS")
 
@@ -123,7 +189,47 @@ main() {
 	fi
 }
 
-downsample_file() {
+function run_ld(){
+	OUTDIR="$1"
+	PREFIX="$2"
+	INBASE="$3"
+	ld_args="$4"
+	
+	# And LD prune (if needed)
+	if test "$ld_args"; then
+		eval plink2 --bfile $INBASE "$ld_args" --threads $(nproc --all) -allow-no-sex --out ld_list
+		plink2 --bfile $INBASE --extract ld_list.prune.in --make-bed --out $OUTDIR/$PREFIX
+	else
+		for ext in bed bim fam; do
+			mv $INBASE.$ext $OUTDIR/$PREFIX.$ext
+		done
+	fi
+}
+
+
+downsample_plink(){
+	WKDIR=$(mktemp -d)
+	OUTDIR=$(mktemp -d)
+	
+	cd $WKDIR
+	# Now, get our VCF and VCF Idx file
+	dx download "$bed_fn" -o input.bed
+	dx download "$bim_fn" -o input.bim
+	dx download "$fam_fn" -o input.fam		
+	
+	PREFIX=$(dx describe --name "$bed_fn" | sed 's/.bed$//')
+	
+	run_ld "$OUTDIR" "$PREFIX" input "$ld_args"
+	
+	# upload all 3 bed/bim/fam files
+	for ext in bed bim fam; do
+		dxfn=$(dx upload --brief $OUTDIR/$PREFIX.$ext)
+	    dx-jobutil-add-output $ext $dxfn
+	done
+}
+
+
+downsample_vcf() {
     # Fill in your process code here
     
     # First, we need to get GATK so we can get only biallelic SNPs, please!
@@ -156,21 +262,13 @@ downsample_file() {
 	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / 20 ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T SelectVariants -nt $(nproc --all) \
 		-V input.vcf.gz $GATK_ARGS \
 		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-selectType SNP --restrictAllelesTo BIALLELIC -ef -env \
+		-selectType SNP --restrictAllelesTo BIALLELIC -ef -env -set\
 		-o base.vcf.gz
 	
 	# Now, convert the VCF into a PLINK file
 	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all)
 	
-	# And LD prune (if needed)
-	if test "$ld_args"; then
-		eval plink2 --bfile preld "$ld_args" --threads $(nproc --all) -allow-no-sex --out ld_list
-		plink2 --bfile preld --extract ld_list.prune.in --make-bed --out $OUTDIR/$PREFIX
-	else
-		for ext in bed bim fam; do
-			mv preld.$ext $OUTDIR/$PREFIX.$ext
-		done
-	fi
+	run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
 	
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do

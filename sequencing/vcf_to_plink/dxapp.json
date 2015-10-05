@@ -1,0 +1,109 @@
+{
+  "name": "vcf_to_plink",
+  "title": "Convert VCF file to PLINK file",
+  "summary": "vcf_to_plink",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling",
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File(s)",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File(s)",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ]
+    },
+    {
+      "name": "snp_only",
+      "label": "Output SNPs only",
+      "class": "boolean",
+      "optional": false,
+      "default" : false
+    },
+    {
+      "name": "merge",
+      "label": "Merge PLINK Files",
+      "class": "boolean",
+      "optional": false,
+      "default" : true
+    },
+    {
+      "name": "prefix",
+      "label": "Prefix for files",
+      "class": "string",
+      "optional": true,
+      "default": "VCF_PLINK"
+    },
+    {
+      "name": "excl_region",
+      "label": "Exclusion Region(s)",
+      "class": "array:file",
+      "optional": true
+    },
+    {
+      "name": "sel_args",
+      "label": "PLINK Marker selection arguments",
+      "class": "string",
+      "optional": true,
+      "default": ""
+    },
+    {
+      "name": "merge_args",
+      "label" : "PLINK Merge arguments (sample drop goes here)",
+      "class" : "string",
+      "optional" : true,
+      "default" : ""
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "bed_out",
+      "label": "PLINK BED file",
+      "class": "array:file"
+    },
+    {
+      "name": "bim_out",
+      "label": "PLINK BIM file",
+      "class": "array:file"
+    },
+    {
+      "name": "fam_out",
+      "label": "PLINK FAM file",
+      "class": "array:file"
+    },
+    {
+      "name": "samp_excl",
+      "label": "Samples Excluded",
+      "class": "file",
+      "optional" : true
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {"name": "libgsl0ldbl"},
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"}
+    ],
+    "interpreter": "bash",
+    "file": "src/vcf_to_plink.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

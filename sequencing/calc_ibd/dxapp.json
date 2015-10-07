@@ -1,7 +1,7 @@
 {
-  "name": "vcf_pca",
-  "title": "Calculate PCs from VCF",
-  "summary": "vcf_pca",
+  "name": "calc_ibd",
+  "title": "Calculate IBD from VCF or PLINK file",
+  "summary": "calc_ibd",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -53,13 +53,13 @@
       "patterns": [
         "*.fam"
       ]
-    },    
+    },
     {
       "name": "prefix",
       "label": "Prefix for files",
       "class": "string",
       "optional": true,
-      "default": "VCF_PCA"
+      "default": "VCF_PLINK"
     },
     {
       "name": "maf",
@@ -67,7 +67,7 @@
       "class": "float",
       "optional": false,
       "default" : 0.05
-    },
+    },    
     {
       "name": "excl_region",
       "label": "Exclusion Region(s)",
@@ -79,7 +79,7 @@
       "label": "PLINK Marker selection arguments",
       "class": "string",
       "optional": true,
-      "default": "--autosome --hwe 0.000001"
+      "default": ""
     },
     {
       "name": "ld_args",
@@ -94,69 +94,17 @@
       "class" : "string",
       "optional" : true,
       "default" : ""
-    },
-    {
-      "name": "fast_pca",
-      "label": "Use Fast Eigenvalue Approx.",
-      "class": "boolean",
-      "optional": false,
-      "default" : false
-    },
-    {
-      "name": "twstats",
-      "label": "Calculate Tracy-Widom Stats",
-      "class": "boolean",
-      "optional": false,
-      "default" : true
-    },
-    {
-      "name": "num_evec",
-      "label": "Number of Eigenvectors",
-      "class": "int",
-      "optional": false,
-      "default" : 20
-    },
-    {
-      "name": "ldregress",
-      "label": "LD Regression Parameter",
-      "class": "int",
-      "optional": true,
-      "default": 0
-    },
-    {
-      "name": "numoutlier",
-      "label": "Number of Outlier Removal Iterations",
-      "class": "int",
-      "optional": true,
-      "default": 5
-    },
-    {
-      "name": "pca_opts",
-      "label": "Other Eigensoft Options (comma-separated)",
-      "class": "string",
-      "optional": true
     }
   ],
   "outputSpec": [
     {
-      "name": "evec_out",
-      "label": "Eigenvectors",
+      "name": "ibd_out",
+      "label": "PLINK IBD file",
       "class": "file"
-    },
-    {
-      "name": "eval_out",
-      "label": "Eigenvalues",
-      "class": "file"
-    },
-    {
-      "name": "twstats_out",
-      "label": "TW Statistics",
-      "class": "file",
-      "optional" : true
     },
     {
       "name": "samp_excl",
-      "label": "Samples Excluded from Analysis",
+      "label": "Samples Excluded",
       "class": "file",
       "optional" : true
     }
@@ -169,7 +117,7 @@
       {"name": "tabix"}
     ],
     "interpreter": "bash",
-    "file": "src/vcf_pca.sh"
+    "file": "src/calc_ibd.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,

@@ -1,0 +1,98 @@
+{
+  "name": "gen_related_todrop",
+  "title": "Generate Related Drop List",
+  "summary": "gen_related_todrop",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "genome",
+      "label": "IBD file",
+      "class": "file",
+      "optional": false,
+      "patterns" :[ "*.genome", "*.genome.gz"]
+    },
+    {
+      "name": "pref",
+      "label": "Preferred Drop list",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name" : "prefix",
+      "label" : "PREFIX",
+      "class" : "string",
+      "optional" : true,
+      "default" : "related"
+    },
+    {
+      "name" : "thresh",
+      "label" : "Pi Hat threshold",
+      "class" : "float",
+      "optional" : false,
+      "default" : 0.125
+    },
+    {
+      "name": "id1_col",
+      "label": "Column of ID 1",
+      "class": "int",
+      "optional": true,
+      "default": 2
+    },
+    {
+      "name": "id2_col",
+      "label": "Column of ID 2",
+      "class": "int",
+      "optional": true,
+      "default": 4
+    },
+    {
+      "name": "pihat_col",
+      "label": "Column of Pi Hat (set to 0 to disable and use all IDs)",
+      "class": "int",
+      "optional": true,
+      "default": 10
+    },
+    {
+      "name" : "exact",
+      "label" : "Use exact minimal set algorithm (SLOW!)",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    },
+    {
+      "name" : "drop_before",
+      "label" : "Prefer to drop samples not found in preferred drop list",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "relateds",
+      "label": "Minimal Related Drop Set",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+      "execDepends": [
+         {"name": "optparse", "package_manager": "cran"},
+         {"name": "reshape2", "package_manager": "cran"},
+         {"name": "parallel", "package_manager": "cran"},
+         {"name": "foreach", "package_manager": "cran"},
+         {"name": "doMC", "package_manager": "cran"}
+    ],
+
+    "interpreter": "bash",
+    "file": "src/gen_related_todrop.sh"    
+  },
+  "access": {"network": ["*"]},
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

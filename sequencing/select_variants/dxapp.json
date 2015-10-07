@@ -67,6 +67,20 @@
       "default": false
     },
     {
+      "name" : "merge",
+      "label" : "Merge Output?",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : true
+    },
+    {
+      "name" : "headers",
+      "label" : "Also output sites-only?",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    },
+    {
       "name": "EXTRA_CMD",
       "label": "Additional Command Line parameters to SelectVariants",
       "class": "string",
@@ -83,6 +97,18 @@
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
       "class": "array:file"
+    },
+    {
+      "name": "vcf_hdr_out",
+      "label": "Filtered VCF sites-only file",
+      "class": "array:file",
+      "optional" : true
+    },
+    {
+      "name": "vcfidx_hdr_out",
+      "label": "Filtered VCF sites-only Index file",
+      "class": "array:file",
+      "optional" : true
     }
   ],
   "runSpec": {

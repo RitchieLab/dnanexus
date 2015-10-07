@@ -335,38 +335,38 @@ genotype_gvcfs() {
 	  
     # Now, if we padded the intervals, get an on-target VCF through the use of SelectVariants
     if test "$PADDED" -ne 0; then
-    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz"
-    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi"
+    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz"
+    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi"
     
     	java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
 			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 			-nt $(nproc --all) \
-			-V "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" \
+			-V "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" \
 			-o "$VCF_TMPDIR/$PREFIX.vcf.gz" 
 			
 		# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
-		pigz -dc "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz"
-		tabix -p vcf "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz"
+		pigz -dc "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
+		tabix -p vcf "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
 		
 		# upload all of the padded files
 		
-		vcf_pad_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.vcf.gz" --brief)
-	    vcf_idx_pad_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.vcf.gz.tbi" --brief)
+		vcf_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" --brief)
+	    vcf_idx_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi" --brief)
 
 		dx-jobutil-add-output vcf_pad_out "$vcf_pad_fn" --class=file
 		dx-jobutil-add-output vcfidx_pad_out "$vcf_idx_pad_fn" --class=file
 		
-	   	vcf_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz" --brief)
-		vcf_idx_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.padded.header.vcf.gz.tbi" --brief)
+	   	vcf_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz" --brief)
+		vcf_idx_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz.tbi" --brief)
 
 		dx-jobutil-add-output vcf_pad_hdr_out "$vcf_pad_hdr_fn" --class=file
 		dx-jobutil-add-output vcfidx_pad_hdr_out "$vcf_idx_pad_hdr_fn" --class=file
 	fi
 	  	
    	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
-	pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/$PREFIX.header.vcf.gz"
-	tabix -p vcf "$VCF_TMPDIR/$PREFIX.header.vcf.gz"	
+	pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/header.$PREFIX.vcf.gz"
+	tabix -p vcf "$VCF_TMPDIR/header.$PREFIX.vcf.gz"	
 	
 	vcf_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz" --brief)
     vcf_idx_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" --brief)
@@ -374,8 +374,8 @@ genotype_gvcfs() {
     dx-jobutil-add-output vcf_out "$vcf_fn" --class=file
     dx-jobutil-add-output vcfidx_out "$vcf_idx_fn" --class=file
     
-   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.header.vcf.gz" --brief)
-    vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.header.vcf.gz.tbi" --brief)
+   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz" --brief)
+    vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz.tbi" --brief)
 
     dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
     dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file

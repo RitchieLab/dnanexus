@@ -32,12 +32,6 @@ main() {
     echo "Value of maf: '$maf'"
     echo "Value of ld_args: '$ld_args'"
     echo "Value of merge_args: '$merge_args'"
-    echo "Value of fast_pca: '$fast_pca'"
-    echo "Value of twstats: '$twstats'"
-    echo "Value of num_evec: '$num_evec'"
-    echo "Value of ldregress: '$ldregress'"
-    echo "Value of numoutlier: '$numoutlier'"
-    echo "Value of pca_opts: '$pca_opts'"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
@@ -55,7 +49,7 @@ main() {
 		fi
 	fi
 	
-	PCA_ARGS="-inum_evec:int=$num_evec -imerge_args:string=\"$merge_args\" -ifast_pca:boolean=$fast_pca -itwstats:boolean=$twstats -ildregress:int=$ldregress -inumoutlier:int=$numoutlier -ipca_opts:string=\"$pca_opts\" -iprefix:string=$prefix"
+	IBD_ARGS="-imerge_args:string=\"$merge_args\" -iprefix:string=$prefix"
 	SUBJOB_ARGS="-imaf:float=\"$maf\" -ild_args:string=\"$ld_args\" -isel_args:string=\"$sel_args\""
 
 	if test $USE_VCF -gt 0; then
@@ -99,7 +93,7 @@ main() {
 	
 			SUBJOB=$(eval dx-jobutil-new-job downsample_vcf "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
 		
-			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
+			IBD_ARGS="$IBD_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
 		
 		done < $JOINT_LIST
 	
@@ -143,24 +137,20 @@ main() {
 			BIM_DXFN=$(echo "$PLINK_LINE" | cut -f3)
 			FAM_DXFN=$(echo "$PLINK_LINE" | cut -f4)
 	
-			SUBJOB=$(eval dx-jobutil-new-job downsample_plink "$SUBJOB_ARGS" -ibed_fn:file="$BED_DXFN" -ibim_fn:file="$BIM_DXFN" -ifam_fn:file="$FAM_DXFN")
+			SUBJOB=$(eval dx-jobutil-new-job downsample_plink "$SUBJOB_ARGS"  -ibed_fn:file="$BED_DXFN" -ibim_fn:file="$BIM_DXFN" -ifam_fn:file="$FAM_DXFN")
 		
-			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
+			IBD_ARGS="$IBD_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
 		
 		done < $JOINT_LIST
 
 	fi	
 
-    pcarun=$(eval dx-jobutil-new-job run_pca "$PCA_ARGS")
+    ibdrun=$(eval dx-jobutil-new-job run_ibd "$IBD_ARGS")
+    
+    dx-jobutil-add-output ibd_out "$ibdrun:ibd" --class=jobref
+    dx-jobutil-add-output samp_excl "$ibdrun:excluded" --class=jobref
 
-    dx-jobutil-add-output evec_out "$pcarun:evec_out" --class=jobref
-	dx-jobutil-add-output samp_excl "$pcarun:samp_excl" --class=jobref
-    if test "$fast_pca" = "false"; then
-	    dx-jobutil-add-output eval_out "$pcarun:eval_out" --class=jobref
-	    if test "$twstats" = "true"; then
-		    dx-jobutil-add-output twstats_out "$pcarun:twstats_out" --class=jobref
-		fi
-	fi
+
 }
 
 function run_ld(){
@@ -180,7 +170,6 @@ function run_ld(){
 	fi
 }
 
-
 downsample_plink(){
 	WKDIR=$(mktemp -d)
 	OUTDIR=$(mktemp -d)
@@ -196,7 +185,7 @@ downsample_plink(){
 	PREFIX=$(dx describe --name "$bed_fn" | sed 's/.bed$//')
 	
 	run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
-	
+		
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do
 		dxfn=$(dx upload --brief $OUTDIR/$PREFIX.$ext)
@@ -242,7 +231,7 @@ downsample_vcf() {
 		-o base.vcf.gz
 	
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all)
+	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --keep-allele-order --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all)
 	
 	run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
 	
@@ -253,17 +242,10 @@ downsample_vcf() {
 	done
 }
 
-run_pca() {
+
+run_ibd() {
     # Fill in your postprocess code here
-    
-    echo "Value of merge_args: '$merge_args'"
-    echo "Value of fast_pca: '$fast_pca'"
-    echo "Value of twstats: '$twstats'"
-    echo "Value of num_evec: '$num_evec'"
-    echo "Value of ldregress: '$ldregress'"
-    echo "Value of numoutlier: '$numoutlier'"
-    echo "Value of pca_opts: '$pca_opts'"
-    
+      
     WKDIR=$(mktemp -d)
     cd $WKDIR
     
@@ -299,62 +281,18 @@ run_pca() {
 		dx-jobutil-report-error "ERROR: Samples from parallel VCF conversions do not overlap!"
 	fi
 	
-	INPUTDIR=$(mktemp -d)
-
-	# Allow some sample-level dropping to happen here (i.e. geno).
-	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $INPUTDIR/input --make-bed -allow-no-sex
-	
-	# get a list of those dropped
-	SAMPLE_DROPPED=$(mktemp)
-	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $INPUTDIR/input.fam | cut -f1-2 | sort -t'\0') > $SAMPLE_DROPPED
-	
 	OUTDIR=$(mktemp -d)
 	
-	PAR_F=$(mktemp)
-	echo "genotypename: $INPUTDIR/input.bed" >> $PAR_F
-	echo "snpname: $INPUTDIR/input.bim" >> $PAR_F
-	echo "indivname: $INPUTDIR/input.fam" >> $PAR_F
-	echo "evecoutname: $OUTDIR/$prefix.evec" >> $PAR_F
-	echo "numoutevec: $num_evec" >> $PAR_F
-	echo "ldregress: $ldregress" >> $PAR_F
-	echo "familynames: NO" >> $PAR_F
-
-    if test "$fast_pca" = "false"; then
-		echo "evaloutname: $OUTDIR/$prefix.eval" >> $PAR_F
-		echo "numthreads: $(nproc --all)" >> $PAR_F
-		echo "numoutlieriter: $numoutlier" >> $PAR_F
-		echo "outlieroutname: $OUTDIR/$prefix.outlier" >> $PAR_F
-		echo "numoutlierevec: $num_evec" >> $PAR_F	    	
-	else
-		echo "fastmode: yes" >> $PAR_F
-	fi
+	# Allow some sample-level dropping to happen here (i.e. geno).
+	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $OUTDIR/$prefix --genome gz --make-bed -allow-no-sex
 	
-	echo "$pca_opts" | sed 's/"//g' | tr ',' '\n' >> $PAR_F
+	# get a list of those dropped
+	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $OUTDIR/$prefix.fam | cut -f1-2 | sort -t'\0') > $OUTDIR/$prefix.excluded
 
-	ulimit -c unlimited
-
-	smartpca -p $PAR_F
-	
-	# And upload results
-	evec_dxfn=$(dx upload --brief $OUTDIR/$prefix.evec)
-    dx-jobutil-add-output evec_out "$evec_dxfn" --class=file
+	excl_dxfn=$(dx upload --brief $OUTDIR/$prefix.excluded)
+    dx-jobutil-add-output excluded $excl_dxfn
     
-    # concatenate the sample exluded lists
-    cat $SAMPLE_DROPPED <(awk '{print $3 "\t" $3}' $OUTDIR/$prefix.outlier) > $OUTDIR/$prefix.excluded
-    se_dxfn=$(dx upload --brief $OUTDIR/$prefix.excluded)
-	dx-jobutil-add-output samp_excl "$se_dxfn" --class=file
-	
-	
-    if test "$fast_pca" = "false"; then
-    	eval_dxfn=$(dx upload --brief $OUTDIR/$prefix.eval)
-	    dx-jobutil-add-output eval_out "$eval_dxfn" --class=file
-	    if test "$twstats" = "true"; then
-	    	# do the twstats calculation here
-	    	twstats -t /usr/share/twtable -i $OUTDIR/$prefix.eval -o $OUTDIR/$prefix.twstats
-	    	tw_dxfn=$(dx upload --brief $OUTDIR/$prefix.twstats)
-		    dx-jobutil-add-output twstats_out "$tw_dxfn" --class=file
-		fi
-	fi
-	
+   	ibd_dxfn=$(dx upload --brief $OUTDIR/$prefix.genome.gz)
+    dx-jobutil-add-output ibd $ibd_dxfn
 	
 }

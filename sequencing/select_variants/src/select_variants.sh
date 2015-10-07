@@ -39,6 +39,8 @@ main() {
 		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string='$EXTRA_CMD'"
 	fi
 
+	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$header"
+
 	WKDIR=$(mktemp -d)
 	cd $WKDIR
 
@@ -59,6 +61,7 @@ main() {
 	
 		# get a list of chromosomes and run SelectVariants on the chromosomes independently
 		CONCAT_ARGS="-iprefix=$PREFIX"
+		CONCAT_HDR_ARGS="$CONCAT_ARGS"
 		
 		N_CHR=$(tabix -l raw.vcf.gz | wc -l)
 		
@@ -70,18 +73,41 @@ main() {
 		
 			SUBJOBID=$(eval dx-jobutil-new-job run_sv -ivcf_fn:file=$(dx describe --json "${vcf_fn[$i]}" | jq -r .id) -ivcfidx_fn:file=$VCF_IDX_LINE -iCHR:string="$CHR" -iPREFIX:string="$NEWPREFIX" "$SUBJOB_ARGS") 
 			
+			if test $N_CHR -gt 1 -a "$merge" = "false"; then
+				dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
+				dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
+				if test "$header" = "true"; then
+					dx-jobutil-add-output vcf_hdr_out --array "$SUBJOBID:vcf_hdr_out" --class=jobref
+					dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOBID:vcfidx_hdr_out" --class=jobref
+				fi
+			fi
+			
 			CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
+			CONCAT_HDR_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_hdr_out -ivcfidxs=$SUBJOBID:vcfidx_hdr_out"
 		done
 	
 		if test $N_CHR -gt 1; then
-			# Concatenate the results
-			CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
-    		dx-jobutil-add-output vcf_out --array "$CONCAT_JOB:vcf_out" --class=jobref
-    		dx-jobutil-add-output vcfidx_out --array "$CONCAT_JOB:vcfidx_out" --class=jobref
-    	else
-    		dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
-    		dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
-    	fi
+			if test "$merge" = "true"; then
+				# Concatenate the results
+				CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
+				dx-jobutil-add-output vcf_out --array "$CONCAT_JOB:vcf_out" --class=jobref
+				dx-jobutil-add-output vcfidx_out --array "$CONCAT_JOB:vcfidx_out" --class=jobref
+				if test "$header" = "true"; then
+					CONCAT_HDR_JOB=$(dx run cat_variants $CONCAT_HDR_ARGS --brief)
+					dx-jobutil-add-output vcf_hdr_out --array "$CONCAT_HDR_JOB:vcf_out" --class=jobref
+					dx-jobutil-add-output vcfidx_hdr_out --array "$CONCAT_HDR_JOB:vcfidx_out" --class=jobref
+				fi
+			fi
+			# empty else is taken care of in the "for CHR ..." loop
+		else
+			dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
+			dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
+			if test "$header" = "true"; then
+				dx-jobutil-add-output vcf_hdr_out --array "$SUBJOBID:vcf_hdr_out" --class=jobref
+				dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOBID:vcfidx_hdr_out" --class=jobref
+			fi			
+		fi
+
     	
     	rm raw.vcf.gz.tbi
     done
@@ -215,4 +241,17 @@ run_sv() {
 
     dx-jobutil-add-output vcf_out "$vcf_out" --class=file
     dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
+    
+    if test "$header" = "true"; then
+       	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+		pigz -dc "$OUT_DIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$OUT_DIR/header.$PREFIX.vcf.gz"
+		tabix -p vcf "$OUT_DIR/header.$PREFIX.vcf.gz"
+		
+    
+	   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz" --brief)
+    	vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz.tbi" --brief)
+
+    	dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
+    	dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+    fi
 }

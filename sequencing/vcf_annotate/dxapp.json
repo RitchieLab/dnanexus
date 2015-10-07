@@ -1,0 +1,55 @@
+{
+  "name": "vcf_annotate",
+  "title": "Annotate VCF File",
+  "summary": "Use a variety of tools to annotate a sites-only VCF",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "prefix",
+      "label": "PREFIX for VCF file",
+      "class": "string",
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Annotated VCF",
+      "class": "file"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Annotated VCF Index",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"}
+    ],  
+    "interpreter": "bash",
+    "file": "src/vcf_annotate.sh"
+  },
+  "access": {
+    "network": [
+      "*"
+    ]
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+
+}

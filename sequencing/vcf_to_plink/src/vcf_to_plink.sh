@@ -77,9 +77,9 @@ main() {
 		SUBJOB=$(eval dx-jobutil-new-job downsample_file "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
 		
 		if test "$merge" = "false"; then
-		    dx-jobutil-add-output bed_out --array "$mergerun:bed" --class=jobref
-		    dx-jobutil-add-output bim_out --array "$mergerun:bim" --class=jobref
-		    dx-jobutil-add-output fam_out --array "$mergerun:fam" --class=jobref
+		    dx-jobutil-add-output bed_out --array "$SUBJOB:bed" --class=jobref
+		    dx-jobutil-add-output bim_out --array "$SUBJOB:bim" --class=jobref
+		    dx-jobutil-add-output fam_out --array "$SUBJOB:fam" --class=jobref
 		else
 			MERGE_ARGS="$MERGE_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
 		fi
@@ -92,7 +92,7 @@ main() {
     	dx-jobutil-add-output bed_out --array "$mergerun:bed" --class=jobref
     	dx-jobutil-add-output bim_out --array "$mergerun:bim" --class=jobref
     	dx-jobutil-add-output fam_out --array "$mergerun:fam" --class=jobref
-    	dx-jobutil-add-output samp_excl "$mergerun:exclude" --class=jobref
+    	dx-jobutil-add-output samp_excl "$mergerun:excluded" --class=jobref
     fi
 }
 
@@ -137,7 +137,7 @@ downsample_file() {
 		-o base.vcf.gz
 	
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter --make-bed --maf $maf "$sel_args" --out $OUTDIR/$PREFIX -allow-no-sex --threads $(nproc --all)
+	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter --make-bed "$sel_args" --out $OUTDIR/$PREFIX -allow-no-sex --threads $(nproc --all)
 	
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do
@@ -198,7 +198,7 @@ run_merge() {
 	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $OUTDIR/$prefix --make-bed -allow-no-sex
 	
 	# get a list of those dropped
-	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $INPUTDIR/input.fam | cut -f1-2 | sort -t'\0') > $OUTDIR/$prefix.excluded
+	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $OUTDIR/$prefix.fam | cut -f1-2 | sort -t'\0') > $OUTDIR/$prefix.excluded
 	
 	# And upload results
 	for ext in bed bim fam excluded; do

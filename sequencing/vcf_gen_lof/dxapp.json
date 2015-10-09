@@ -1,7 +1,7 @@
 {
-  "name": "vcf_annotate",
-  "title": "Annotate VCF File",
-  "summary": "Use a variety of tools to annotate a sites-only VCF",
+  "name": "vcf_gen_lof",
+  "title": "Generate LOF Rollup",
+  "summary": "Generate a custom LOF rollup from an annotated sites-only VCF file",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -20,7 +20,9 @@
       "label": "PREFIX for VCF file",
       "class": "string",
       "optional": true
-    }
+    },
+    {
+      "name" : "
   ],
   "outputSpec": [
     {
@@ -39,14 +41,12 @@
       {"name": "pigz"},
       {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
-      {"name": "libtie-ixhash-perl"},
-      {"name": "libdbi-perl"},
-      {"name": "libfile-util-perl"},
-      {"name": "perl-doc"},
+      {"name": "libxml-simple-perl"},
+      {"name": "libwww-perl"},
       {"name": "libdbd-sqlite3-perl"}
     ],  
     "interpreter": "bash",
-    "file": "src/vcf_annotate.sh"
+    "file": "src/vcf_gen_lof.sh"
   },
   "access": {
     "network": [

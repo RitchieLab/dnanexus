@@ -18,6 +18,46 @@
 set -x
 set -o pipefail
 
+function parse_sift(){
+	SIFT_IN="$1"
+	VCF_IN="$2"
+	OUT_FN="$3"
+	
+	NEWDIR=$(mktemp -d)
+	#cd $NEWDIR
+	
+	# columns in 2nd cut are:
+	# 1 - chrom
+	# 2 - pos
+	# 3 - ALT
+	# 20 - gene
+	
+	# cut removes the ",1," in the gene ID, tail removes the header,
+	# sed turns 1st 3 commas to tabs
+	# set removes the REF allele from column 3
+	# tr converts ,->& and ' '->_
+	# awk prints the annotation, defined to be pipe separated with the following fields:
+	#   - ALT allele
+	#   - Annotation (D=Damaging, T=Tolerated, N=N/A (i.e., synonymous change)
+	#   - Impact Score (default <0.05 == Damaging)
+	#   - Gene Name
+	#   - Gene ID
+	#   - SNP Type (Synon./Nonsynon.)
+	#   - Transcript(s) (&-separated, if needed)
+	#   - Role (i.e. 3'UTR, EXON, ...)
+	cut -d, -f1,2,4- $SIFT_IN | tail -n+2 | sed -E 's/,/\n/g3; s/,/\t/g; s/\n/,/g' | \
+		sed 's|\t[^\t/]*/|\t|' | tr ', ' '&_' | \
+		awk -F'\t' '{print $1 "\t" $2 "\t" $3 "|" substr($16,1,1) "|" $17 "|" $21 "|" $20 "|" $15 "|" $5 "|" $13}' > $NEWDIR/snp_anno
+	
+	for C in $(tabix -l "$VCF_IN" ); do grep "^$C\W" $NEWDIR/snp_anno | sort -k2,2n; done | bgzip -c > $NEWDIR/snp_anno_sorted.gz
+	tabix -s 1 -b 2 $NEWDIR/snp_anno_sorted.gz
+	
+	zcat $VCF_IN | vcf-annotate -a $NEWDIR/snp_anno_sorted.gz -d key=INFO,ID=SIFT,Number=1,Type=String,Description='SIFT 5.2.2 annotations: ALT | Annotation (D=Damaging, T=Tolerated, N=N/A) | Raw SIFT score | Gene Name | Ensembl Gene ID | SNP Type | Ensembl Transcript ID(s) | SNP placement' -c CHROM,FROM,INFO/SIFT | bgzip -c > $OUT_FN
+	
+	tabix -p vcf $OUT_FN
+}
+
+
 main() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
@@ -34,6 +74,16 @@ main() {
     # inputs to the local file system using variable names for the filenames. To
     # recover the original filenames, you can use the output of "dx describe
     # "$variable" --name".
+    
+   	# get the resources we need in /usr/share/GATK
+	sudo mkdir -p /usr/share/GATK/resources
+	sudo chmod -R a+rwX /usr/share/GATK
+	
+	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+
 
 	# Download the necessary files for snpEff
 	sudo mkdir -p /usr/share/snpEff/data
@@ -47,17 +97,98 @@ main() {
 	cd $WKDIR
 	
 	cat_cmd="cat"
+	LOCALFN="input.vcf"
 	if test "$(echo "$FN" | grep '\.gz$')"; then
 		cat_cmd="zcat"
+		LOCALFN="$LOCALFN.gz"
+	fi
+	
+	dx download "$vcf_fn" -o $LOCALFN
+	if test "$(echo "$FN" | grep '\.gz$')"; then
+		tabix -p vcf $LOCALFN
 	fi
 	
     TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
     # only ask for 90% of total system memory
     TOT_MEM=$((TOT_MEM * 9 / 10))
 
-	dx cat "$vcf_fn" | $cat_cmd | java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/snpEff/snpEff-4.1l.jar \
-		-c /usr/share/snpEff/snpEff.config GRCh37.75 - | bgzip -c > $OUTDIR/$prefix.vcf.gz
+	$cat_cmd $LOCALFN | java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/snpEff/snpEff-4.1l.jar \
+		-c /usr/share/snpEff/snpEff.config GRCh37.75 - | bgzip -c > snpEff.vcf.gz
+		
+	cp snpEff.vcf.gz $OUTDIR/$prefix.vcf.gz
 	
+	# Add SIFT annotations here
+	
+	# First, download what we need for SIFT
+	sudo mkdir /usr/share/blast
+	sudo chmod a+rwx /usr/share/blast
+	dx download -r "$DX_RESOURCES_ID:/BLAST+/*" -o /usr/share/blast
+	
+	chmod a+x /usr/share/blast/bin/*
+	export PATH="/usr/share/blast/bin:$PATH"
+	
+	
+	sudo mkdir /usr/share/sift
+	sudo chmod a+rwx /usr/share/sift
+	
+	dx download -r "$DX_RESOURCES_ID:/SIFT-5.2.2/*" -o /usr/share/sift
+	
+	chmod a+x /usr/share/sift/bin/*
+	
+	sudo mkdir /usr/share/sift_db
+	sudo chmod a+rwx /usr/share/sift_db
+	
+	dx download -r "$DX_RESOURCES_ID:/SIFT_db/*" -o /usr/share/sift_db
+	
+	# create the file to annotate SNPs
+	
+	# first, get all the SNPs using GATK SelectVariants
+	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+		-T SelectVariants \
+		-nt $(nproc --all) \
+		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+		-V $LOCALFN -selectType SNP -o input.snp.vcf.gz
+	
+	# Now, convert this into SIFT-enabled input (residue-based, please!)
+	zcat input.snp.vcf.gz | grep -v '^#' | cut -f1,2,4,5 | awk -F '\t|,' '{for(i=4;i<=NF;i++){print $1 "," $2 ",1," $3 "/" $i}}' > sift_input
+	
+	# Looks like SIFT assumes a very specific running location!
+	mkdir /usr/share/sift/tmp
+	cd /usr/share/sift/tmp
+	
+	/usr/share/sift/bin/SIFT_exome_nssnvs.pl -i $WKDIR/sift_input -d /usr/share/sift_db/hg19_dbsnp135_2014_01_27 -o $SIFT_DIR -A 1 -B 1 > $WKDIR/sift_output
+	
+	# and back to the working directory with you!
+	cd $WDKIR
+	
+	# Find out where my files are located, please!
+	RESULT_FN=$(tail -1 sift_output | sed 's/^Results in //')
+	
+	# And parse them into a consistent format, prolly using a function
+	parse_sift $RESULT_FN snpEff.vcf.gz $WKDIR/siftSNP.snpEff.vcf.gz
+	cp siftSNP.snpEff.vcf.gz $OUTDIR/$prefix.vcf.gz
+	
+	
+	# Now, let's annotate the INDELs, too! (maybe)
+	# first, get all the INDELs using GATK SelectVariants
+#	java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+#		-T SelectVariants \
+#		-nt $(nproc --all) \
+#		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+#		-V $LOCALFN -selType INDEL -o input.INDEL.vcf.gz
+
+	# Now, convert this into SIFT-enabled input (have to use space-based ... bummer)
+#	zcat input.snp.vcf.gz | grep -v '^#' | cut -f1,2,4,5 | awk -F '\t|,' '{for(i=4;i<=NF;i++){print $1 "," $2 - 1, "," length($3) ",1," $3 "/" $i}}' > sift_input
+
+	
+	
+	# Add polyphen2-HDIV here
+	
+	# Add polyphen2-HVAR here
+	
+	# Add LRT here??
+	
+
 	tabix -p vcf $OUTDIR/$prefix.vcf.gz
 	
     vcf_out=$(dx upload $OUTDIR/$prefix.vcf.gz --brief)

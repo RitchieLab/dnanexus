@@ -23,11 +23,11 @@ function download_resources() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 
-	dx download $(dx find data --name "GenomeAnalysisTK-3.3-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.3-0.jar
-	dx download $(dx find data --name "GenomeAnalysisTK-3.4-0.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta.fai" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download $(dx find data --name "human_g1k_v37_decoy.dict" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+		
+	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 	
 }
 
@@ -63,7 +63,7 @@ function renameVCFIDs() {
 
 		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 		vcf_filtered="$(mktemp).vcf.gz"
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar GenomeAnalysisTK-3.4-0.jar -T SelectVariants -R  /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $OLD_VCF_FILE --sample_file <(cut -f1 $id_t) -o $vcf_filtered -nt 4
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar GenomeAnalysisTK-3.4-46.jar -T SelectVariants -R  /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $OLD_VCF_FILE --sample_file <(cut -f1 $id_t) -o $vcf_filtered -nt 4
 		tabix -p vcf $vcf_filtered
 		OLD_VCF_FILE=$vcf_filtered
 		zcat "$OLD_VCF_FILE" | head -5000 | grep -E '^#' > $vcf_header
@@ -227,11 +227,11 @@ main() {
 
 		#TODO: only perform this step if we really, truly NEED to!
 		# Now, let's SelectVariants up in here!
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta $PARALLEL_ARGS \
 			-V $INPUTDIR/$INPUT1_NAME -sf $ID_LIST_ALL -o VCF1.renamed.vcf.gz
 
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta $PARALLEL_ARGS \
 			-V $INPUTDIR/$INPUT2_NAME -sf $ID_LIST_ALL -o VCF2.renamed.vcf.gz
 
@@ -257,15 +257,15 @@ main() {
 		ORIG_IDLIST2=$(mktemp)
 		cut -f1 $ID_LIST2 > $ORIG_IDLIST2
 		
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta $PARALLEL_ARGS \
 			-V $INPUTDIR/$INPUT1_NAME -sf <(cat $ORIG_IDLIST1 $ORIG_IDLIST2) -o combined_orig.vcf.gz	
 	
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta $PARALLEL_ARGS \
 			-V combined_orig.vcf.gz -sf $ORIG_IDLIST1 -o VCF1_orig.vcf.gz
 
-		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 			-T SelectVariants -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta $PARALLEL_ARGS \
 			-V combined_orig.vcf.gz -sf $ORIG_IDLIST2 -o VCF2_orig.vcf.gz
 
@@ -282,7 +282,7 @@ main() {
 	#RUN GATK GENOTYPE CONCORDANCE ALL
 	#GATK Genotype Concordance (raw)
 	#this uses all records, so the filters will be ignored
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.vcf.gz --comp VCF2.renamed.vcf.gz \
 		--ignoreFilters --out ${PREFIX}.raw.txt
@@ -291,24 +291,24 @@ main() {
 	#gfe This will apply Genotype filters to EVAL set (anything true in the expression will be a no call
 	#gfc This will apply Genotype filters to the Comp set (anything true in the expression will be a no call)
 	#Add FT expression in gfc and gfe
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.vcf.gz --comp VCF2.renamed.vcf.gz \
 		-gfc 'FT!="PASS"' -gfe  'FT!="PASS"' --out ${PREFIX}.filtered.txt
 
 	# get SNP-only VCFs
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants -selectType SNP -V VCF1.renamed.vcf.gz -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-o VCF1.renamed.SNP.vcf.gz -l ERROR
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		-o VCF1.renamed.SNP.vcf.gz $PARALLEL_ARGS -l ERROR
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants -selectType SNP -V VCF2.renamed.vcf.gz -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-o VCF2.renamed.SNP.vcf.gz -l ERROR
+		-o VCF2.renamed.SNP.vcf.gz $PARALLEL_ARGS -l ERROR
 
 
 	#RUN GATK GENOTYPE CONCORDANCE SNP ONLY
 	#GATK Genotype Concordance (raw)
 	#this uses all records, so the filters will be ignored
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.SNP.vcf.gz --comp VCF2.renamed.SNP.vcf.gz \
 		--ignoreFilters --out ${PREFIX}.raw.SNP.txt
@@ -317,23 +317,23 @@ main() {
 	#gfe This will apply Genotype filters to EVAL set (anything true in the expression will be a no call
 	#gfc This will apply Genotype filters to the Comp set (anything true in the expression will be a no call)
 	#Add FT expression in gfc and gfe
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.SNP.vcf.gz --comp VCF2.renamed.SNP.vcf.gz \
 		-gfc 'FT!="PASS"' -gfe 'FT!="PASS"'  --out ${PREFIX}.filtered.SNP.txt
 
 	# get INDEL-only VCF
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants -selectType INDEL -selectType MIXED -selectType MNP \
-		-V VCF1.renamed.vcf.gz -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -o VCF1.renamed.INDEL.vcf.gz -l ERROR
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+		-V VCF1.renamed.vcf.gz $PARALLEL_ARGS -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -o VCF1.renamed.INDEL.vcf.gz -l ERROR
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants -selectType INDEL -selectType MIXED -selectType MNP \
-		-V VCF2.renamed.vcf.gz -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -o VCF2.renamed.INDEL.vcf.gz -l ERROR
+		-V VCF2.renamed.vcf.gz $PARALLEL_ARGS -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -o VCF2.renamed.INDEL.vcf.gz -l ERROR
 
 	#RUN GATK GENOTYPE CONCORDANCE INDEL ONLY
 	#GATK Genotype Concordance (raw)
 	#this uses all records, so the filters will be ignored
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.INDEL.vcf.gz --comp VCF2.renamed.INDEL.vcf.gz \
 		--ignoreFilters --out ${PREFIX}.raw.INDEL.txt
@@ -341,7 +341,7 @@ main() {
 	#gfe This will apply Genotype filters to EVAL set (anything true in the expression will be a no call
 	#gfc This will apply Genotype filters to the Comp set (anything true in the expression will be a no call)
 	#Add FT expression in gfc and gfe
-	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-0.jar \
+	java -d64 -Xms512m -Xmx$(( (TOT_MEM * 9) / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T GenotypeConcordance -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		--eval VCF1.renamed.INDEL.vcf.gz --comp VCF2.renamed.INDEL.vcf.gz \
 		-gfc 'FT!="PASS"' -gfe 'FT!="PASS"' --out ${PREFIX}.filtered.INDEL.txt

@@ -57,12 +57,13 @@ main() {
 	sudo chmod -R a+rwX /usr/share/GATK
 
 	# get the supporting files we need for GATK (and GATK itself)
-	dx download $(dx find data --name "GenomeAnalysisTK-3.4-46.jar" --project $DX_RESOURCES_ID --brief) -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
-	dx download $(dx find data --name "dbsnp_137.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download $(dx find data --name "human_g1k_v37_decoy.fasta.fai" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download $(dx find data --name "human_g1k_v37_decoy.dict" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+	
+	dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz" -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
+	dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
 	
     INCL_DP=""
     # if exome == "false", then we're whole genome and we want a depth included in VQSR
@@ -74,12 +75,12 @@ main() {
 	ANNO_STR=""
 	# running in SNP mode
 	if test "$mode" = "SNP"; then
-		dx download $(dx find data --name "hapmap_3.3.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz
-		dx download $(dx find data --name "hapmap_3.3.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz.tbi
-		dx download $(dx find data --name "1000G_omni2.5.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz
-		dx download $(dx find data --name "1000G_omni2.5.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz.tbi
-		dx download $(dx find data --name "1000G_phase1.snps.high_confidence.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz
-		dx download $(dx find data --name "1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi
+		dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.b37.vcf.gz" -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz
+		dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz.tbi
+		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.b37.vcf.gz" -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz
+		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz.tbi
+		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz
+		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi
 		
 		ANNO_STR="-mode $mode -an QD -an FS -an SOR -an MQ -an MQRankSum -an ReadPosRankSum -an InbreedingCoeff $INCL_DP"
 		RESOURCE_STR="$RESOURCE_STR -resource:hapmap,known=false,training=true,truth=true,prior=15.0 /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz"
@@ -88,8 +89,8 @@ main() {
 		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz"
 	else
 	# running in INDEL mode
-		dx download $(dx find data --name "Mills_and_1000G_gold_standard.indels.b37.vcf.gz" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-		dx download $(dx find data --name "Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" --project $DX_RESOURCES_ID --folder /resources --brief) -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi
+		dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz
+		dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi
 		
 		ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
 		RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"

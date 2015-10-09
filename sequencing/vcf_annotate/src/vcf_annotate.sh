@@ -156,6 +156,7 @@ main() {
 	mkdir /usr/share/sift/tmp
 	cd /usr/share/sift/tmp
 	
+	SIFT_DIR=$(mktemp -d)
 	/usr/share/sift/bin/SIFT_exome_nssnvs.pl -i $WKDIR/sift_input -d /usr/share/sift_db/hg19_dbsnp135_2014_01_27 -o $SIFT_DIR -A 1 -B 1 > $WKDIR/sift_output
 	
 	# and back to the working directory with you!

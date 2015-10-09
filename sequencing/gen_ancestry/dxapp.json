@@ -1,0 +1,61 @@
+{
+  "name": "gen_ancestry",
+  "title": "Determine Ancestry from PCA",
+  "summary": "gen_ancestry",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "evec_fn",
+      "label": "PCA Eigenvector File",
+      "class": "file",
+      "optional": false,
+      "patterns" : ["*.evec"]
+    },
+    {
+      "name": "ancestry_fn",
+      "label": "Self-Reported Ancestry",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "prefix",
+      "label": "PREFIX for ancestry file",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "num_evec",
+      "label": "Number of Eigenvectors for Ancestry determination",
+      "class": "int",
+      "optional": true,
+      "default": 2
+    },
+    {
+      "name": "thresh",
+      "label": "Posteriori Probability Threshold",
+      "class": "float",
+      "optional": true,
+      "default": 0.8
+    }
+    
+  ],
+  "outputSpec": [
+    {
+      "name": "ancestry_out",
+      "label": "Genetically Determined Ancestry",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/gen_ancestry.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

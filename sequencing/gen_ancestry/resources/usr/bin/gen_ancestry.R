@@ -23,7 +23,7 @@ qres <- qda(evec_race[,2:(numev + 1)], evec_race$race)
 p_anc <- predict(qres, evec[,2:(numev + 1)])
 
 # now, get the ancestry + max probability
-race_df <- data.frame(ID=evec$ID, race=apply(pqd$posterior, 1, which.max), prob=apply(pqd$posterior, 1, max))
+race_df <- data.frame(ID=evec$ID, race=apply(p_anc$posterior, 1, which.max), prob=apply(p_anc$posterior, 1, max))
 race_labels <- levels(evec_race$race)
 race_df$race <- race_labels[race_df$race]
 

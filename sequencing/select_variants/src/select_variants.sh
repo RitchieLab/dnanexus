@@ -31,15 +31,16 @@ main() {
 		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_excl:file=$(dx describe --json "$samp_excl" | jq -r .id)"
 	fi
 	
-	if test "$concat_vcf"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -iconcat_vcf:file=$(dx describe --json "$concat_vcf" | jq -r .id)"
+	if test "$concord_vcf"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iconcord_vcf:file=$(dx describe --json "$concord_vcf" | jq -r .id)"
 	fi
+	
 	
 	if test "$EXTRA_CMD"; then
 		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string='$EXTRA_CMD'"
 	fi
 
-	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$header"
+	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$headers"
 
 	WKDIR=$(mktemp -d)
 	cd $WKDIR
@@ -195,7 +196,7 @@ run_sv() {
 		# NOTE: This is only here because some of the VCFs may be unsorted... grumble...
 		# This REALLY should just be a check for compression, then tabix if necessary
 		CAT_CMD="cat"
-		if test $(dx describe --name | grep '\.gz$' | wc -l) ne 0; then
+		if test $(dx describe --name "$concord_vcf" | grep '\.gz$' | wc -l) -ne 0; then
 			CAT_CMD="zcat"
 		fi
 		

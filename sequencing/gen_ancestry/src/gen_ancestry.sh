@@ -15,6 +15,8 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
+set -x
+
 main() {
 
     echo "Value of evec_fn: '$evec_fn'"

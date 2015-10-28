@@ -113,15 +113,10 @@
   ],
   "runSpec": {
   "execDepends": [
-      {
-        "name": "pigz"
-      },
-      {
-        "name": "openjdk-7-jre-headless"
-      },
-      {
-        "name": "tabix"
-      }
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"},
+      {"name": "vcftools"}
     ],
     "interpreter": "bash",
     "file": "src/select_variants.sh"

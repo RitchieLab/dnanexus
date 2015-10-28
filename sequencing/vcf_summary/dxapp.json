@@ -1,0 +1,72 @@
+{
+  "name": "vcf_summary",
+  "title": "VCF Summary Statistics",
+  "summary": "Generate summary statistics for a VCF file (by sample and by variant)",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns" : ["*.vcf", "*.vcf.gz"]
+    },
+    {
+      "name" : "prefix",
+      "label" : "Filename Prefix",
+      "class" : "string",
+      "optional" : true
+    },
+    {
+      "name" : "sample",
+      "label" : "Include Sample Summary Stats",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : true
+    },
+    {
+      "name" : "variant",
+      "label" : "Include Variant Summary Stats",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "sample_status",
+      "label": "Sample Statistics",
+      "class": "file",
+      "optional" : true
+    },
+    {
+      "name": "variant_stats",
+      "label": "Variant Statistics",
+      "class": "file",
+      "optional" : true
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {"name": "pigz"},
+      {"name": "tabix"},
+      {"name": "vcftools"},
+      {"name": "python-apsw"}
+    ],  
+    "interpreter": "bash",
+    "file": "src/vcf_summary.sh"
+  },
+  "access": {
+    "network": [
+      "*"
+    ]
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

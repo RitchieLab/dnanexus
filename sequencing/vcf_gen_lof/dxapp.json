@@ -3,7 +3,7 @@
   "title": "Generate LOF Rollup",
   "summary": "Generate a custom LOF rollup from an annotated sites-only VCF file",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "categories": [
     "Variation Calling"
   ],
@@ -22,8 +22,158 @@
       "optional": true
     },
     {
-      "name" : "
-  ],
+      "name" : "snps_only",
+      "label" : "Output SNPs only",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false
+    },
+    {
+      "name" : "min_maf",
+      "label" : "Minimum MAF",
+      "class" : "float",
+      "optional" : false,
+      "default" : 0,
+      "group" : "MAF Options"
+    },
+    {
+      "name" : "max_maf",
+      "label" : "Maximum MAF",
+      "class" : "float",
+      "optional" : false,
+      "default" : 1,
+      "group" : "MAF Options"
+	    },     
+    {
+      "name" : "snpEff_mod",
+      "label" : "snpEff Modifiers",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : [ "HIGH","MODERATE","LOW","MODIFIER" ],
+      "group" : "SNPEff Options"
+    },
+    {
+      "name" : "snpEff_role",
+      "label" : "snpEff Role",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : [
+      			"chromosome_number_variation (*)",
+				"exon_loss_variant",
+				"frameshift_variant",
+				"stop_gained",
+				"stop_lost",
+				"start_lost",
+				"splice_acceptor_variant",
+				"splice_donor_variant",
+				"rare_amino_acid_variant",
+				"transcript_ablation (*)",
+				"disruptive_inframe_insertion",
+				"disruptive_inframe_deletion",
+				"missense_variant",
+				"inframe_insertion",
+				"inframe_deletion",
+				"5_prime_UTR_truncation",
+				"3_prime_UTR_truncation",
+				"splice_region_variant",
+				"splice_branch_variant (*)",
+				"coding_sequence_variant (*)",
+				"regulatory_region_ablation (*)",
+				"TFBS_ablation (*)",
+				"5_prime_UTR_premature_start_codon_gain_variant",
+				"non_canonical_start_codon",
+				"initiator_codon_variant",
+				"stop_retained_variant",
+				"start_retained (*)",
+				"synonymous_variant",
+				"coding_sequence_variant (*)",
+				"5_prime_UTR_variant",
+				"3_prime_UTR_variant",
+				"upstream_gene_variant",
+				"downstream_gene_variant",
+				"TF_binding_site_variant",
+				"regulatory_region_variant (*)",
+				"intergenic_region",
+				"intragenic_variant",
+				"sequence_feature",
+				"conserved_intron_variant (*)",
+				"intron_variant",
+				"intragenic_variant (*)",
+				"conserved_intergenic_variant (*)",
+				"intergenic_region (*)",
+				"coding_sequence_variant (*)",
+				"non_coding_exon_variant",
+				"non_coding_transcript_variant",
+				"gene_variant (*)",
+				"chromosome (*)",
+				"exon_variant (*)",
+				"feature_elongation (*)",
+				"feature_truncation (*)",
+				"mature_miRNA_variant (*)",
+				"NMD_transcript_variant (*)",
+				"regulatory_region_amplification (*)",
+				"TFBS_amplification (*)",
+				"transcript_amplification (*)",
+				"transcript_variant (*)"],
+      "group" : "SNPEff Options"
+    },
+    {
+      "name" : "snpEff_nowarn",
+      "label" : "Ignore Transcript Warnings",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false,
+      "group" : "SNPEff Options"
+    },
+    {
+      "name" : "dbnsfp_numpred",
+      "label" : "Number of dbNSFP deleterious predictors",
+      "class" : "int",
+      "optional" : true,
+      "group" : "dbNSFP Options"
+    },
+    {
+      "name" : "dbnsfp_preduse",
+      "label" : "dbNSFP prediction algorithms to use",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : ["SIFT","Polyphen2_HDIV","Polyphen2_HVAR","LRT","MutationTaster","MutationAssessor","FATHMM","MetaSVM","MetaLR","PROVEAN"],
+      "group" : "dbNSFP Options"
+    },
+    {
+      "name" : "clinvar_level",
+      "label" : "Minimum CLINVAR Pathogenic level",
+      "class" : "int",
+      "optional" : true,
+      "group" : "dbNSFP Options"
+    },
+    {
+      "name" : "clinvar_pred",
+      "label" : "CLINVAR prediction to include",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : ["Pathogenic","Likely_pathogenic","risk_factor","confers_sensitivity","drug_response","Affects",
+                   "association","conflicting_data_from_submitters","not_provided","other","Uncertain_significance","Likely_benign","Benign","protective"],
+      "group" : "CLINVAR Options"
+	},
+	{
+	  "name" : "clinvar_excl",
+      "label" : "CLINVAR prediction to exclude",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : ["Pathogenic","Likely_pathogenic","risk_factor","confers_sensitivity","drug_response","Affects",
+                   "association","conflicting_data_from_submitters","not_provided","other","Uncertain_significance","Likely_benign","Benign","protective"],
+      "group" : "CLINVAR Options"
+	},
+	{
+	  "name" : "clinvar_review",
+	  "label" : "CLINVAR review level",
+	  "class" : "array:string",
+	  "optional" : true,
+	  "choices" : ["guideline","expert","multiple","single","none","conflicting"],
+	  "group" : "CLINVAR Options"
+	}
+  ],	
   "outputSpec": [
     {
       "name": "vcf_out",
@@ -41,9 +191,7 @@
       {"name": "pigz"},
       {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
-      {"name": "libxml-simple-perl"},
-      {"name": "libwww-perl"},
-      {"name": "libdbd-sqlite3-perl"}
+      {"name": "vcftools"}
     ],  
     "interpreter": "bash",
     "file": "src/vcf_gen_lof.sh"

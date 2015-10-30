@@ -1,0 +1,63 @@
+{
+  "name": "vcf_slice",
+  "title": "Slice VCF File(s)",
+  "summary": "vcf_slice",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF Files",
+      "class": "array:file",
+      "optional": false,
+      "patterns" : ["*.vcf.gz"]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index Files",
+      "class": "array:file",
+      "optional": false,
+      "patterns" : ["*.vcf.gz.tbi"]
+    },
+    {
+      "name": "region_fn",
+      "label": "File of regions (chr:start-stop)",
+      "class": "file",
+      "optional": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Sliced VCF Files",
+      "class": "array:file"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Sliced VCF Index Files",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"},
+      {"name": "vcftools"}
+    ],  
+    "interpreter": "bash",
+    "file": "src/vcf_slice.sh"
+  },
+  "access": {
+    "network": [
+      "*"
+    ]
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-johnwallace123", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

@@ -432,7 +432,7 @@ if __name__ =="__main__":
 					dict_idx += 1
 
 	# Now, dict_idx is a mapping of chromosome names -> position in the dictionary
-	dict_f.close()
+	#dict_f.close()
 
 	if args.output is not None:
 		out_f = file(args.output, 'wb')

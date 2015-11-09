@@ -85,45 +85,59 @@ main() {
 	# PREFIX (mandatory)
 	# the prefix to use for the single resultant gvcf
 
-	download_resources
-	
-	# download my gvcfidx_list
-	DX_VCFIDX_LIST=$(mktemp)
-	WKDIR=$(mktemp -d)
-
-	for i in "${!vcfidxs[@]}"; do	
-		echo "${vcfidxs[$i]}" >> $DX_VCFIDX_LIST
-	done
-	
-	cd $WKDIR
-	
-	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DX_VCFIDX_LIST ::: $WKDIR
-	
-	# OK, now all of the gvcf indexes are in $WKDIR, time to download
-	# all of the GVCFs in parallel
-	DX_VCF_LIST=$(mktemp)
-	for i in "${!vcfs[@]}"; do	
-		echo "${vcfs[$i]}" >> $DX_VCF_LIST
-	done
-	
-	# download (and index if necessary) all of the gVCFs
-	VCF_LIST=$(mktemp)	
-	parallel -u --gnu -j $(nproc --all) dl_index :::: $DX_VCF_LIST ::: $WKDIR ::: $VCF_LIST
-	
-	# Now, merge the gVCFs into a single gVCF
 	FINAL_DIR=$(mktemp -d)
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m  -cp /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar org.broadinstitute.gatk.tools.CatVariants \
-    -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-    $(cat $VCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
-	-out $FINAL_DIR/$prefix.vcf.gz
+
+	if test "$use_gatk" = "true"; then
+		download_resources
 	
+		# download my gvcfidx_list
+		DX_VCFIDX_LIST=$(mktemp)
+		WKDIR=$(mktemp -d)
+
+		for i in "${!vcfidxs[@]}"; do	
+			echo "${vcfidxs[$i]}" >> $DX_VCFIDX_LIST
+		done
+	
+		cd $WKDIR
+	
+		parallel -u --gnu -j $(nproc --all) parallel_download :::: $DX_VCFIDX_LIST ::: $WKDIR
+	
+		# OK, now all of the gvcf indexes are in $WKDIR, time to download
+		# all of the GVCFs in parallel
+		DX_VCF_LIST=$(mktemp)
+		for i in "${!vcfs[@]}"; do	
+			echo "${vcfs[$i]}" >> $DX_VCF_LIST
+		done
+	
+		# download (and index if necessary) all of the gVCFs
+		VCF_LIST=$(mktemp)	
+		parallel -u --gnu -j $(nproc --all) dl_index :::: $DX_VCF_LIST ::: $WKDIR ::: $VCF_LIST
+	
+		# Now, merge the gVCFs into a single gVCF
+		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+		java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m  -cp /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar org.broadinstitute.gatk.tools.CatVariants \
+		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+		$(cat $VCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
+		-out $FINAL_DIR/$prefix.vcf.gz
+	
+	else
+		# Use the custom vcf_cat.py script
+		WKDIR=$(mktemp -d)
+		dict_dxid=$(dx describe --json "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" | jq -r .id)
+		
+		ARGS=""
+		for i in "${!vcfs[@]}"; do	
+			ARGS="$ARGS -V $(dx describe "${vcfs[$i]}" --json | jq -r .id)"
+		done
+		
+		cat_vcf.py -D $dict_dxid $ARGS -o $FINAL_DIR/$prefix.vcf.gz
+		tabix -l $FINAL_DIR/$prefix.vcf.gz
+	fi
+
 	# and upload it and we're done!
 	DX_VCF_UPLOAD=$(dx upload "$FINAL_DIR/$prefix.vcf.gz" --brief)
 	DX_VCFIDX_UPLOAD=$(dx upload "$FINAL_DIR/$prefix.vcf.gz.tbi" --brief)
-	
+
 	dx-jobutil-add-output vcf_out $DX_VCF_UPLOAD --class=file
 	dx-jobutil-add-output vcfidx_out $DX_VCFIDX_UPLOAD --class=file
-
-
 }

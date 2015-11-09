@@ -27,6 +27,13 @@
       ]
     },
     {
+      "name" : "use_gatk",
+      "label" : "Use GATK CatVariants (alt: custom script)",
+      "class": "boolean",
+      "optional" : false,
+      "default" : true
+    },
+    {
       "name": "prefix",
       "label": "Prefix",
       "class": "string",
@@ -78,5 +85,5 @@
   },
   "developers": ["user-johnwallace123", "user-auv13"],
   "openSource" : true,
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "authorizedUsers" : ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

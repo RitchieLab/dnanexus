@@ -495,8 +495,8 @@ if __name__ =="__main__":
 		data_end_vfp = vcfidx_data.getNextChrom(data_start_vfp)
 	elif data_start_vfp is not None:
 		end_index = intv_end/(16*1024)
-		if end_index >= len(chrom_ref.ioff) + 1:
-			data_end_vfp = vcfidx_data.getNextChrom(cvfp)
+		if end_index < len(chrom_ref.ioff) + 1:
+			data_end_vfp = vcfidx_data.getNextChrom(data_start_vfp)
 		else:
 			# make sure to not get a "0" offset!
 			data_end_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[end_index+1])

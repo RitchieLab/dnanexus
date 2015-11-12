@@ -479,7 +479,6 @@ if __name__ =="__main__":
 			print >> sys.stderr, "WARNING: start position not in linear index; interval not in VCF?"
 			data_start_vfp = chrom_ref.ioff[-1]
 		else:
-			print >> sys.stderr, convert_vfp(chrom_ref.ioff[st_index])
 			data_start_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[st_index])
 
 	# if data_start_vfp is None, then we can't find the interval AT ALL!
@@ -496,9 +495,8 @@ if __name__ =="__main__":
 		data_end_vfp = vcfidx_data.getNextChrom(data_start_vfp)
 	elif data_start_vfp is not None:
 		end_index = intv_end/(16*1024)
-		if end_index < len(chrom_ref.ioff) + 1:
+		if end_index + 1 < len(chrom_ref.ioff):
 			data_end_vfp = max(chrom_ref.first_pos, chrom_ref.ioff[end_index+1])
-			print >> sys.stderr, convert_vfp(data_end_vfp)
 		else:
 			data_end_vfp = vcfidx_data.getNextChrom(data_start_vfp)
 		

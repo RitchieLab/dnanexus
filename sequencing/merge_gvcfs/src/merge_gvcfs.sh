@@ -292,7 +292,6 @@ function merge_intervals(){
 	
 	# To reduce startup overhead of GATK, let's do multiple intervals at a time
 	# This variable tells us to use $OVERSUB * $(nproc) different GATK runs
-	OVERSUB=1
 	SPLIT_DIR=$(mktemp -d)
 	cd $SPLIT_DIR
 	NPROC=$(nproc --all)
@@ -300,11 +299,11 @@ function merge_intervals(){
 	# if we are given a list of intervals, "targeted" will be defined, o/w, we assume the target list will be by chromosome
 	# and in that case, we only want one line per file
 	if test "$targeted"; then
-		N_BATCHES=$((OVERSUB * NPROC))
-		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $TARGET_FILE "interval_split."
+		# split the target files into the number of processors available
+		split -a 2 -d -n l/$NPROC $TARGET_FILE "interval_split."
 	else
-		N_BATCHES=$(cat $TARGET_FILE | wc -l)	
-		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l 1 $TARGET_FILE "interval_split."
+		# if we have >1,000 chromosomes, we're in a bad way
+		split -a 3 -d -l 1 $TARGET_FILE "interval_split."
 	fi
 	
 	cd - >/dev/null
@@ -345,30 +344,34 @@ function merge_intervals(){
 	fi
 
 	# No merging! just upload the pieces individually - we'll reassemble them later!
-	for f in $(ls $OUTDIR/*.vcf.gz); do
-		VCF_OUT=$(dx upload $f --brief)
-		VCFIDX_OUT=$(dx upload $f.tbi --brief)
+	if test -z "$targeted" ; then
+		for f in $(ls $OUTDIR/*.vcf.gz); do
+			VCF_OUT=$(dx upload $f --brief)
+			VCFIDX_OUT=$(dx upload $f.tbi --brief)
+	
+			dx-jobutil-add-output vcf --array "$VCF_OUT"
+			dx-jobutil-add-output vcfidx --array "$VCFIDX_OUT"
+		
+		done
+	else
+		# jk, we want to merge when working with targeted files
+		NEW_OUTDIR=$(mktemp -d)
+		
+		# Note, since everything's on the same chromosome, we don't have to worry about mis-sorting, so no need for the custom jar		
+		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+		java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m  -cp /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar org.broadinstitute.gatk.tools.CatVariants \
+		    -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+		    $(ls -1 $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
+		    -out $NEW_OUTDIR/$PREFIX.vcf.gz
+
+		VCF_OUT=$(dx upload $NEW_OUTDIR/$PREFIX.vcf.gz --brief)
+		VCFIDX_OUT=$(dx upload $NEW_OUTDIR/$PREFIX.vcf.gz.tbi --brief)
 	
 		dx-jobutil-add-output vcf --array "$VCF_OUT"
 		dx-jobutil-add-output vcfidx --array "$VCFIDX_OUT"
 		
-	done
-	
-	# OK, at this point everything should be merged, so we'll go ahead and concatenate everything in $OUTDIR
-	#FINAL_DIR=$(mktemp -d)
-	#TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	#java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-	#-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
-	#$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
-	#-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	#-genotypeMergeOptions UNSORTED \
-	#-o $FINAL_DIR/$PREFIX.vcf.gz
-	
-	#VCF_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz --brief)
-	#VCFIDX_OUT=$(dx upload $FINAL_DIR/$PREFIX.vcf.gz.tbi --brief)
-	
-	#dx-jobutil-add-output vcf "$VCF_OUT"
-	#dx-jobutil-add-output vcfidx "$VCFIDX_OUT"
+	fi
+
 
 }	
 
@@ -419,36 +422,21 @@ function single_merge_subjob() {
 		cd $SPLIT_DIR
 		NPROC=$(nproc --all)
 	
-		#N_INT=$(cat $INTERVAL_LIST | wc -l)
-		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
-	
-		# BUT, let's make sure that they're not crossing chromosome boundaries (how embarrassing!)
-		# also, all the chromosomes should be together, so no need to sort
-		# this may allow us to use CatVariants later on...
+		# Let's merge each chromosome independently.  merging sections of chroms
+		# doesn't seem to be necessary for <5,000 samples
 		for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
 			CHR_LIST=$(mktemp)
 			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
-			N_CHR_TARGET=$(cat $CHR_LIST | wc -l)
-			N_BATCHES=$((N_CHR_TARGET / (OVER_SUB * NPROC) + 1))			
-			split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -n l/$N_BATCHES $CHR_LIST "interval_split.$CHR."
-			
-			CONCAT_ARGS=""
-			for f in interval_split.$CHR.*; do
-				echo "interval file:"
-				cat $f
-				int_fn=$(dx upload $f --brief)
-				# run a subjob that merges the input VCFs on the given target file
-				merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX")
-				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${merge_jobid}:vcfidx -ivcfs:array:file=${merge_jobid}:vcf"
-			done
-			# concatenate the results
-			concat_job=$(dx run cat_variants -iprefix="$PREFIX.$CHR" $CONCAT_ARGS --brief)
-			dx-jobutil-add-output gvcf --array "$concat_job:vcf_out" --class=jobref
-			dx-jobutil-add-output gvcfidx --array "$concat_job:vcfidx_out" --class=jobref	
+			int_fn=$(dx upload $CHR_LIST -- brief)
+			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
+
+			dx-jobutil-add-output gvcf --array "$merge_jobid:vcf_out" --class=jobref
+			dx-jobutil-add-output gvcfidx --array "$merge_jobid:vcfidx_out" --class=jobref	
 			
 			rm $CHR_LIST
+
 		done
-						
+
 	else
 		TMPWKDIR=$(mktemp -d)
 		cd $TMPWKDIR
@@ -463,8 +451,6 @@ function single_merge_subjob() {
 		cd $SPLIT_DIR
 		NPROC=$(nproc --all)
 	
-		#N_INT=$(cat $INTERVAL_LIST | wc -l)
-		#N_BATCHES=$((N_INT / (OVER_SUB * NPROC) ))
 		N_BATCHES=$((N_CHR / (NPROC) + 1 ))			
 		
 		split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -d -l $NPROC $INTERVAL_LIST "interval_split."	
@@ -474,7 +460,7 @@ function single_merge_subjob() {
 			cat $f
 			int_fn=$(dx upload $f --brief)
 			# run a subjob that merges the input VCFs on the given target file
-			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX")
+			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX" -iconcat:int=0)
 			dx-jobutil-add-output gvcf --array "${merge_jobid}:vcf" --class=jobref
 			dx-jobutil-add-output gvcfidx --array "${merge_jobid}:vcfidx" --class=jobref	
 

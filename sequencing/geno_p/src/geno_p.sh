@@ -52,17 +52,19 @@ function dl_part_index() {
 	
 	set -o 'pipefail'
 	
+	INTV="$(echo "$3" | tr ':-' '._')"
+
 	RERUN=1
 	MAX_RETRY=5
 	while test $RERUN -ne 0 -a $MAX_RETRY -gt 0; do
-		download_part.py -f "$file_dxid" -i "$idxfn" -L "$3" -o "$4/$fn_base.$3.vcf.gz" -H
+		download_part.py -f "$file_dxid" -i "$idxfn" -L "$3" -o "$4/$fn_base.$INTV.vcf.gz" -H
 		RERUN="$?"
 		MAX_RETRY=$((MAX_RETRY - 1))
 	done
 	
 	# Make sure to cause problems downstream if we didn't succeed
 	if test "$RERUN" -eq 0; then
-		tabix -p vcf "$4/$fn_base.$3.vcf.gz"
+		tabix -p vcf "$4/$fn_base.$INTV.vcf.gz"
 	fi
 }
 
@@ -92,7 +94,7 @@ main() {
 
 	SUBJOB_ARGS=""
 	if test "$target_file"; then
-		tgt_id=$(dx describe "$target_file" --json | jq .id | sed 's/"//g')
+		tgt_id=$(dx describe "$target_file" --json | jq -r .id )
 		SUBJOB_ARGS="$SUBJOB_ARGS -itarget_file:file=$tgt_id"
 		
 		if [ -n "$padding" ] && [ "$padding" -ne 0 ] ; then 
@@ -255,13 +257,17 @@ genotype_gvcfs() {
 	if test "$target_file"; then
 		dx download "$target_file" -o targets_raw.bed
 		sed -n "/^$chrom[ \t].*/p" targets_raw.bed > targets.bed
+		TGT_FN="targets.bed"
+		RAW_TGT_FN="$PWD/targets.bed"
 		if test "$padding"; then
 			cat targets.bed | interval_pad.py $padding | tr ' ' '\t' | sort -n -k2,3 > targets.padded.bed
-			ADDL_CMD="-L $PWD/targets.padded.bed"
+			TGT_FN="targets.padded.bed"
 			PADDED=1
 		else
-			ADDL_CMD="-L $PWD/targets.bed"
+			padding=0
 		fi
+		
+		ADDL_CMD="-L $PWD/$TGT_FN"
 
 	else
 		ADDL_CMD="-L $chrom"
@@ -282,103 +288,207 @@ genotype_gvcfs() {
 	dx download "${vcfidx_files}" -f -o $DXGVCFIDX_LIST
 	parallel -u -j $(nproc --all) --gnu parallel_download :::: $DXGVCFIDX_LIST ::: $WKDIR
 	
-	dx download "${vcf_files}" -f -o $DXGVCF_LIST
+	# Let's first check to ensure that we have enough room for the VCF sections, with 10% leftover
+	# only really possible in a targeted analysis, as we're already broken down by chrom!
+	N_JOBS=1
 	
-	# Now, download and index in parallel, please
-	parallel -u -j $(nproc --all) --gnu dl_part_index :::: $DXGVCF_LIST ::: $WKDIR ::: $chrom ::: $OUTDIR
-	
-	echo "Contents of WKDIR:"
-	ls -alh $WKDIR
-	
-	echo "Contents of OUTDIR:"
-	ls -alh $OUTDIR
-	
-	sleep 10	
+
+	INTERVAL="$chrom"
+
+	if test "$target_file"; then
+		bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 9 / 10 ))
+		INTERVAL="$(head -1 $RAW_TGT_FN | cut -f1-2 | tr '\t' ':')-$(tail -1 $RAW_TGT_FN | cut -f3)"
 		
-	# get the resources we need in /usr/share/GATK
-	sudo mkdir -p /usr/share/GATK/resources
-	sudo chmod -R a+rwX /usr/share/GATK
-		
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-		
-	dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz" -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
-	dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
-	
-    TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-    # only ask for 90% of total system memory
-    TOT_MEM=$((TOT_MEM * 9 / 10))
-	VCF_TMPDIR=$(mktemp -d)
-	# OK, now we can call the GATK genotypeGVCFs
-	java -d64 -Xms512m -Xmx${TOT_MEM}m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-	-T GenotypeGVCFs \
-	-A QualByDepth \
-	-A HaplotypeScore \
-	-A MappingQualityRankSumTest \
-	-A ReadPosRankSumTest \
-	-A FisherStrand \
-	-A GCContent \
-	-A AlleleBalance \
-	-A InbreedingCoeff \
-	-A StrandOddsRatio \
-	-A HardyWeinberg \
-	-A ChromosomeCounts \
-	-A VariantType \
-	-A GenotypeSummaries $ADDL_CMD \
-	-nt $(nproc --all) \
-	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-	$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
-	--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
-	-o "$VCF_TMPDIR/$PREFIX.vcf.gz"
-	  
-    # Now, if we padded the intervals, get an on-target VCF through the use of SelectVariants
-    if test "$PADDED" -ne 0; then
-    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz"
-    	mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi"
-    
-    	java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-			-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
-			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-			-nt $(nproc --all) \
-			-V "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" \
-			-o "$VCF_TMPDIR/$PREFIX.vcf.gz" 
+		EST_SZ=0
+		if test "$(echo $INTERVAL | grep ':')" -a "$(cat $RAW_TGT_FN | wc -l)" -gt 1; then
+			#If we're here, we're parallelizing by regions and we have more than one
+			for f in $(ls $WKDIR/*.vcf.gz.tbi); do
+				EST_SZ=$(( EST_SZ + $(estimate_size.py -i $f -L $INTERVAL -H) ))
+			done
 			
-		# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
-		pigz -dc "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
-		tabix -p vcf "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
+			# get the numer of jobs needed here:
+			N_JOBS=$((1 + EST_SZ / bytes_avail ))
+		fi
 		
-		# upload all of the padded files
-		
-		vcf_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" --brief)
-	    vcf_idx_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi" --brief)
+		# If we have more than one job, we need to split the target file into the number of jobs
+		# and then attempt to re-run this function
+		if test $N_JOBS -gt 1; then
 
-		dx-jobutil-add-output vcf_pad_out "$vcf_pad_fn" --class=file
-		dx-jobutil-add-output vcfidx_pad_out "$vcf_idx_pad_fn" --class=file
-		
-	   	vcf_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz" --brief)
-		vcf_idx_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz.tbi" --brief)
+			# let's give a wider allowance for bytes_avail (70%)
+			bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 7 / 10 ))
+			N_JOBS=$((1 + EST_SZ / bytes_avail ))
 
-		dx-jobutil-add-output vcf_pad_hdr_out "$vcf_pad_hdr_fn" --class=file
-		dx-jobutil-add-output vcfidx_pad_hdr_out "$vcf_idx_pad_hdr_fn" --class=file
+			INTV_SPLIT_FN=$(mktemp)
+			
+			SPLIT_DIR=$(mktemp -d)
+			
+			cat $RAW_TGT_FN | interval_pad.py $padding $N_JOBS > $INTV_SPLIT_FN
+			
+			CONCAT_ARGS=""
+			CONCAT_HDR_ARGS=""
+			CONCAT_PAD_ARGS=""
+			CONCAT_PAD_HDR_ARGS=""
+			
+			DX_VCF_LIST=$(dx describe --json "${vcf_files}" | jq -r .id)
+			DX_VCFIDX_LIST=$(dx describe --json "${vcfidx_files}" | jq -r .id)
+			
+			SUBJOB_ARGS=""
+			if test $PADDED -ne 0; then
+				SUBJOB_ARGS="-ipadding:int=$padding"
+			fi
+			
+			
+			
+			for n in $(cut -d: -f1 $INTV_SPLIT_FN | uniq); do
+				grep "^$n:" $INTV_SPLIT_FN | cut -d: -f2 > "$SPLIT_DIR/target_split.$n.bed"
+				
+				echo "Split $n:"
+				cat "$SPLIT_DIR/target_split.$n.bed"
+
+				# and upload the file
+				DX_TGT_FN=$(dx upload "$SPLIT_DIR/target_split.$n.bed" --brief)
+				
+				#start this section anew
+				subchr_job=$(dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcf_files:file="$DX_VCF_LIST" -ivcfidx_files:file="$DX_VCFIDX_LIST" -itarget_file:file=$DX_TGT_FN $SUBJOB_ARGS)
+				
+				# add the args to the concatenator
+				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_out -ivcfs:array:file=${subchr_job}:vcf_out"
+				CONCAT_HDR_ARGS="$CONCAT_HDR_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_hdr_out -ivcfs:array:file=${subchr_job}:vcf_hdr_out"
+				
+				if test $PADDED -ne 0; then
+					CONCAT_PAD_ARGS="$CONCAT_PAD_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_pad_out -ivcfs:array:file=${subchr_job}:vcf_pad_out"
+					CONCAT_PAD_HDR_ARGS="$CONCAT_PAD_HDR_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_pad_hdr_out -ivcfs:array:file=${subchr_job}:vcf_pad_hdr_out"
+				fi				
+				
+			done
+			
+			# OK, now start a concatenation job (or 4)
+			cat_job=$(dx run cat_variants -iprefix="$PREFIX" $CONCAT_ARGS --brief --instance-type mem2_hdd2_x2)
+			cat_hdr_job=$( dx run cat_variants -iprefix="header.$PREFIX" $CONCAT_HDR_ARGS --brief --instance-type mem1_ssd1_x2)
+			
+			# add those to our output
+			dx-jobutil-add-output vcf_out --array "$cat_job:vcf_out" --class=jobref
+			dx-jobutil-add-output vcfidx_out --array "$cat_job:vcfidx_out" --class=jobref			
+			dx-jobutil-add-output vcf_hdr_out --array "$cat_hdr_job:vcf_out" --class=jobref
+			dx-jobutil-add-output vcfidx_hdr_out --array "$cat_hdr_job:vcfidx_out" --class=jobref			
+
+			
+			if test $PADDED -ne 0; then
+				cat_pad_job=$(dx run cat_variants -iprefix="padded.$PREFIX" $CONCAT_PAD_ARGS --brief --instance-type mem2_hdd2_x2)
+				cat_pad_hdr_job=$(dx run cat_variants -iprefix="padded.header.$PREFIX" $CONCAT_PAD_HDR_ARGS --brief --instance-type mem1_ssd1_x2)
+				
+				dx-jobutil-add-output vcf_pad_out --array "$cat_pad_job:vcf_out" --class=jobref
+				dx-jobutil-add-output vcfidx_pad_out --array "$cat_pad_job:vcfidx_out" --class=jobref			
+				dx-jobutil-add-output vcf_pad_hdr_out --array "$cat_pad_hdr_job:vcf_out" --class=jobref
+				dx-jobutil-add-output vcfidx_pad_hdr_out --array "$cat_pad_hdr_job:vcfidx_out" --class=jobref			
+
+			fi
+		fi
 	fi
-	  	
-   	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
-	pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/header.$PREFIX.vcf.gz"
-	tabix -p vcf "$VCF_TMPDIR/header.$PREFIX.vcf.gz"	
 	
-	vcf_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz" --brief)
-    vcf_idx_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" --brief)
+	# if N_JOBS > 1, we're already done (run in a subjob)
+	if test $N_JOBS -eq 1; then	
+		dx download "${vcf_files}" -f -o $DXGVCF_LIST
+	
+		TODL=$chrom
+		if test "$subchrom"; then
+			TODL=$INTERVAL
+		fi
 
-    dx-jobutil-add-output vcf_out "$vcf_fn" --class=file
-    dx-jobutil-add-output vcfidx_out "$vcf_idx_fn" --class=file
-    
-   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz" --brief)
-    vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz.tbi" --brief)
+		# Now, download and index in parallel, please
+		parallel -u -j $(nproc --all) --gnu dl_part_index :::: $DXGVCF_LIST ::: $WKDIR ::: $TODL ::: $OUTDIR
+	
+		echo "Contents of WKDIR:"
+		ls -alh $WKDIR
+	
+		echo "Contents of OUTDIR:"
+		ls -alh $OUTDIR
+	
+		# get the resources we need in /usr/share/GATK
+		sudo mkdir -p /usr/share/GATK/resources
+		sudo chmod -R a+rwX /usr/share/GATK
+		
+		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+		
+		dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz" -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
+		dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
+	
+		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+		# only ask for 90% of total system memory
+		TOT_MEM=$((TOT_MEM * 9 / 10))
+		VCF_TMPDIR=$(mktemp -d)
+		# OK, now we can call the GATK genotypeGVCFs
+		java -d64 -Xms512m -Xmx${TOT_MEM}m -XX:+UseSerialGC -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+		-T GenotypeGVCFs \
+		-A QualByDepth \
+		-A HaplotypeScore \
+		-A MappingQualityRankSumTest \
+		-A ReadPosRankSumTest \
+		-A FisherStrand \
+		-A GCContent \
+		-A AlleleBalance \
+		-A InbreedingCoeff \
+		-A StrandOddsRatio \
+		-A HardyWeinberg \
+		-A ChromosomeCounts \
+		-A VariantType \
+		-A GenotypeSummaries $ADDL_CMD \
+		-nt $(nproc --all) \
+		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+		$(ls $OUTDIR/*.vcf.gz | sed 's/^/-V /' | tr '\n' ' ') \
+		--dbsnp /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz \
+		-o "$VCF_TMPDIR/$PREFIX.vcf.gz"
+		  
+		# Now, if we padded the intervals, get an on-target VCF through the use of SelectVariants
+		if test "$PADDED" -ne 0; then
+			mv "$VCF_TMPDIR/$PREFIX.vcf.gz" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz"
+			mv "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi"
+		
+			java -d64 -Xms512m -XX:+UseSerialGC -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
+				-T SelectVariants $(echo $ADDL_CMD | sed 's|^\(.*\)/[^/]*$|\1/targets.bed|') \
+				-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+				-nt $(nproc --all) \
+				-V "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" \
+				-o "$VCF_TMPDIR/$PREFIX.vcf.gz" 
+			
+			# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+			pigz -dc "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
+			tabix -p vcf "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz"
+		
+			# upload all of the padded files
+		
+			vcf_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz" --brief)
+			vcf_idx_pad_fn=$(dx upload "$VCF_TMPDIR/padded.$PREFIX.vcf.gz.tbi" --brief)
 
-    dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
-    dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+			dx-jobutil-add-output vcf_pad_out "$vcf_pad_fn" --class=file
+			dx-jobutil-add-output vcfidx_pad_out "$vcf_idx_pad_fn" --class=file
+		
+		   	vcf_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz" --brief)
+			vcf_idx_pad_hdr_fn=$(dx upload "$VCF_TMPDIR/padded.header.$PREFIX.vcf.gz.tbi" --brief)
 
+			dx-jobutil-add-output vcf_pad_hdr_out "$vcf_pad_hdr_fn" --class=file
+			dx-jobutil-add-output vcfidx_pad_hdr_out "$vcf_idx_pad_hdr_fn" --class=file
+		fi
+		  	
+	   	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
+		pigz -dc "$VCF_TMPDIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$VCF_TMPDIR/header.$PREFIX.vcf.gz"
+		tabix -p vcf "$VCF_TMPDIR/header.$PREFIX.vcf.gz"	
+	
+		vcf_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz" --brief)
+		vcf_idx_fn=$(dx upload "$VCF_TMPDIR/$PREFIX.vcf.gz.tbi" --brief)
+
+		dx-jobutil-add-output vcf_out "$vcf_fn" --class=file
+		dx-jobutil-add-output vcfidx_out "$vcf_idx_fn" --class=file
+		
+	   	vcf_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz" --brief)
+		vcf_idx_hdr_fn=$(dx upload "$VCF_TMPDIR/header.$PREFIX.vcf.gz.tbi" --brief)
+
+		dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
+		dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+
+	fi
 
 }

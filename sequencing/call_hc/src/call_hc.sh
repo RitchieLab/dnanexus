@@ -71,8 +71,7 @@ function call_hc(){
 	fi
 	
 	LOG_FN=$(mktemp)
-	ulimit -m $((TOT_MEM * 19 / (N_PROC * 20) ))
-	
+		
 	# run HC to get a gVCF
 	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / (N_PROC * 20) ))k -jar  /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 	-T HaplotypeCaller \

@@ -94,5 +94,5 @@
   },
   "developers": ["user-johnwallace123", "user-auv13"],
   "openSource" : true,
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13", "org-geisinger", "user-azo121", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "authorizedUsers" : ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

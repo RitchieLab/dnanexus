@@ -23,9 +23,10 @@ sudo apt-get install --yes parallel
 set -x
 
 function slice_vcf () {
-	VCFFN=$(echo "$1" | cut -f2)
+	set -x
+	VCFFN=$(echo "$1" | cut -f3)
 	PREFIX=$(echo "$1" | cut -f1)
-	VCFIDXFN=$(echo "$1" | cut -f4)
+	VCFIDXFN=$(echo "$1" | cut -f5)
 	REGIONFN="$2"
 	OUTDIR=$3
 	OUTFN="$OUTDIR/$PREFIX.sliced.vcf.gz"
@@ -61,15 +62,15 @@ main() {
 		dx-jobutil-report-error "ERROR: Number of VCF files and index files do not match"
 	fi
 
-    for i in ${!vcf_fn[@]}
-    do
-        dx describe --json "${vcf_fn[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed -e 's/\t$/\n/'
-    done 
+#    for i in ${!vcf_fn[@]}
+#    do
+#        dx describe --json "${vcf_fn[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed -e 's/\t$/\n/'
+#    done 
 
-    for i in ${!vcfidx_fn[@]}
-    do
-        dx describe --json "${vcf_fn[$i]}" 
-    done 
+#    for i in ${!vcfidx_fn[@]}
+#    do
+#        dx describe --json "${vcf_fn[$i]}" 
+#    done 
 
     for i in ${!vcf_fn[@]}
     do
@@ -102,6 +103,6 @@ main() {
 		vcfidx_out=$(dx upload "$f.tbi" --brief)
 		dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=array:file
 		
-	done < <(ls -1 $OUTDIR/*.vcf)
+	done < <(ls -1 $OUTDIR/*.vcf.gz)
 
 }

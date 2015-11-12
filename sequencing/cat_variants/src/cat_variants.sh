@@ -131,7 +131,7 @@ main() {
 		done
 		
 		cat_vcf.py -D $dict_dxid $ARGS -o $FINAL_DIR/$prefix.vcf.gz
-		tabix -l $FINAL_DIR/$prefix.vcf.gz
+		tabix -p vcf $FINAL_DIR/$prefix.vcf.gz
 	fi
 
 	# and upload it and we're done!

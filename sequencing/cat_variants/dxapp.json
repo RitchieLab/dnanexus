@@ -31,7 +31,7 @@
       "label" : "Use GATK CatVariants (alt: custom script)",
       "class": "boolean",
       "optional" : false,
-      "default" : true
+      "default" : false
     },
     {
       "name": "prefix",

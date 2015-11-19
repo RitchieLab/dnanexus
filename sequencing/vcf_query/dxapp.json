@@ -1,0 +1,64 @@
+{
+  "name": "vcf_query",
+  "title": "Query VCF File",
+  "summary": "Run vcf-query
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "query_str",
+      "label": "Query Stringto vcf-query",
+      "class": "string",
+      "optional": false,
+	  "default" : "%CHROM\t%POS\t%ID\t%REF\t%ALT\t%QUAL\t%INFO/QD\t%INFO/AN\t%INFO/AC[%GTR\t]"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "query_out",
+      "label": "Output of vcf-query (block compressed)",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {"name": "pigz"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "tabix"},
+      {"name": "vcftools"}
+    ],
+    "interpreter": "bash",
+    "file": "src/vcf_query.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "openSource" : true,
+  "authorizedUsers" : ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

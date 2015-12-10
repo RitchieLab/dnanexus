@@ -31,11 +31,6 @@ main() {
 		SUBJOB_ARGS="$SUBJOB_ARGS -isamp_excl:file=$(dx describe --json "$samp_excl" | jq -r .id)"
 	fi
 	
-	if test "$concord_vcf"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -iconcord_vcf:file=$(dx describe --json "$concord_vcf" | jq -r .id)"
-	fi
-	
-	
 	if test "$EXTRA_CMD"; then
 		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string='$EXTRA_CMD'"
 	fi
@@ -62,7 +57,7 @@ main() {
 	
 		# get a list of chromosomes and run SelectVariants on the chromosomes independently
 		CONCAT_ARGS="-iprefix=$PREFIX"
-		CONCAT_HDR_ARGS="-iprefix=header.$PREFIX"
+		CONCAT_HDR_ARGS="$CONCAT_ARGS"
 		
 		N_CHR=$(tabix -l raw.vcf.gz | wc -l)
 		
@@ -77,14 +72,14 @@ main() {
 			if test $N_CHR -gt 1 -a "$merge" = "false"; then
 				dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
 				dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
-				if test "$headers" = "true"; then
+				if test "$header" = "true"; then
 					dx-jobutil-add-output vcf_hdr_out --array "$SUBJOBID:vcf_hdr_out" --class=jobref
 					dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOBID:vcfidx_hdr_out" --class=jobref
 				fi
 			fi
 			
 			CONCAT_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_out -ivcfidxs=$SUBJOBID:vcfidx_out"
-			CONCAT_HDR_ARGS="$CONCAT_HDR_ARGS -ivcfs=$SUBJOBID:vcf_hdr_out -ivcfidxs=$SUBJOBID:vcfidx_hdr_out"
+			CONCAT_HDR_ARGS="$CONCAT_ARGS -ivcfs=$SUBJOBID:vcf_hdr_out -ivcfidxs=$SUBJOBID:vcfidx_hdr_out"
 		done
 	
 		if test $N_CHR -gt 1; then
@@ -93,7 +88,7 @@ main() {
 				CONCAT_JOB=$(dx run cat_variants $CONCAT_ARGS --brief)
 				dx-jobutil-add-output vcf_out --array "$CONCAT_JOB:vcf_out" --class=jobref
 				dx-jobutil-add-output vcfidx_out --array "$CONCAT_JOB:vcfidx_out" --class=jobref
-				if test "$headers" = "true"; then
+				if test "$header" = "true"; then
 					CONCAT_HDR_JOB=$(dx run cat_variants $CONCAT_HDR_ARGS --brief)
 					dx-jobutil-add-output vcf_hdr_out --array "$CONCAT_HDR_JOB:vcf_out" --class=jobref
 					dx-jobutil-add-output vcfidx_hdr_out --array "$CONCAT_HDR_JOB:vcfidx_out" --class=jobref
@@ -103,12 +98,13 @@ main() {
 		else
 			dx-jobutil-add-output vcf_out --array "$SUBJOBID:vcf_out" --class=jobref
 			dx-jobutil-add-output vcfidx_out --array "$SUBJOBID:vcfidx_out" --class=jobref
-			if test "$headers" = "true"; then
+			if test "$header" = "true"; then
 				dx-jobutil-add-output vcf_hdr_out --array "$SUBJOBID:vcf_hdr_out" --class=jobref
 				dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOBID:vcfidx_hdr_out" --class=jobref
 			fi			
 		fi
 
+    	
     	rm raw.vcf.gz.tbi
     done
 
@@ -130,87 +126,34 @@ run_sv() {
 	SV_ARGS=""
 	if test "$region_file"; then
 		REGION_FN=$(dx describe --name "$region_file");
-		REGION_EXT=$(echo "$REGION_FN" | sed 's|.*\.||')
-		REGION_BASE=$(echo "$REGION_FN" | sed 's|\.[^.]*$||')
-		
-		declare -A ext_list
-		ext_list["list"]=1
-		ext_list["interval_list"]=1
-		ext_list["bed"]=1
-		
-		if [[ ${ext_list[$REGION_EXT]} ]]; then
-			REGION_FN="$REGION_BASE.$REGION_EXT"
-		else
-			REGION_FN="$REGION_BASE.list"
-		fi
-		
 		dx download "$region_file" -o "$REGION_FN"
-		SV_ARGS="$SV_ARGS -L $PWD/$REGION_FN"
-	fi
-	
-	if test "$ef" = "true"; then
-		SV_ARGS="$SV_ARGS -ef"
-	fi
-	
-	if test "$env" = "true"; then 
-		SV_ARGS="$SV_ARGS -env"
+		SV_ARGS="$SV_ARGS -R $PWD/$REGION_FN"
 	fi
 	
 	if test "$samp_incl"; then
 		dx download "$samp_incl" -o samp_incl
-		SV_ARGS="$SV_ARGS -sf samp_incl"
+		SV_ARGS="$SV_ARGS -S samp_incl"
 	fi
 	
 	if test "$samp_excl"; then
 		dx download "$samp_excl" -o samp_excl
-		SV_ARGS="$SV_ARGS -xl_sf samp_excl"
+		SV_ARGS="$SV_ARGS -S ^samp_excl"
 	fi
 	
 	if test "$EXTRA_CMD"; then
 		SV_ARGS="$SV_ARGS $EXTRA_CMD"
 	fi
 	
-	if test -z "$SV_ARGS" -a -z "$concord_vcf"; then
+	if test -z "$SV_ARGS" ; then
 		dx-jobutil-report-error "ERROR: Nothing to do!"
 	fi
 	
-	# get the resources we need in /usr/share/GATK
-	sudo mkdir -p /usr/share/GATK/resources
-	sudo chmod -R a+rwX /usr/share/GATK
-	
-		
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 
-
-
-    TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+    TOT_MEM=$(free -k | grep "Mem" | awk '{print $2}')
     # only ask for 90% of total system memory
     TOT_MEM=$((TOT_MEM * 9 / 10))
 
-	if test "$concord_vcf"; then
-	
-		# NOTE: This is only here because some of the VCFs may be unsorted... grumble...
-		# This REALLY should just be a check for compression, then tabix if necessary
-		CAT_CMD="cat"
-		if test $(dx describe --name "$concord_vcf" | grep '\.gz$' | wc -l) -ne 0; then
-			CAT_CMD="zcat"
-		fi
-		
-		dx cat "$concord_vcf" | $CAT_CMD | vcf-sort | bgzip -c > concord_all.vcf.gz
-		tabix -p vcf concord_all.vcf.gz
-		
-		# Restrict the concord_all.$EXT to the chromosome of interest only!
-		java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-		-T SelectVariants \
-		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-V concord_all.vcf.gz -L $CHR -o concord_chr.vcf.gz
-		
-		SV_ARGS="$SV_ARGS -conc concord_chr.vcf.gz"
-	fi	
+	ulimit -v $TOT_MEM
 
 	download_part.py -f $(dx describe --json "$vcf_fn" | jq -r .id) -i $(dx describe --json "$vcfidx_fn" | jq -r .id) -L $CHR -H -o raw.vcf.gz
 	tabix -p vcf raw.vcf.gz
@@ -224,13 +167,8 @@ run_sv() {
 		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
 	fi
 
-	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
-		-T SelectVariants \
-		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-V raw.vcf.gz "$SV_ARGS" \
-		-o $OUT_DIR/$PREFIX.vcf.gz
-	
+	eval bcftools view "$SV_ARGS" raw.vcf.gz -o $OUT_DIR/$PREFIX.vcf.gz
+
 	vcf_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz --brief)
     vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz.tbi --brief)
 

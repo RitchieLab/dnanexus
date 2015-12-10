@@ -159,6 +159,10 @@ main() {
 	
 	# sanity check, should have same # of lines!
 	if test "$(cat $VCF_ID_LIST | wc -l)" -ne "$(cat $VCFIDX_ID_LIST | wc -l)" -o "$(cat $JOINT_ID_LIST | wc -l)" -ne "$(cat $VCF_ID_LIST | wc -l)"; then
+		echo "Files in VCF list not in index list:"
+		join -v1 -t$'\t' -j1 <(sort -k1,1 $VCF_ID_LIST) <(sort -k1,1 $VCFIDX_ID_LIST)
+		echo "Files in VCF index list not in VCF list:"
+		join -v2 -t$'\t' -j1 <(sort -k1,1 $VCF_ID_LIST) <(sort -k1,1 $VCFIDX_ID_LIST)
 		dx-jobutil-report-error "ERROR: VCF and VCF Index arrays do not match!"
 	fi
 	
@@ -296,7 +300,7 @@ genotype_gvcfs() {
 	INTERVAL="$chrom"
 
 	if test "$target_file"; then
-		bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 9 / 10 ))
+		bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 6 / 10 ))
 		INTERVAL="$(head -1 $RAW_TGT_FN | cut -f1-2 | tr '\t' ':')-$(tail -1 $RAW_TGT_FN | cut -f3)"
 		
 		EST_SZ=0
@@ -315,7 +319,7 @@ genotype_gvcfs() {
 		if test $N_JOBS -gt 1; then
 
 			# let's give a wider allowance for bytes_avail (70%)
-			bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 7 / 10 ))
+			bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 5 / 10 ))
 			N_JOBS=$((1 + EST_SZ / bytes_avail ))
 
 			INTV_SPLIT_FN=$(mktemp)

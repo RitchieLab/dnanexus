@@ -60,7 +60,15 @@
     {
       "name": "PREFIX",
       "class": "string",
-      "optional": true
+      "optional": true,
+      "default" : "merged"
+    },
+    {
+      "name" : "force_single",
+      "label" : "Force Single Merge",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false
     },
     {
       "name" : "by_chrom",

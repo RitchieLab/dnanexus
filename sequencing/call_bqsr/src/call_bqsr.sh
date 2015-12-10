@@ -23,7 +23,7 @@ sudo apt-get update
 sudo apt-get install --yes parallel
 
 function parallel_download() {
-	set -x
+#	set -x
 	cd $2
 	dx download "$1"
 	cd -
@@ -32,7 +32,7 @@ export -f parallel_download
 
 function call_bqsr(){
 
-	set -x
+#	set -x
 	
 	bam_in=$1
 	WKDIR=$2

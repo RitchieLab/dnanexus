@@ -27,6 +27,27 @@
       ]
     },
     {
+      "name" : "target",
+      "label" : "Exon Target",
+      "class" : "file",
+      "optional" : true,
+      "patterns" : ["*.bed"]
+    },
+    {
+      "name" : "max_sz",
+      "label" : "Maximum File Size (in MB)",
+      "optional" : true,
+      "default" : 5000,
+      "class" : "int"
+    },
+    {
+      "name" : "padding",
+      "label" : "Interval Padding",
+      "optional" : true,
+      "default" : 0,
+      "class" : "int"
+    },    	
+    {
       "name": "SNP_tranches",
       "label": "SNP tranches file",
       "class": "file",

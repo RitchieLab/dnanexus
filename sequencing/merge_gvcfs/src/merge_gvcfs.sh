@@ -167,7 +167,7 @@ function upload_files() {
 export -f upload_files
 
 function dl_merge_interval() {
-	#set -x
+	set -x
 	INTERVAL_FILE=$1
 	
 	# If we have no intervals, just exit
@@ -427,11 +427,11 @@ function single_merge_subjob() {
 		for CHR in $(cut -f1 $INTERVAL_LIST | uniq); do
 			CHR_LIST=$(mktemp)
 			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
-			int_fn=$(dx upload $CHR_LIST -- brief)
+			int_fn=$(dx upload $CHR_LIST --brief)
 			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
 
-			dx-jobutil-add-output gvcf --array "$merge_jobid:vcf_out" --class=jobref
-			dx-jobutil-add-output gvcfidx --array "$merge_jobid:vcfidx_out" --class=jobref	
+			dx-jobutil-add-output gvcf --array "$merge_jobid:vcf" --class=jobref
+			dx-jobutil-add-output gvcfidx --array "$merge_jobid:vcfidx" --class=jobref	
 			
 			rm $CHR_LIST
 
@@ -646,22 +646,31 @@ main() {
     fi
     
     # move the special logic testing N_BATCHES==1 here
-    if test "$split_merge" = "true" -a $N_BATCHES -eq 1; then
-    		
-		dx_gvcflist=$(dx upload $GVCF_LIST --brief)
-	
-		single_job=$(dx-jobutil-new-job single_merge_subjob -iPREFIX="$PREFIX" -igvcflist="$dx_gvcflist" $SUBJOB_ARGS)
+    if test "$split_merge" = "true" -a \( $N_BATCHES -eq 1 -o "$force_single" = "true" \) ; then
+    	
+    	# split the gvcflist into the number of batches
+    	SPLIT_DIR=$(mktemp -d)
+    	split -a 3 -d -n l/$N_BATCHES $GVCF_LIST $SPLIT_DIR/gvcflist.
+    	
+    	cd $SPLIT_DIR
+    	
+    	for f in $(ls gvcflist.*); do
+			dx_gvcflist=$(dx upload $f --brief)
+			single_job=$(dx-jobutil-new-job single_merge_subjob -iPREFIX="$PREFIX.$(echo $f | cut -d. -f2)" -igvcflist="$dx_gvcflist" $SUBJOB_ARGS)
 		
-		# If we wanted a single VCF, we now need to merge all of the output
-		if test "$by_chrom" = "false"; then
-			merge_subjob=$(dx run cat_variants -iprefix="$PREFIX" -ivcfidxs:array:file=${single_job}:gvcfidx -ivcfs:array:file=${single_job}:gvcf --brief)
-			dx-jobutil-add-output vcf_fn --array "$merge_subjob:vcf_out" --class=jobref
-			dx-jobutil-add-output vcf_idx_fn --array "$merge_subjob:vcfidx_out" --class=jobref
-		else
-			# and upload it and we're done!
-			dx-jobutil-add-output vcf_fn --array "$single_job:gvcf" --class=jobref
-			dx-jobutil-add-output vcf_idx_fn --array "$single_job:gvcfidx" --class=jobref
-		fi
+			# If we wanted a single VCF, we now need to merge all of the output
+			if test "$by_chrom" = "false"; then
+				merge_subjob=$(dx run cat_variants -iprefix="$PREFIX" -ivcfidxs:array:file=${single_job}:gvcfidx -ivcfs:array:file=${single_job}:gvcf --brief)
+				dx-jobutil-add-output vcf_fn --array "$merge_subjob:vcf_out" --class=jobref
+				dx-jobutil-add-output vcf_idx_fn --array "$merge_subjob:vcfidx_out" --class=jobref
+			else
+				# and upload it and we're done!
+				dx-jobutil-add-output vcf_fn --array "$single_job:gvcf" --class=jobref
+				dx-jobutil-add-output vcf_idx_fn --array "$single_job:gvcfidx" --class=jobref
+			fi
+			
+		done
+		
     
     else
    

@@ -180,12 +180,19 @@ downsample_plink(){
 	dx download "$bim_fn" -o input.bim
 	dx download "$fam_fn" -o input.fam		
 	
-	eval plink2 --bfile input --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) --make-bed
+	eval plink2 --bfile input --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) --make-bed || touch preld.bed preld.bim preld.fam
 	
 	PREFIX=$(dx describe --name "$bed_fn" | sed 's/.bed$//')
-	
-	run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
+
+	if test -s preld.bed; then
+		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
+	else
 		
+		for ext in bed bim fam; do
+			mv preld.$ext  $OUTDIR/$PREFIX.$ext
+		done
+	fi
+	
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do
 		dxfn=$(dx upload --brief $OUTDIR/$PREFIX.$ext)
@@ -231,10 +238,16 @@ downsample_vcf() {
 		-o base.vcf.gz
 	
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --keep-allele-order --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all)
-	
-	run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
-	
+	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --keep-allele-order --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
+
+	if test -s preld.bed; then
+		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
+	else
+		for ext in bed bim fam; do
+			mv preld.$ext  $OUTDIR/$PREFIX.$ext
+		done
+	fi
+
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do
 		dxfn=$(dx upload --brief $OUTDIR/$PREFIX.$ext)
@@ -260,20 +273,23 @@ run_ibd() {
 		dx download "${bed[$i]}" -o f_$i.bed
 		dx download "${bim[$i]}" -o f_$i.bim
 		dx download "${fam[$i]}" -o f_$i.fam
-		if test $N_F -eq 0; then
-			FIRST_PREF="f_$i"
-			MAX_N=$(cat f_$i.fam | wc -l)
-			sed 's/[ \t][ \t]*/\t/g' f_$i.fam | cut -f1-2 | sort -t'\0' > $FAM_OVERALL
-		else
-			echo "f_$i" >> $MERGE_FILE
-			TEST_N=$(cat f_$i.fam | wc -l)
-			MAX_N=$((TEST_N > MAX_N ? TEST_N : MAX_N))
-			TMPFAM=$(mktemp)
-			join -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' f_$i.fam | cut -f1-2 | sort -t'\0') > $TMPFAM
-			mv $TMPFAM $FAM_OVERALL			
-		fi
+
+		if test -s f_$i.bed; then
+			if test $N_F -eq 0; then
+				FIRST_PREF="f_$i"
+				MAX_N=$(cat f_$i.fam | wc -l)
+				sed 's/[ \t][ \t]*/\t/g' f_$i.fam | cut -f1-2 | sort -t'\0' > $FAM_OVERALL
+			else
+				echo "f_$i" >> $MERGE_FILE
+				TEST_N=$(cat f_$i.fam | wc -l)
+				MAX_N=$((TEST_N > MAX_N ? TEST_N : MAX_N))
+				TMPFAM=$(mktemp)
+				join -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' f_$i.fam | cut -f1-2 | sort -t'\0') > $TMPFAM
+				mv $TMPFAM $FAM_OVERALL			
+			fi
 		
-		N_F=$((N_F + 1))
+			N_F=$((N_F + 1))
+		fi
 	done
 	
 	# Make sure the number of samples is identical for each

@@ -204,13 +204,7 @@ downsample_plink(){
 downsample_vcf() {
     # Fill in your process code here
     
-    # First, we need to get GATK so we can get only biallelic SNPs, please!
-    sudo mkdir -p /usr/share/GATK/resources
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-	
+   
 	WKDIR=$(mktemp -d)
 	OUTDIR=$(mktemp -d)
 	
@@ -221,24 +215,11 @@ downsample_vcf() {
 	
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/.vcf\.gz$//')
 	
-	GATK_ARGS=""
-	# if we have one (or more) exclusion lists, parse them here
-	for i in "${!excl_region[@]}"; do
-		FILE_EXT="$(dx describe --name "${excl_region[$i]}" | sed 's/.*\.//')"
-		dx download "${excl_region[$i]}" -o region_xl.$i.$FILE_EXT
-		GATK_ARGS="$GATK_ARGS -XL region_xl.$i.$FILE_EXT"
-	done
-	
 	# Select only biallelic SNPs excluding the appropriate region
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / 20 ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T SelectVariants -nt $(nproc --all) \
-		-V input.vcf.gz $GATK_ARGS \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-selectType SNP --restrictAllelesTo BIALLELIC -ef -env --setFilteredGtToNocall -trimAlternates \
-		-o base.vcf.gz
-	
+
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --keep-allele-order --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
+	eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --vcf-filter --biallelic-only strict --snps-only --set-missing-var-ids @:#:\$1 --keep-allele-order --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
 
 	if test -s preld.bed; then
 		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
@@ -299,8 +280,10 @@ run_ibd() {
 	
 	OUTDIR=$(mktemp -d)
 	
+	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
+	TOT_MEM=$((TOT_MEM * 8 / 10))
 	# Allow some sample-level dropping to happen here (i.e. geno).
-	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $OUTDIR/$prefix --genome gz --make-bed -allow-no-sex
+	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $OUTDIR/$prefix --genome gz --make-bed -allow-no-sex --memory $TOT_MEM
 	
 	# get a list of those dropped
 	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $OUTDIR/$prefix.fam | cut -f1-2 | sort -t'\0') > $OUTDIR/$prefix.excluded

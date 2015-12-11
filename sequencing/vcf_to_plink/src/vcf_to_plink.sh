@@ -61,52 +61,31 @@ main() {
 		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 	fi
 	
-	SUBJOB_ARGS="-isnp_only:boolean=$snp_only -isel_args:string=\"$sel_args\""
-	if test "${excl_region[@]}"; then
-		for i in "${!excl_region[@]}"; do
-			SUBJOB_ARGS="$SUBJOB_ARGS -iexcl_region:array:file=$(dx describe --json "${excl_region[$i]}" | jq -r .id)"
-		done
+	SUBJOB_ARGS=""
+	if test "$strict"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -istrict:boolean=$strict"
 	fi
 	
+	SUBJOB_ARGS="$SUBJOB_ARGS -isnp_only:boolean=$snp_only -ibiallelic:boolean=$biallelic -isel_args:string=\"$sel_args\""
+	
 	# and loop through the file, submitting sub-jobs
-	MERGE_ARGS="-imerge_args:string=\"$merge_args\" -iprefix:string=$prefix"
 	while read VCF_LINE; do
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
 	
-		SUBJOB=$(eval dx-jobutil-new-job downsample_file "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
+		SUBJOB=$(eval dx-jobutil-new-job convert_vcf "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iprefix_in:string="$prefix")
 		
-		if test "$merge" = "false"; then
-		    dx-jobutil-add-output bed_out --array "$SUBJOB:bed" --class=jobref
-		    dx-jobutil-add-output bim_out --array "$SUBJOB:bim" --class=jobref
-		    dx-jobutil-add-output fam_out --array "$SUBJOB:fam" --class=jobref
-		else
-			MERGE_ARGS="$MERGE_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
-		fi
+	    dx-jobutil-add-output bed_out --array "$SUBJOB:bed" --class=jobref
+	    dx-jobutil-add-output bim_out --array "$SUBJOB:bim" --class=jobref
+	    dx-jobutil-add-output fam_out --array "$SUBJOB:fam" --class=jobref
 		
 	done < $JOINT_LIST
 
-	if test "$merge" = "true"; then
-	    mergerun=$(eval dx-jobutil-new-job run_merge "$MERGE_ARGS")
-
-    	dx-jobutil-add-output bed_out --array "$mergerun:bed" --class=jobref
-    	dx-jobutil-add-output bim_out --array "$mergerun:bim" --class=jobref
-    	dx-jobutil-add-output fam_out --array "$mergerun:fam" --class=jobref
-    	dx-jobutil-add-output samp_excl "$mergerun:excluded" --class=jobref
-    fi
 }
 
-downsample_file() {
+convert_vcf() {
     # Fill in your process code here
     
-    # First, we need to get GATK so we can get only biallelic SNPs, please!
-    sudo mkdir -p /usr/share/GATK/resources
-		
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-	
 	WKDIR=$(mktemp -d)
 	OUTDIR=$(mktemp -d)
 	
@@ -114,31 +93,27 @@ downsample_file() {
 	# Now, get our VCF and VCF Idx file
 	dx download "$vcf_fn" -o input.vcf.gz
 	dx download "$vcfidx_fn" -o input.vcf.gz.tbi
-	
+
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/.vcf\.gz$//')
-	
-	GATK_ARGS=""
-	# if we have one (or more) exclusion lists, parse them here
-	for i in "${!excl_region[@]}"; do
-		FILE_EXT="$(dx describe --name "${excl_region[$i]}" | sed 's/.*\.//')"
-		dx download "${excl_region[$i]}" -o region_xl.$i.$FILE_EXT
-		GATK_ARGS="$GATK_ARGS -XL region_xl.$i.$FILE_EXT"
-	done
+	if test "$prefix_in"; then
+		PREFIX="$prefix_in.$PREFIX"
+	fi
+
+	PLINK_ARGS=""
 	
 	if test "$snp_only" = "true"; then
-		GATK_ARGS="$GATK_ARGS -selectType SNP"
+		PLINK_ARGS="$PLINK_ARGS --snps-only"
 	fi
 	
-	# Select only biallelic SNPs excluding the appropriate region
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / 20 ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T SelectVariants -nt $(nproc --all) \
-		-V input.vcf.gz $GATK_ARGS \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		--restrictAllelesTo BIALLELIC -ef -env --setFilteredGtToNocall -trimAlternates \
-		-o base.vcf.gz
+	if test "$biallelic" = "true"; then
+		PLINK_ARGS="$PLINK_ARGS --biallelic-only"
+		if test "$strict" = "true"; then
+			PLINK_ARGS="$PLINK_ARGS strict"
+		fi
+	fi
 	
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter --make-bed "$sel_args" --out $OUTDIR/$PREFIX -allow-no-sex --threads $(nproc --all)
+	eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter --make-bed "$sel_args" $PLINK_ARGS --out $OUTDIR/$PREFIX -allow-no-sex --threads $(nproc --all)
 	
 	# upload all 3 bed/bim/fam files
 	for ext in bed bim fam; do

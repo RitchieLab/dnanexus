@@ -69,12 +69,6 @@
       "default" : 0.05
     },
     {
-      "name": "excl_region",
-      "label": "Exclusion Region(s)",
-      "class": "array:file",
-      "optional": true
-    },
-    {
       "name": "sel_args",
       "label": "PLINK Marker selection arguments",
       "class": "string",

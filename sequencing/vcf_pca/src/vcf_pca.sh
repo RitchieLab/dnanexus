@@ -214,15 +214,7 @@ downsample_plink(){
 downsample_vcf() {
     # Fill in your process code here
     
-    # First, we need to get GATK so we can get only biallelic SNPs, please!
-    sudo mkdir -p /usr/share/GATK/resources
-		
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-	
-	WKDIR=$(mktemp -d)
+    WKDIR=$(mktemp -d)
 	OUTDIR=$(mktemp -d)
 	
 	cd $WKDIR
@@ -232,24 +224,8 @@ downsample_vcf() {
 	
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/.vcf\.gz$//')
 	
-	GATK_ARGS=""
-	# if we have one (or more) exclusion lists, parse them here
-	for i in "${!excl_region[@]}"; do
-		FILE_EXT="$(dx describe --name "${excl_region[$i]}" | sed 's/.*\.//')"
-		dx download "${excl_region[$i]}" -o region_xl.$i.$FILE_EXT
-		GATK_ARGS="$GATK_ARGS -XL region_xl.$i.$FILE_EXT"
-	done
-	
-	# Select only biallelic SNPs excluding the appropriate region
-	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-	java -d64 -Xms512m -Xmx$((TOT_MEM * 19 / 20 ))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T SelectVariants -nt $(nproc --all) \
-		-V input.vcf.gz $GATK_ARGS \
-		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
-		-selectType SNP --restrictAllelesTo BIALLELIC -ef -env --setFilteredGtToNocall -trimAlternates \
-		-o base.vcf.gz
-	
 	# Now, convert the VCF into a PLINK file
-	eval plink2 --vcf base.vcf.gz --double-id --id-delim "' '" --vcf-filter  --set-missing-var-ids @:#:\$1 --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
+	eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --vcf-filter --biallelic-only strict --snps-only --set-missing-var-ids @:#:\$1 --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
 
 	if test -s preld.bed; then
 		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"

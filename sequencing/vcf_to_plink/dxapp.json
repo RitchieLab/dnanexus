@@ -35,25 +35,19 @@
       "default" : false
     },
     {
-      "name": "merge",
-      "label": "Merge PLINK Files",
+      "name": "biallelic",
+      "label": "Output Biallelic Markers only",
       "class": "boolean",
       "optional": false,
       "default" : true
     },
     {
-      "name": "prefix",
-      "label": "Prefix for files",
-      "class": "string",
-      "optional": true,
-      "default": "VCF_PLINK"
-    },
-    {
-      "name": "excl_region",
-      "label": "Exclusion Region(s)",
-      "class": "array:file",
-      "optional": true
-    },
+      "name" : "strict",
+      "label" : "Output strict biallelic markers only",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    },      
     {
       "name": "sel_args",
       "label": "PLINK Marker selection arguments",
@@ -62,10 +56,10 @@
       "default": ""
     },
     {
-      "name": "merge_args",
-      "label" : "PLINK Merge arguments (sample drop goes here)",
+      "name" : "prefix",
+      "label" : "Prefix for files",
       "class" : "string",
-      "optional" : true,
+      "optional" :true,
       "default" : ""
     }
   ],

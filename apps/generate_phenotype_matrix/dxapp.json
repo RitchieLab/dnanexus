@@ -1,0 +1,154 @@
+{
+  "name": "generate_phenotype_matrix",
+  "title": "Generate Phenotype Matrix",
+  "summary": "generate_phenotype_matrix",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "sql_file",
+      "label": "SQLite file",
+      "class": "file",
+      "optional": false,
+      "default": {"$dnanexus_link": "file-BkXKpJQ0z9X2xVGxYGPY1kqz"}
+    },
+    {
+      "name": "freeze",
+      "label": "Freeze",
+      "class": "string",
+      "choices": [ "40K", "50K" ],
+      "optional": false
+    },
+    {
+      "name": "icd9_code_matrix",
+      "group": "ICD Code Options",
+      "label": "ICD-9 code file",
+      "class": "boolean",
+      "optional": false,
+      "default": false
+    },
+    {
+      "name": "case_filter",
+      "group": "ICD Code Options",
+      "label": "Case Threshold",
+      "class": "int",
+      "optional": true
+    },
+    {
+      "name": "count_filter",
+      "group": "ICD Code Options",
+      "label": "ICD-9 Count Threshold",
+      "class": "int",
+      "optional": true
+    },
+    {
+      "name": "three_digit_rollup",
+      "group": "ICD Code Options",
+      "label": "3digit Rollup",
+      "class": "boolean",
+      "optional": true
+    },
+    {
+      "name": "icd9_out_prefix",
+      "group": "ICD Code Options",
+      "label": "Output Filename",
+      "class": "string",
+      "optional": true,
+      "default": "icd9_code_matrix.txt"
+    },    
+    {
+      "name": "select_icd",
+      "group": "ICD Code Options",
+      "label": "List of ICD-9 Codes",
+      "help": "By default, app generate the phenotype file for all the ICD-9 codes. Please provide the ICD-9 codes (comma-seperated) if you wish to generate phenotype file for sepecific codes.",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "clinical_lab_matrix",
+      "group": "Clinical Lab Options",
+      "label": "Clinical lab file",
+      "class": "boolean",
+      "default": false,
+      "optional": true
+    },
+    {
+      "name": "clinical_lab_out_prefix",
+      "group": "Clinical Lab Options",
+      "label": "Output Filename",
+      "class": "string",
+      "optional": true,
+      "default": "clinical_lab_matrix.txt"
+    },
+    {
+      "name": "cont_covariate",
+      "label": "Continous Covariates",
+      "group": "Covariate Options",
+      "class": "array:string",
+      "choices": [ "age", "age^2", "bmi", "pc1", "pc2", "pc3" ,"pc4" ],
+      "optional": true
+    },
+    {
+      "name": "cont_covariate_out_prefix",
+      "group": "Covariate Options",
+      "label": "Output Filename",
+      "class": "string",
+      "optional": true,
+      "default": "continous_covariate.txt"
+    },
+    {
+      "name": "cat_covariate",
+      "label": "Categorical Covariates",
+      "group": "Covariate Options",
+      "class": "array:string",
+      "choices": [ "sex", "race" ],
+      "optional": true
+    },
+    {
+      "name": "cat_covariate_out_prefix",
+      "group": "Covariate Options",
+      "label": "Output Filename",
+      "class": "string",
+      "optional": true,
+      "default": "categorical_covariate.txt"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "icd9_out",
+      "label": "Output ICD-9 Phenotype File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "clinical_out",
+      "label": "Output Clinical Lab Phenotype File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "cont_covariate_out",
+      "label": "Continuous Covariate File",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "cat_covariate_out",
+      "label": "Categorical Covariate File",
+      "class": "file",
+      "optional": true
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/generate_phenotype_matrix.sh"
+  },
+  "access": {
+    "network": [
+      "*"
+    ]
+  },
+  "authorizedUsers": ["org-geisinger"]
+}
+

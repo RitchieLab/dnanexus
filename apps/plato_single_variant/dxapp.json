@@ -1,0 +1,141 @@
+{
+  "name": "plato_single_variant",
+  "title": "PLATO - Single Variant Analysis",
+  "summary": "Apps allows you to run single variant association testing against single phenotype (GWAS) or multiple phenotype (PheWAS)",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Statistics"
+  ],
+  "inputSpec": [
+    {
+      "name": "input_plink_binary",
+      "label": "PLINK binary input files (bed, bim, fam)",
+      "class": "array:file",
+      "optional": false
+    },
+    {
+      "name": "input_phenotype",
+      "label": "Input phenotype file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "group": "Regression Options",
+      "name": "regression",
+      "label": "Regression",
+      "class": "string",
+      "choices": ["regress-auto","linear","logistic"],
+      "default": "regress-auto", 
+      "optional": true
+    },
+    {
+      "group": "Regression Options",
+      "name": "association_type",
+      "label": "Association Type",
+      "class": "string",
+      "choices": ["PheWAS","GWAS"],
+      "default": "PheWAS",
+      "optional": true
+    },
+    {
+      "group": "Regression Options",
+      "name": "outcome",
+      "label": "Outcome (Only required if Assocaition Type: GWAS)",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "group": "Regression Options",
+      "name": "covariates",
+      "label": "Covariates (Enter covariates column names)",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "output_filename",
+      "label": "Output Filename",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "group": "PLATO Commad-Line Options",
+      "name": "plato_analysis_string",
+      "label": "PLATO command-line analysis string (If used, leave above options EMPTY)",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "group": "Regression Options",
+      "name": "missingness",
+      "label": "Enter value used to denote missingness in phenotype or covariate input files",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "input_continuous_covariate",
+      "label": "Input covariate file with continuous values",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "input_categorical_covariate",
+      "label": "Input covariate file with categorical values",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "input_samples",
+      "label": "Sample list file",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "input_markers",
+      "label": "SNP list file (RSID format or Range format: chr bp1 bp2 label))",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "group": "Filter Options",
+      "name": "maf_threshold",
+      "label": "MAF Threshold",
+      "class": "float",
+      "optional": true
+    },
+    {
+      "group": "Filter Options",
+      "name": "case_threshold",
+      "label": "Case Threshold",
+      "class": "float",
+      "optional": true
+    },
+    
+    {
+      "group": "Regression Options",
+      "name": "correction",
+      "label": "Correction Type",
+      "class": "array:string",
+      "choices": [ "Bonferoni", "FDR" ],
+      "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "output_files",
+      "label": "Output files",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "execDepends":[
+      {
+        "name": "libgsl0ldbl"
+      }
+    ],
+    "interpreter": "bash",
+    "file": "src/plato_single_variant.sh"
+  },
+  "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "authorizedUsers": ["org-geisinger"]
+}

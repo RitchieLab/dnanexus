@@ -1,0 +1,24 @@
+PLINK v1.90b3m 64-bit (3 May 2015) 
+8 arguments: --bfile dataset1_adults_nullvar_maf0.005 --extract range test_range_snp.txt --make-bed --out extracted
+Hostname: lionxg.rcc.psu.edu
+Working directory: /gpfs/group1/m/mdr23/projects/dnanexus/svn/apps/plato_single_variant/test
+Start time: Sun Oct 25 22:53:05 2015
+
+Random number seed: 1445827985
+64377 MB RAM detected; reserving 32188 MB for main workspace.
+25 variants loaded from .bim file.
+20526 people (8936 males, 11564 females, 26 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to extracted.nosex .
+1905 phenotype values loaded from .fam.
+--extract range: 21 variants excluded.
+--extract range: 4 variants remaining.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 20526 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.997759.
+4 variants and 20526 people pass filters and QC.
+Among remaining phenotypes, 898 are cases and 1007 are controls.  (18621
+phenotypes are missing.)
+--make-bed to extracted.bed + extracted.bim + extracted.fam ... done.
+
+End time: Sun Oct 25 22:53:05 2015

@@ -1,0 +1,40 @@
+{
+  "name": "genotype_case_control",
+  "title": "Generate Case/Control by Genotype",
+  "summary": "App provides case and control number by each genotype",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "input_plink_binary",
+      "label": "PLINK binary input files (bed, bim, fam)",
+      "class": "array:file",
+      "optional": false
+    },
+    {
+      "name": "input_phenotype",
+      "label": "Input phenotype file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "input_covariate",
+      "label": "Covariate file",
+      "class": "array:file",
+      "optional": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "output_file",
+      "label": "Output file",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/genotype_case_control.sh"
+  },
+  "authorizedUsers": []
+}

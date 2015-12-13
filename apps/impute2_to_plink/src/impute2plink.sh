@@ -114,12 +114,12 @@ process() {
 	PREFIX=$(dx describe --name "$geno" | sed 's/\..*//')
 	PREFIX="$(pwd -P)/$PREFIX"
 
-	impute2-to-plink.py -s sample -i info.gz -g geno.gz -c $chr -m $thresh -b -p $PREFIX -d $(mktemp -d)
-	bed_file=$(dx upload "$PREFIX.bed" --brief)
+	impute2-to-plink.py -s sample -i info.gz -g geno.gz -c $chr -m $thresh -b -p $PREFIX.$chr -d $(mktemp -d)
+	bed_file=$(dx upload "$PREFIX.$chr.bed" --brief)
     dx-jobutil-add-output bed_file "$bed_file" --class=file
-	bim_file=$(dx upload "$PREFIX.bim" --brief)
+	bim_file=$(dx upload "$PREFIX.$chr.bim" --brief)
     dx-jobutil-add-output bim_file "$bim_file" --class=file
-	fam_file=$(dx upload "$PREFIX.fam" --brief)
+	fam_file=$(dx upload "$PREFIX.$chr.fam" --brief)
     dx-jobutil-add-output fam_file "$fam_file" --class=file
 }
 

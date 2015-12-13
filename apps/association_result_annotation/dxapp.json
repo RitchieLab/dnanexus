@@ -1,0 +1,73 @@
+{
+  "name": "association_result_annotation",
+  "title": "Annotate GWAS, PheWAS Assocaitions",
+  "summary": "association_result_annotation",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "input_file",
+      "label": "Input Assocaition File",
+      "class": "file",
+      "optional": false
+    },
+    {  "name": "icd9_desc",
+      "label": "ICD-9 description",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    {
+      "name": "or_val",
+      "label": "Odds Ratio",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    {
+      "name": "gene",
+      "label": "Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    {
+      "name": "up_gene",
+      "label": "Upstream Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    {
+      "name": "down_gene",
+      "label": "Downstream Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    {
+      "name": "case_control_num",
+      "label": "Case-Control Numbers",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "out_file",
+      "label": "Output File",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/association_result_annotation.sh"
+  },
+  "resources" : "project-BgBxYb80z9X9XVXGJQbkBz5F",
+  "access": {
+    "project": "CONTRIBUTE"
+  },
+  "authorizedUsers": []
+}

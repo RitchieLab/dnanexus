@@ -16,6 +16,7 @@
 # to modify this file.
 
 set -x
+set -o pipefail
 
 main() {
 

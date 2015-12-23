@@ -27,6 +27,13 @@
       ]
     },
     {
+      "name" : "no_geno",
+      "label" : "Suppress all samples VCF",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false
+    },
+    {
       "name": "hdr_only",
       "label": "Output Sites-only VCF",
       "class": "boolean",
@@ -44,12 +51,26 @@
     {
       "name": "vcf_out",
       "label": "Filtered VCF file",
-      "class": "array:file"
+      "class": "array:file",
+      "optional" : true
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
-      "class": "array:file"
+      "class": "array:file",
+      "optional" : true
+    },
+    {
+      "name": "vcf_hdr_out",
+      "label": "Filtered VCF Sites-only file",
+      "class": "array:file",
+      "optional" : true
+    },
+    {
+      "name": "vcfidx_hdr_out",
+      "label": "Filtered VCF Sites-only Index file",
+      "class": "array:file",
+      "optional" : true
     }
   ],
   "runSpec": {

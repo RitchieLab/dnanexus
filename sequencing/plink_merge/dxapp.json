@@ -1,7 +1,7 @@
 {
-  "name": "vcf_to_plink",
-  "title": "Convert VCF file to PLINK file",
-  "summary": "vcf_to_plink",
+  "name": "plink_merge",
+  "title": "Merge PLINK Files",
+  "summary": "Concatenate by-chromosome PLINK files",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -10,74 +10,68 @@
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
-      "label": "VCF File(s)",
+      "name": "bed_fn",
+      "label": "BED File(s)",
       "class": "array:file",
       "optional": false,
       "patterns": [
-        "*.vcf.gz"
+        "*.bed"
       ]
     },
     {
-      "name": "vcfidx_fn",
-      "label": "VCF Index File(s)",
+      "name": "bim_fn",
+      "label": "BIM File(s)",
       "class": "array:file",
       "optional": false,
       "patterns": [
-        "*.vcf.gz.tbi"
+        "*.bim"
       ]
     },
     {
-      "name": "snp_only",
-      "label": "Output SNPs only",
-      "class": "boolean",
+      "name": "fam_fn",
+      "label": "FAM File(s)",
+      "class": "array:file",
       "optional": false,
-      "default" : false
-    },
+      "patterns": [
+        "*.fam"
+      ]
+    },    
     {
-      "name": "biallelic",
-      "label": "Output Biallelic Markers only",
-      "class": "boolean",
-      "optional": false,
-      "default" : true
-    },
-    {
-      "name" : "strict",
-      "label" : "Output strict biallelic markers only",
-      "class" : "boolean",
-      "optional" : true,
-      "default" : false
-    },      
-    {
-      "name": "sel_args",
-      "label": "PLINK Marker selection arguments",
+      "name": "prefix",
+      "label": "Prefix for merged file",
       "class": "string",
-      "optional": true,
-      "default": ""
+      "optional": false,
+      "default": "VCF_PLINK"
     },
     {
-      "name" : "prefix",
-      "label" : "Prefix for files",
+      "name": "merge_args",
+      "label" : "PLINK Merge arguments (sample drop goes here)",
       "class" : "string",
-      "optional" :true,
+      "optional" : true,
       "default" : ""
     }
   ],
   "outputSpec": [
-    {
+   {
       "name": "bed_out",
       "label": "PLINK BED file",
-      "class": "array:file"
+      "class": "file"
     },
     {
       "name": "bim_out",
       "label": "PLINK BIM file",
-      "class": "array:file"
+      "class": "file"
     },
     {
       "name": "fam_out",
       "label": "PLINK FAM file",
-      "class": "array:file"
+      "class": "file"
+    },
+    {
+      "name": "samp_excl",
+      "label": "Samples Excluded",
+      "class": "file",
+      "optional" : true
     }
   ],
   "runSpec": {
@@ -88,7 +82,7 @@
       {"name": "tabix"}
     ],
     "interpreter": "bash",
-    "file": "src/vcf_to_plink.sh"
+    "file": "src/plink_merge.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,

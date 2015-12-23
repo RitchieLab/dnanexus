@@ -1,0 +1,53 @@
+{
+  "name": "vcf_sitesonly",
+  "title": "Get Sites-only VCF",
+  "summary": "Get a sites-only vcf (1st 8 columns) using cut",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Variation Calling"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Filtered VCF file",
+      "class": "array:file",
+      "optional" : true
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Filtered VCF Index file",
+      "class": "array:file",
+      "optional" : true
+    }
+  ],
+  "runSpec": {
+  "execDepends": [
+      {"name": "pigz"},
+      {"name": "tabix"}
+    ],
+    "interpreter": "bash",
+    "file": "src/vcf_sitesonly.sh"
+  },
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "developers": ["user-johnwallace123", "user-auv13"],
+  "openSource" : true,
+  "authorizedUsers" : ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+}

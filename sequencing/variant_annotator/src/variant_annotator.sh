@@ -23,7 +23,12 @@ main() {
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
     echo "Value of hdr_only: '$hdr_only'"
+    echo "Value of no_geno: '$no_geno'"
     echo "Value of cmd_params: '$cmd_params'"
+
+	if test "$no_geno" = "true" -a "$hdr_only" = "false"; then
+		dx-jobutil-report-error "ERROR: No output requested, nothing to do!"
+	fi
 
 	# Sanity check - make sure vcf + vcfidx have same # of elements
 	if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
@@ -56,11 +61,17 @@ main() {
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
 	
-		SUBJOB=$(dx-jobutil-new-job run_anno -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -icmd_params:string="$cmd_params" -ihdr_only:boolean=$hdr_only)
-		
-		# for each subjob, add the output to our array
-    	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
-	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
+		SUBJOB=$(dx-jobutil-new-job run_anno -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -icmd_params:string="$cmd_params" -ihdr_only:boolean=$hdr_only -ino_geno:boolean=$no_geno)
+		if test "$no_geno" = "false"; then
+			# for each subjob, add the output to our array
+    		dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
+		    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
+	   	fi
+	   	if test "$hdr_only" = "true"; then
+			# for each subjob, add the output to our array
+    		dx-jobutil-add-output vcf_hdr_out --array "$SUBJOB:vcf_hdr_out" --class=jobref
+		    dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOB:vcfidx_hdr_out" --class=jobref
+	   	fi
 		
 	done < $JOINT_LIST
 	
@@ -72,6 +83,7 @@ run_anno() {
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
     echo "Value of hdr_only: '$hdr_only'"
+    echo "Value of no_geno: '$no_geno'"
     echo "Value of cmd_params: '$cmd_params'"
 
     # The following line(s) use the dx command-line tool to download your file
@@ -80,7 +92,7 @@ run_anno() {
     # "$variable" --name".
 
 	SITES_FLAG=""
-	if test "$hdr_only" == "true"; then
+	if test "$hdr_only" = "true" -a "$no_geno" = "true"; then
 		SITES_FLAG="--sites_only"
 	fi
 
@@ -109,15 +121,27 @@ run_anno() {
 
 	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantAnnotator -nt $(nproc --all) -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$cmd_params" $SITES_FLAG -o "$OUT_DIR/$PREFIX.annotated.vcf.gz"
 
+	if test "$hdr_only" = "true"; then
+		if test "$no_geno" = "true"; then
+			mv $OUT_DIR/$PREFIX.annotated.vcf.gz $OUT_DIR/header.$PREFIX.annotated.vcf.gz
+			mv $OUT_DIR/$PREFIX.annotated.vcf.gz.tbi $OUT_DIR/header.$PREFIX.annotated.vcf.gz.tbi
+		else
+			pigz -dc $OUT_DIR/$PREFIX.annotated.vcf.gz | cut -f1-8 | bgzip -c > "$OUT_DIR/header.$PREFIX.annotated.vcf.gz"
+			tabix -p vcf "$OUT_DIR/header.$PREFIX.annotated.vcf.gz"
+		fi		
+	fi
+
+	if test "$no_geno" = "false"; then
+		vcf_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz" --brief)
+    	vcfidx_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz.tbi" --brief)
+		dx-jobutil-add-output vcf_out "$vcf_out" --class=file
+	    dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
+	fi
 	
-	vcf_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz" --brief)
-    vcfidx_out=$(dx upload "$OUT_DIR/$PREFIX.annotated.vcf.gz.tbi" --brief)
-
-    # The following line(s) use the utility dx-jobutil-add-output to format and
-    # add output variables to your job's output as appropriate for the output
-    # class.  Run "dx-jobutil-add-output -h" for more information on what it
-    # does.
-
-    dx-jobutil-add-output vcf_out "$vcf_out" --class=file
-    dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
+	if test "$hdr_only" = "true"; then
+		vcf_hdr_out=$(dx upload "$OUT_DIR/header.$PREFIX.annotated.vcf.gz" --brief)
+    	vcfidx_hdr_out=$(dx upload "$OUT_DIR/header.$PREFIX.annotated.vcf.gz.tbi" --brief)
+		dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_out" --class=file
+	    dx-jobutil-add-output vcfidx_hdr_out "$vcfidx_hdr_out" --class=file
+	fi
 }

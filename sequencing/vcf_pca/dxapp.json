@@ -140,7 +140,8 @@
     {
       "name": "eval_out",
       "label": "Eigenvalues",
-      "class": "file"
+      "class": "file",
+      "optional" : true
     },
     {
       "name": "twstats_out",

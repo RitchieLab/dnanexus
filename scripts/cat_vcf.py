@@ -464,9 +464,11 @@ if __name__ =="__main__":
 	vcf_order=[]
 	for i, f in enumerate(vcf_list):
 		chrom = f.readline("\t").strip()
-		pos = int(f.readline("\t").strip())
-		chunk = f.readChunk()
-		vcf_order.append((chrom, pos, i, chunk))
+		# if chrom is empty, then the VCF is empty, so ignore!
+		if chrom:
+			pos = int(f.readline("\t").strip())
+			chunk = f.readChunk()
+			vcf_order.append((chrom, pos, i, chunk))
 		
 	# Now, sort the vcf_order
 	# stable sort by chrom/pos

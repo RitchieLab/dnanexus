@@ -22,7 +22,9 @@ main() {
 	if [[ -n "$phenotype_file" ]]; then
 		dx download "$phenotype_file" -o input/input.phenotype
 		BIOBIN_PHENO_ARG="--phenotype-file input/input.phenotype"
-		BIOBIN_TEST_ARG="--test $(IFS="," ; echo "${regression_type[*]}")"
+		if [[ ${#regression_type[*]} -gt 0 ]]; then
+			BIOBIN_TEST_ARG="--test $(IFS="," ; echo "${regression_type[*]}")"
+		fi
 	fi
 	BIOBIN_COVAR_ARG=""
 	if [[ -n "$covariate_file" ]]; then
@@ -64,25 +66,31 @@ main() {
 		$BIOBIN_PHENO_ARG \
 		$BIOBIN_COVAR_ARG \
 		$BIOBIN_TEST_ARG \
-		--report-prefix biobin/output \
+		--report-prefix "biobin/$output_prefix" \
 		$biobin_args \
 	2>&1 | tee -a output.log
 	ls -laR biobin
 	
 	
-	# archive output
+	# run summary script
 	
-	tar cjvf biobin.tar.bz biobin 2>&1 | tee -a output.log
-	
-	
-	# move files into position for upload
-	mkdir -p "$HOME/out/log_file"
-	mv output.log "$HOME/out/log_file"
-	mkdir -p "$HOME/out/biobin_output"
-	mv biobin.tar.bz "$HOME/out/biobin_output"
+	biobin-summary.py --prefix="biobin/$output_prefix" > "biobin/${output_prefix}-summary.csv"
 	
 	
-	# return to the home dir and upload all files
-	cd "$HOME"
-	dx-upload-all-outputs
+	# upload output files
+	
+	for f in biobin/*-bins.csv ; do
+		bin_file=$(dx upload "$f" --brief)
+		dx-jobutil-add-output bins_files --class="array:file" "$bin_file"
+	done
+	
+	summary_file=$(dx upload biobin/*-summary.csv --brief)
+	dx-jobutil-add-output summary_file --class="file" "$summary_file"
+	
+	locus_file=$(dx upload biobin/*-locus.csv --brief)
+	dx-jobutil-add-output locus_file --class="file" "$locus_file"
+	
+	mv output.log "${output_prefix}.log"
+	log_file=$(dx upload "${output_prefix}.log" --brief)
+	dx-jobutil-add-output log_file --class="file" "$log_file"
 }

@@ -50,8 +50,13 @@
       "label": "Regression Type",
       "class": "array:string",
       "choices": ["linear","logistic","wilcoxon","SKAT-linear","SKAT-logistic"],
-      "optional": true,
-      "default": ["linear"]
+      "optional": true
+    },
+    {
+      "name": "output_prefix",
+      "label": "Output File Prefix",
+      "class": "string",
+      "default": "biobin"
     },
     {
       "name": "biobin_args",
@@ -68,8 +73,18 @@
       "class": "file"
     },
     {
-      "name": "biobin_output",
-      "label": "BioBin Output",
+      "name": "bins_files",
+      "label": "Bins Files",
+      "class": "array:file"
+    },
+    {
+      "name": "summary_file",
+      "label": "Bins Summary File",
+      "class": "file"
+    },
+    {
+      "name": "locus_file",
+      "label": "Locus File",
       "class": "file"
     }
   ],

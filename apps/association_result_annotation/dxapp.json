@@ -65,9 +65,9 @@
     "interpreter": "bash",
     "file": "src/association_result_annotation.sh"
   },
-  "resources" : "project-BgBxYb80z9X9XVXGJQbkBz5F",
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "access": {
     "project": "CONTRIBUTE"
   },
-  "authorizedUsers": []
+  "authorizedUsers": ["user-szs14"]
 }

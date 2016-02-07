@@ -36,34 +36,48 @@ main() {
     #sudo mkdir /usr/share/biofilter
 	#sudo chmod a+rwx /usr/share/biofilter
 	
-		
+	
+	# Download PLATO, PLINK, PLINK2	
 	dx download "$DX_RESOURCES_ID:/PLATO/plato" -o /usr/bin/
-	sudo chmod a+rwx /usr/bin/plato
+	dx download "$DX_RESOURCES_ID:/Plink/plink" -o /usr/bin/
+	dx download "$DX_RESOURCES_ID:/Plink/plink2" -o /usr/bin/
+	sudo chmod a+rx /usr/bin/plato
+	sudo chmod a+rx /usr/bin/plink
+	sudo chmod a+rx /usr/bin/plink2
 		
-	dx download "$DX_RESOURCES_ID:/PLATO/lib/*" -o /usr/local/lib/
-	sudo chmod a+rwx /usr/local/lib/*
+	
     
     input_dir="../.."
-    
+    # Download Phenotype files
     dx download "$input_phenotype" -o input_phenotype
+    
+    # Download Continous Covariate files
     if [ -n "$input_continuous_covariate" ]
     then
         dx download "$input_continuous_covariate" -o input_continuous_covariate
     fi
+    
+    # Download Categorical Covariate Files
     if [ -n "$input_categorical_covariate" ]
     then
         dx download "$input_categorical_covariate" -o input_categorical_covariate
 		load_cat="load-categorical --file $input_dir/input_categorical_covariate --missing $missingness --extra-samples"
     fi
+    
+    # Download sample file if provided
     if [ -n "$input_samples" ]
     then
 		dx download "$input_samples" -o input_samples
 		plinkargs=" --keep input_samples"
     fi
+    
+    #Download marker file if provided
     if [ -n "$input_markers" ]
     then
         dx download "$input_markers" -o input_markers
 		NF=$(head -n1 input_markers | wc -w)
+	
+	# Check the format marker files, If its RSID format then use --extract else for range format use --extract range
 	if [[ "$NF" == 1 ]]
 	then
 		plinkargs="$plinkargs --extract input_markers"
@@ -71,10 +85,14 @@ main() {
 		plinkargs="$plinkargs --extract range input_markers"
 	fi
     fi
+    
+    # MAF Threshold
     if [ -n "$maf_threshold" ]
     then
 	plinkargs="$plinkargs --maf $maf_threshold"
     fi
+    
+    # Process Plink input files
     for i in ${!input_plink_binary[@]}
     do
         name=$(dx describe "${input_plink_binary[$i]}" --name)
@@ -121,27 +139,41 @@ main() {
     mkdir -p out/output_files
     cd out/output_files
     plato_analysis_string=$plato_analysis_string
-   #Check if command-line string provided 
-	if [[ -z "$plato_analysis_string" ]]
+   
+	#Check if command-line string provided 
+	if [[ -z "$plato_analysis_string" ]] 
 	then
- 		if [[ -n "$regression" ]]
+		# Regression Type
+ 		if [[ -n "$regression" ]] 
+     	then
+     		# Plato memory option. Use --lowmem by default
+     		if [ "$mem" == true ]
      		then
+				plato_analysis_string=" $regression --lowmem"
+			else
 				plato_analysis_string=" $regression"
-     		fi
-     		if [[ -n "$covariates" ]]
+			fi
+     	fi
+     	
+		# Any covariates
+     	if [[ -n "$covariates" ]]
+     	then
+        	plato_analysis_string="$plato_analysis_string --covariates $covariates"
+     	fi
+		
+		# Type of analysis in PLATO
+     	for i in ${association_type[@]}
+     	do
+     		if [[ "$i" == "PheWAS" ]]
      		then
-        		plato_analysis_string="$plato_analysis_string --covariates $covariates"
+        		plato_analysis_string="$plato_analysis_string --phewas"
+     		elif [[ "$i" == "GWAS" ]]
+     		then
+        		plato_analysis_string=" $plato_analysis_string --outcome $outcome"
      		fi
-     		for i in ${association_type[@]}
-     		do
-     			if [[ "$i" == "PheWAS" ]]
-     			then
-        			plato_analysis_string="$plato_analysis_string --phewas"
-     			elif [[ "$i" == "GWAS" ]]
-     			then
-        			plato_analysis_string=" $plato_analysis_string --outcome $outcome"
-     			fi
-     		done
+     	done
+     	
+     	# Bonferoni or FDR correction
         if [[ -n "$correction" ]]
 		then
 			correction_val=$(echo ${correction[*]} | tr ' ' ',')	
@@ -150,18 +182,20 @@ main() {
 			plato_analysis_string="$plato_analysis_string"
 		fi
 		
-     		if [[ -n $output_filename ]]
-     		then
-        		plato_analysis_string=" $plato_analysis_string --output $output_filename"
-        		outfile="$output_filename"
-     		else
-				plato_analysis_string=" $plato_analysis_string --output output.txt"
-				outfile="output.txt"
-     		fi
+		# If output file name provided
+     	if [[ -n $output_filename ]]
+     	then
+        	plato_analysis_string=" $plato_analysis_string --output $output_filename"
+        	outfile="$output_filename"
+     	else
+			plato_analysis_string=" $plato_analysis_string --output output.txt"
+			outfile="output.txt"
+     	fi
 	else
 		plato_analysis_string="$plato_analysis_string"
 	fi     
 
+	# Use all the core in AWS instance
 	if ! [[ "$plato_analysis_string" =~ --threads ]]; then
 		threads="--threads $(nproc)"
         analysis2=${plato_analysis_string/linear /linear $threads }
@@ -169,15 +203,8 @@ main() {
         analysis4=${analysis3/logistic /logistic $threads }
         plato_analysis_string=$analysis4
      fi
-	# Odds ratio
-	# if ! [[ "$plato_analysis_string" =~ --odds-ratio ]]; then
-         #       odds="--odds-ratio"
-          #      analysis3=${analysis2/regress-auto /regress-auto $odds }
-           #     analysis4=${analysis3/logistic /logistic $odds }
-            #    plato_analysis_string=$analysis4
-       # fi
 
-
+	# Plato command
     plato load-data \
     --bed $input_dir/input_plink.bed \
     --bim $input_dir/input_plink.bim \
@@ -191,27 +218,26 @@ main() {
     $load_cat \
     $plato_analysis_string
     
+    # Filter out the results with MAF or Case filter provided.
     mkdir temp
     
     if [ -n "$maf_threshold" ] && [ -n "$case_threshold" ]
     then
-sed 's/\([A-Z]\)\(:\)\([0-9]\.\)/\1\t\3/g' ${outfile} | sed 's/\([A-Z]\)\(:\)\([0-9]\)/\1\t\3/g' | sed 's/Var1_MAF/Var1\tMAF/g' | awk -v var1="$maf_threshold" '{if($5>var1) print $0}' > temp/${outfile}_maf_threshold
+		awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$4)}1' ${outfile}  | sed 's/Var1_MAF/Var1_Allele\tMAF/g' | awk -v var1="$maf_threshold" 'BEGIN{OFS=FS="\t"}{if($5>var1) print $0}' > temp/${outfile}_maf_threshold
+		cat temp/${outfile}_maf_threshold
 		case_col=$(head -n1 temp/${outfile}_maf_threshold | tr '\t' '\n' | grep -n "Num_Cases" | cut -d":" -f1)
-		awk -F"\t" -v var1="$case_col" -v var2="$case_threshold" '{if($var1>=var2)print $0}' temp/${outfile}_maf_threshold > $outfile
-		ls temp
+		awk -v var1="$case_col" -v var2="$case_threshold" 'BEGIN{OFS=FS="\t"}{if($var1>=var2)print $0}' temp/${outfile}_maf_threshold > $outfile
 	elif [ -n "$maf_threshold" ]
 	then
-		sed 's/\([A-Z]\)\(:\)\([0-9]\.\)/\1\t\3/g' $outfile | sed 's/\([A-Z]\)\(:\)\([0-9]\)/\1\t\3/g' | sed 's/Var1_MAF/Var1\tMAF/g' | awk -v var1="$maf_threshold" '{if($5>var1) print $0}' > temp/${outfile}_maf_threshold
+		awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$4)}1' $outfile | sed 's/Var1_MAF/Var1_Allele\tMAF/g' | awk -v var1="$maf_threshold" 'BEGIN{OFS=FS="\t"}{if($5>var1) print $0}' > temp/${outfile}_maf_threshold
 		cp temp/${outfile}_maf_threshold ${outfile}
 	elif [ -n "$case_threshold" ]
 	then
-sed 's/\([A-Z]\)\(:\)\([0-9]\.\)/\1\t\3/g' ${outfile} | sed 's/\([A-Z]\)\(:\)\([0-9]\)/\1\t\3/g' | sed 's/Var1_MAF/Var1\tMAF/g' > temp/${outfile}_maf
+		awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$4)}1' ${outfile} | sed 's/Var1_MAF/Var1_Allele\tMAF/g' > temp/${outfile}_maf
 		case_col=$(head -n1 temp/${outfile}_maf | tr '\t' '\n' | grep -n "Num_Cases" | cut -d":" -f1)
-		awk -F"\t" -v var1="$case_col" -v var2="$case_threshold" '{if($var1>=var2)print $0}' temp/${outfile}_maf > ${outfile}
+		awk  -v var1="$case_col" -v var2="$case_threshold" 'BEGIN{OFS=FS="\t"}{if($var1>=var2)print $0}' temp/${outfile}_maf > ${outfile}
     fi
-	
 	rm -rf temp
-    ls .
     cd -
 
     # The following line(s) use the utility dx-jobutil-add-output to format and

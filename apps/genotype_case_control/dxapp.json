@@ -36,5 +36,6 @@
     "interpreter": "bash",
     "file": "src/genotype_case_control.sh"
   },
-  "authorizedUsers": []
+  "authorizedUsers": [],
+  "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
 }

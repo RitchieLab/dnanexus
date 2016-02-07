@@ -61,7 +61,7 @@ delete from assoc_result where outcome='Outcome';
 !
 
 	# Import ICD-9 code description table to the database
-	dx download "$DX_RESOURCES_ID:icd9_codes_description_l.txt"  -o icd9_code_desc.txt
+	dx download "$DX_RESOURCES_ID:ICD9/icd9_codes_description.txt"  -o icd9_code_desc.txt
 	sqlite3 anno.db <<!
 create table icd9_code_desc (icd9_code varchar(8), desc text);
 .header on
@@ -81,12 +81,12 @@ select * from icd9_code_desc limit 5;
 	sudo chmod a+rwx /usr/share/biofilter
 		
 	#dx download -r "$DX_RESOURCES_ID:/biofilter/*" -o /usr/share/biofilter
-	#dx download "$DX_RESOURCES_ID:/LOKI/loki-20150427-nosnps.db" -o /usr/share/biofilter/loki.db
+	dx download "$DX_RESOURCES_ID:/LOKI/loki-20150427-nosnps.db" -o /usr/share/biofilter/loki.db
     
     #python /usr/share/biofilter/biofilter.py biofilter-2 -v -k /.db -P input_file_snp_position.txt -a snp gene upstream downstream
 
 	# Import biofilter result into
-	#gene_gwas_col=$(head -n1 biofilter.position.gene-upstream-downstream |sed 's/^#//g' | sed 's/\//_/g' | sed 's/%/_/g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g' )
+	#	gene_gwas_col=$(head -n1 biofilter.position.gene-upstream-downstream |sed 's/^#//g' | sed 's/\//_/g' | sed 's/%/_/g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g' )
 	#sqlite3 anno.db "create table biofilter_anno ($gene_gwas_col)
 	#echo -e '.separator "\t"\n.import biofilter.position.gene-upstream-downstream biofilter_anno' | sqlite3 anno.db
 
@@ -96,50 +96,52 @@ select * from icd9_code_desc limit 5;
 		icd9_select=",b.desc as icd9_description"
 
 	fi
-
+#exp(log(exp(Var1_beta)) - 1.96*Var1_SE) || ',' || exp(log(exp(Var1_beta)) + 1.96*Var1_SE) as OR_CI "
 	if [ "$or_val" == true ];
 	then
 		or_val_query=",exp(var1_beta) as odds_ratio"
-	fi
-: '
-	if $gene;
-	then
-		#	gene_query="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-		#gene_col="gene as Gene"
-	fi
-
-
-	if $up_gene;
-	then
-		if [ ${gene_query} != "" ]
-		then
-			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
-		else
-			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
+		#,round(exp(log(exp(Var1_beta)) - 1.96*Var1_SE),3) || ',' || round(exp(log(exp(Var1_beta)) + 1.96*Var1_SE),3) as OR_CI"
 	fi
 	
-	if $down_gene
+#: '
+	#	if $gene;
+	#	then
+		#	gene_query="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
+		#gene_col="gene as Gene"
+	#fi
+
+
+	#if $up_gene;
+	#then
+		#		if [ ${gene_query} != "" ]
+		#	then
+			#			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
+		#		else
+			#			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
+			#			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
+	#	fi
+	
+	#	if $down_gene
+	#	then
+		#		if [ ${gene_query} != "" ]
+		#		then
+			#			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
+		#		else
+			#			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
+			#			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
+	#	fi
+
+	if [ "$case_control_num" == true ];
 	then
-		if [ ${gene_query} != "" ]
-		then
-			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
-		else
-			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
+		case_control_query="Num_Cases as Cases, Num_NonMissing-Num_Cases as Controls"
 	fi
 
-	if $case_control_num;
-	then
-		case_control_query="Num_Cases as Cases, NumNon_Missing-Num_Cases as Controls"
-	fi
-
-	if $gwas;
-	then
-			gwas_query="trait as GWAS Trait"
-	fi
-'
-echo select *${icd9_select}${or_val_query} from assoc_result a ${icd9_join} ${gene_query};
+	#	if $gwas;
+	#then
+			#		gwas_query="trait as GWAS Trait"
+	#	fi
+#'
+echo select *${icd9_select}${or_val_query}${case_control_query} from assoc_result a ${icd9_join} ${gene_query};
 
 sqlite3 anno.db <<!
 .load /usr/local/lib/libsqlitefunctions.so 

@@ -25,7 +25,9 @@
       {"name": "tabix"},
       {"name": "openjdk-7-jre-headless"},
       {"name": "pigz"},
-	  {"name": "vcftools"}
+	  {"name": "vcftools"},
+	  {"name": "subversion"},
+	  {"name": "libtool"}
     ],
     "file": "src/code.sh",
     "interpreter": "bash"

@@ -59,6 +59,14 @@
       "optional": true
     },
     {
+      "group": "Regression Options",
+      "name": "mem",
+      "label": "Lowmem (Reduces memory footprints)",
+      "class": "boolean",
+      "default": true,
+      "optional": true
+    },
+    {
       "group": "PLATO Commad-Line Options",
       "name": "plato_analysis_string",
       "label": "PLATO command-line analysis string (If used, leave above options EMPTY)",

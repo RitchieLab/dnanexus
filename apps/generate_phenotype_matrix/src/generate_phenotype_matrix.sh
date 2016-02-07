@@ -171,6 +171,20 @@ echo "$icd9_code_matrix"
 		query=$(echo $query | sed "s/age\^2/($sys_date\-substr(birth_date,1,4))*($sys_date-substr(birth_date,1,4)) as \`age\^2\`/g") 
 		echo ${query}
 	fi
+	
+	for i in "${cont_covariate[@]}"
+	do
+    		if [ "$i" == "pc1" ] ; then
+        	 pca_table="join freeze_${freeze}_pca using(rgn_id)"
+    		fi
+	done
+	
+	#if [[ ${cont_covariate["pc1"]} ]];
+        #then
+       # 	pca_table="join freeze_${freeze}_pca using(rgn_id)"
+       # fi
+
+
 
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
 		"select 'Geisinger' as fid, \
@@ -178,7 +192,7 @@ echo "$icd9_code_matrix"
 		${query} \
 		from	\
 		freeze_${freeze}_demographics \
-		join freeze_${freeze}_pca using(rgn_id) where sex!='Unknown' and bmi!='' and rgn_id!=''"> cont_covariate_out.txt
+		${pca_table} where sex!='Unknown' and bmi!='' and rgn_id!=''"> cont_covariate_out.txt
 		
 		sed 's/|/\t/g' cont_covariate_out.txt >> ${cont_covariate_out_prefix}
 	fi

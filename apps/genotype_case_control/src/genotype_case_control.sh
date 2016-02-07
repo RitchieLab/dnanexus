@@ -14,7 +14,7 @@
 #
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
-
+set -x
 main() {
 
     echo "Value of input_plink_binary: '${input_plink_binary[@]}'"
@@ -28,37 +28,59 @@ main() {
 	mkdir plink_files
 	mkdir covariate_files
 	mkdir pheno_files
+	mkdir plink_hwe
+	
+	dx download "$DX_RESOURCES_ID:/Plink/plink" -o /usr/bin/
+	sudo chmod a+rwx /usr/bin/*
+	
 	dx download "$input_phenotype" -o pheno_files/input_phenotype
     
     for i in ${!input_plink_binary[@]}
     do
-    	dx download "${input_plink_binary[$i]}" -o plink_files/input_plink_binary-$i
+    	name=$(dx describe "${input_plink_binary[$i]}" --name)
+		if [[ "$name" =~ \.bed$ ]]; then
+		dx download "${input_plink_binary[$i]}" -o plink_files/input_plink.bed
+		elif [[ "$name" =~ \.bim$ ]]; then
+    	dx download "${input_plink_binary[$i]}" -o plink_files/input_plink.bim
+		elif [[ "$name" =~ \.fam$ ]]; then
+    	dx download "${input_plink_binary[$i]}" -o plink_files/input_plink.fam
+		fi
+    	
     done
 
     for i in ${!input_covariate[@]}
     do
     	dx download "${input_covariate[$i]}" -o covariate_files/input_covariate-$i
     done
-	num_cov_files=$(ll covariate_files/* | wc -l)
-	if[$num_cov_files > 1 ]
-    then
-    	join -j2 <(sort -k2,2 )
-    for i in {3..942}; 
-    do 
-    	pheno=$(cut -f${i} geisinger_freeze_40_icd9_5d_64c_3c.txt | head -n1); 
-    	cut -f1,2,${i} geisinger_freeze_40_icd9_5d_64c_3c.txt > pheno5d_files/${pheno}_pheno.txt;
-    done
-    for i in {998..998}; 
-    do 
-    	pheno=$(echo "998_pheno.txt.hwe" | cut -d"_" -f1); 
-    	cat 998_pheno.txt.hwe | grep -v ALL  | awk 'NR>1{print $2,$6}' | awk '{if(a[$1])a[$1]=a[$1]" "$2; \
-		else a[$1]=$2;}END{for (i in a)print i, a[i];}' ; 
-	done
-    join -j2 <(sort -k2,2 rs1650017.raw) \
-    <(cut -f1,2,427 geisinger_freeze_40_icd9_3d_64c_3c.txt | \
-    sort -k2,2) | awk '{if ($7!="NA" && $9!="NA") print $7,$9}' \
-    | grep "1$" | cut -f1 | sort | uniq -c
+    ls -l covariate_files
+	#num_cov_files=$(ll covariate_files/* | wc -l)
+	#if[$num_cov_files > 1 ]
+    #then
+    
+    	join -j2 <(sort -k2,2 covariate_files/input_covariate-0) <(sort -k2,2 covariate_files/input_covariate-1) \
+    	| grep -vi "NA" | awk '{print $1}' > covariate_files/nonmissing_data_sample.txt
     	
+    	wc -l covariate_files/nonmissing_data_sample.txt
+   
+    num_phenotype=$(head -n1 pheno_files/input_phenotype | wc -w)
+    for i in $(seq 3 ${num_phenotype}) 
+    do 
+    	pheno=$(cut -f${i} pheno_files/input_phenotype | head -n1) 
+		cut -f1,2,${i} pheno_files/input_phenotype | \
+		grep -Fwf covariate_files/nonmissing_data_sample.txt > pheno_files/${pheno}_pheno.txt
+		wc -l pheno_files/${pheno}_pheno.txt
+		plink --bed plink_files/input_plink.bed --bim plink_files/input_plink.bim --fam plink_files/input_plink.fam \
+		--pheno pheno_files/${pheno}_pheno.txt --1 --missing-phenotype NA --mpheno 1 --hardy --out plink_hwe/${pheno}_pheno
+				
+    done
+	for i in plink_hwe/*.hwe; 
+    do 
+    	pheno=$(basename $i | cut -d"_" -f1); 
+		cat $i | grep -v ALL  | awk 'NR>1{print $2,$6}' | awk '{if(a[$1])a[$1]=a[$1]" "$2;else a[$1]=$2;}END{for (i in a)print i, a[i];}' \
+		| awk -v var1="${pheno}" '{print $1,var1,$2,$3}' OFS"\t" | sed 's/\//\t/g' \
+		| sed '1i snp\tpheno\tcase_2\tcase_1\tcase_0\tcontrol_2\tcontrol_1\tcontrol_0' 
+	done >> output_file
+        	
 
     # Fill in your application code here.
     #

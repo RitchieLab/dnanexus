@@ -3,7 +3,7 @@
   "title": "BioBin",
   "summary": "BioBin",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -97,7 +97,7 @@
     ]
   },
   "authorizedUsers": [],
-  "__disabled": [
+  "__disabled__runSpec__execDepends": [
       { "name": "gawk" },
       { "name": "libsqlite3-0" },
       { "name": "python-apsw" },

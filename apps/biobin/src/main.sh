@@ -6,6 +6,7 @@ main() {
 	
 	ulimit -c unlimited
 	
+	
 	# switch to a temp directory and download all user input files
 	
 	NUM_CORES="$(nproc --all)"
@@ -41,18 +42,32 @@ main() {
 	fi
 	
 	
-	# download shared resource files
+	# fetch the latest executable(s) and shared resource file(s)
 	
 #	DX_RESOURCES_ID="$(dx find projects --name "App Resources" --brief)"
-	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+#	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
 	mkdir shared
 	dx download \
 		"$(dx find data \
-			--name "loki-20150427-nosnps.db" \
-			--project "$DX_RESOURCES_ID" \
-			--folder /LOKI \
+			--path "Ritchie Lab Software:/BioBin" \
+			--name "biobin" \
 			--brief \
-		)" -o shared/loki.db
+		)" \
+		--output /usr/bin/biobin
+	dx download \
+		"$(dx find data \
+			--path "Ritchie Lab Software:/BioBin" \
+			--name "biobin-summary.py" \
+			--brief
+		)" \
+		--output /usr/bin/biobin-summary.py
+	dx download \
+		"$(dx find data \
+			--path "Ritchie Lab Software:/LOKI" \
+			--name "loki-noSNPs.db" \
+			--brief \
+		)" \
+		--output shared/loki.db
 	
 	
 	# run biobin
@@ -74,7 +89,9 @@ main() {
 	
 	# run summary script
 	
-	biobin-summary.py --prefix="biobin/$output_prefix" > "biobin/${output_prefix}-summary.csv"
+	biobin-summary.py \
+		--prefix="biobin/$output_prefix" \
+		> "biobin/${output_prefix}-summary.csv"
 	
 	
 	# upload output files

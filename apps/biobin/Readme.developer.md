@@ -1,31 +1,14 @@
-# biobin_pipeline Developer Readme
+This app dynamically fetches some resources from other public projects:
 
-<!--
-TODO: Please edit this Readme.developer.md file to include information
-for developers or advanced users, for example:
 
-* Information about app internals and implementation details
-* How to report bugs or contribute to development
--->
+Ritchie Lab Software:/BioBin/biobin
+	The DNAnexus-compiled binary of BioBin.
 
-## Running this app with additional computational resources
+Ritchie Lab Software:/BioBin/biobin-summary.py
+	A helper script which collates and summarizes BioBin output files.
 
-This app has the following entry points:
+Ritchie Lab Software:/LOKI/*.db
+	A LOKI knowledge database whose filename indicates the date on which it was built.
 
-* main
 
-When running this app, you can override the instance type to be used by
-providing the ``systemRequirements`` field to ```/applet-XXXX/run``` or
-```/app-XXXX/run```, as follows:
-
-    {
-      systemRequirements: {
-        "main": {"instanceType": "mem2_hdd2_x2"}
-      },
-      [...]
-    }
-
-See <a
-href="https://wiki.dnanexus.com/API-Specification-v1.0.0/IO-and-Run-Specifications#Run-Specification">Run
-Specification</a> in the API documentation for more information about the
-available instance types.
+Because these external resources are not "frozen" in with this app, they may be updated independently, which may cause this app's results to be unrepeatble.

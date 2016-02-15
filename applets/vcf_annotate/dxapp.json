@@ -1,7 +1,7 @@
 {
-  "name": "vcf_annotate",
-  "title": "VCF Annotator",
-  "summary": "Annotates VCFs",
+  "name": "vcf_anno_format",
+  "title": "VCF Annotation Formatter",
+  "summary": "Extracts and reformats VCF annotations",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [],
@@ -48,14 +48,14 @@
       "name": "annotations",
       "label": "Annotation Types",
       "class": "array:string",
-      "choices": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"],
+      "choices": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"]
     },
     {
       "name": "extra",
       "label": "Extra Annotation Column",
       "class": "boolean",
       "default": false
-    },
+    }
   ],
   "outputSpec": [
     {
@@ -75,7 +75,7 @@
       "label": "SIFT Annotations",
       "class": "file",
       "optional": true
-    }
+    },
     {
       "name": "snpeff_output",
       "label": "SNPEff Annotations",
@@ -85,7 +85,7 @@
   ],
   "runSpec": {
     "interpreter": "bash",
-    "file": "src/main.sh",
+    "file": "src/main.sh"
   },
   "authorizedUsers": ["org-geisinger"]
 }

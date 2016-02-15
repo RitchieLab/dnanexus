@@ -32,6 +32,16 @@ main() {
 		dx download "$covariate_file" -o input/input.covariate
 		BIOBIN_COVAR_ARG="--covariates input/input.covariate"
 	fi
+	BIOBIN_WEIGHT_ARG=""
+	if [[ -n "$weight_file" ]]; then
+		dx download "$weight_file" -o input/input.weight
+		BIOBIN_WEIGHT_ARG="--weight-file input/input.weight"
+	fi
+	BIOBIN_REGION_ARG=""
+	if [[ -n "$region_file" ]]; then
+		dx download "$region_file" -o input/input.region
+		BIOBIN_REGION_ARG="--region-file input/input.region"
+	fi
 	VCF_FILE="input/input.vcf.gz"
 	TBI_FILE="$VCF_FILE.tbi"
 	dx download "$vcf_file" -o "$VCF_FILE"
@@ -54,6 +64,7 @@ main() {
 			--brief \
 		)" \
 		--output /usr/bin/biobin
+	chmod +x /usr/bin/biobin
 	dx download \
 		"$(dx find data \
 			--path "Ritchie Lab Software:/BioBin" \
@@ -61,10 +72,11 @@ main() {
 			--brief
 		)" \
 		--output /usr/bin/biobin-summary.py
+	chmod +x /usr/bin/biobin-summary.py
 	dx download \
 		"$(dx find data \
 			--path "Ritchie Lab Software:/LOKI" \
-			--name "loki-noSNPs.db" \
+			--name "$loki_db" \
 			--brief \
 		)" \
 		--output shared/loki.db
@@ -81,6 +93,8 @@ main() {
 		$BIOBIN_PHENO_ARG \
 		$BIOBIN_COVAR_ARG \
 		$BIOBIN_TEST_ARG \
+		$BIOBIN_WEIGHT_ARG \
+		$BIOBIN_REGION_ARG \
 		--report-prefix "biobin/$output_prefix" \
 		$biobin_args \
 	2>&1 | tee -a output.log

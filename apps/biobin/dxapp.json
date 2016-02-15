@@ -1,5 +1,5 @@
 {
-  "name": "biobin",
+  "name": "BioBin",
   "title": "BioBin",
   "summary": "BioBin",
   "dxapi": "1.0.0",
@@ -10,6 +10,16 @@
     "allProjects": "VIEW"
   },
   "inputSpec": [
+    {
+      "name": "loki_db",
+      "label": "LOKI Knowledge Database",
+      "class": "string",
+      "choices": [
+        "LOKI-20150427-noSNPs.db"
+      ],
+      "optional": false,
+      "default": "LOKI-20150427-noSNPs.db"
+    },
     {
       "name": "vcf_file",
       "label": "VCF File",
@@ -44,6 +54,20 @@
       "class": "file",
       "optional": true,
       "patterns": ["*.cov*"]
+    },
+    {
+      "name": "weight_file",
+      "label": "Weight File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.weight*","*.wgt*"]
+    },
+    {
+      "name": "region_file",
+      "label": "Region File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.region*"]
     },
     {
       "name": "regression_type",

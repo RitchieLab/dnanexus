@@ -1,0 +1,91 @@
+{
+  "name": "vcf_annotate",
+  "title": "VCF Annotator",
+  "summary": "Annotates VCFs",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "access": {
+    "network": [ "*" ],
+    "allProjects": "VIEW"
+  },
+  "inputSpec": [
+    {
+      "name": "vcf_file",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.vcf","*.vcf.gz"]
+    },
+    {
+      "name": "position_file",
+      "label": "Position Filter",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.pos*"]
+    },
+    {
+      "name": "region_file",
+      "label": "Region Filter",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.reg*"]
+    },
+    {
+      "name": "gene_file",
+      "label": "Gene Filter",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.gen*"]
+    },
+    {
+      "name": "prefix",
+      "label": "Output Filename Prefix",
+      "class": "string",
+      "default": "vcf_annotate"
+    },
+    {
+      "name": "annotations",
+      "label": "Annotation Types",
+      "class": "array:string",
+      "choices": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"],
+    },
+    {
+      "name": "extra",
+      "label": "Extra Annotation Column",
+      "class": "boolean",
+      "default": false
+    },
+  ],
+  "outputSpec": [
+    {
+      "name": "clinvar_output",
+      "label": "CLINVAR Annotations",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "dbnsfp_output",
+      "label": "dbNSFP Annotations",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "sift_output",
+      "label": "SIFT Annotations",
+      "class": "file",
+      "optional": true
+    }
+    {
+      "name": "snpeff_output",
+      "label": "SNPEff Annotations",
+      "class": "file",
+      "optional": true
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/main.sh",
+  },
+  "authorizedUsers": ["org-geisinger"]
+}

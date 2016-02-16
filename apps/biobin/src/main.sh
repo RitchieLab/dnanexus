@@ -130,4 +130,10 @@ main() {
 	mv output.log "${output_prefix}.log"
 	log_file=$(dx upload "${output_prefix}.log" --brief)
 	dx-jobutil-add-output log_file --class="file" "$log_file"
+	
+	for f in biobin/*.unlifted.csv ; do
+		unlifted_file=$(dx upload "$f" --brief)
+		dx-jobutil-add-output unlifted_files --class="array:file" "$unlifted_file"
+	done
+	
 }

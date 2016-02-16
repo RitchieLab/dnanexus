@@ -3,7 +3,7 @@
   "title": "BioBin - Latest",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -117,6 +117,12 @@
       "name": "locus_file",
       "label": "Locus File",
       "class": "file"
+    },
+    {
+      "name": "unlifted_files",
+      "label": "Unlifted Variants Files",
+      "class": "array:file",
+      "optinoal": true
     }
   ],
   "runSpec": {

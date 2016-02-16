@@ -42,6 +42,11 @@ main() {
 		dx download "$region_file" -o input/input.region
 		BIOBIN_REGION_ARG="--region-file input/input.region"
 	fi
+	BIOBIN_INCLUDE_REGION_ARG=""
+	if [[ -n "$include_region_file" ]]; then
+		dx download "$include_region_file" -o input/input.gene
+		BIOBIN_INCLUDE_REGION_ARG="--include-region-file input/input.gene"
+	fi
 	VCF_FILE="input/input.vcf.gz"
 	TBI_FILE="$VCF_FILE.tbi"
 	dx download "$vcf_file" -o "$VCF_FILE"
@@ -95,6 +100,7 @@ main() {
 		$BIOBIN_TEST_ARG \
 		$BIOBIN_WEIGHT_ARG \
 		$BIOBIN_REGION_ARG \
+		$BIOBIN_INCLUDE_REGION_ARG \
 		--report-prefix "biobin/$output_prefix" \
 		$biobin_args \
 	2>&1 | tee -a output.log

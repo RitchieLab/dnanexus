@@ -3,7 +3,7 @@
   "title": "BioBin - Latest",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -64,10 +64,17 @@
     },
     {
       "name": "region_file",
-      "label": "Region File",
+      "label": "Binning Regions File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.region*"]
+      "patterns": ["*.region*","*.rgn*"]
+    },
+    {
+      "name": "include_region_file",
+      "label": "Region Names List",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.gen*"]
     },
     {
       "name": "regression_type",

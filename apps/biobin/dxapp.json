@@ -64,7 +64,7 @@
     },
     {
       "name": "region_file",
-      "label": "Binning Regions File",
+      "label": "Custom Regions File",
       "class": "file",
       "optional": true,
       "patterns": ["*.region*","*.rgn*"]

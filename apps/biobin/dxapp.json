@@ -122,7 +122,7 @@
       "name": "unlifted_files",
       "label": "Unlifted Variants Files",
       "class": "array:file",
-      "optinoal": true
+      "optional": true
     }
   ],
   "runSpec": {

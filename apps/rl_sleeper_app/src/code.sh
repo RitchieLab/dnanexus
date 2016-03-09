@@ -46,6 +46,5 @@ main() {
     # will be AppInternalError with a generic error message.
 
 	sleep $sleep_time
-	source ~/.dnanexus_config/unsetenv
 
 }

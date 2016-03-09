@@ -16,9 +16,9 @@
 # to modify this file.
 
 # Make sure to get GNU parallel here
-sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes parallel
+sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
+apt-get update
+apt-get install --yes parallel
 
 RERUN=1
 
@@ -46,5 +46,6 @@ main() {
     # will be AppInternalError with a generic error message.
 
 	sleep $sleep_time
+	source ~/.dnanexus_config/unsetenv
 
 }

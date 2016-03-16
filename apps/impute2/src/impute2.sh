@@ -19,9 +19,9 @@
 set -x
 set -o pipefail
 
-sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes parallel
+sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
+apt-get update
+apt-get install --yes parallel
 
 main() {
 
@@ -203,7 +203,7 @@ imputation() {
 	for f in ${CHUNK_DIR}/$prefix.*.impute2; do
 		# Read the 1st 1,000 bytes and print the 3rd field.  Should eliminate 
 		# issues with too many fields for awk to handle
-		echo -e "$(head -c 1000 $f | awk '{print $3}')\t$f"
+		echo -e "$(head -1 $f | head -c 1000 | awk '{print $3}')\t$f"
 	done | tee $POS_F
 
 	POS_SORT_F=$(mktemp)

@@ -447,14 +447,18 @@ if __name__ =="__main__":
 	# OK, now let's read the header from the first VCF file
 	hdr = []
 	nl = 0
-	for l in vcf_list[0]:
-		nl+=1
-		hdr.append(l)
-		if l.startswith("#CHROM"):
-			break
+	vcfidx=0
+	
+	while not hdr and vcfidx < len(vcf_list):
+		for l in vcf_list[vcfidx]:
+			nl+=1
+			hdr.append(l)
+			if l.startswith("#CHROM"):
+				break
+		vcfidx+=1
 	
 	# And consume the headers for all other VCF files
-	for f in vcf_list[1:]:
+	for f in vcf_list[vcfidx:]:
 		for l in f:
 			if l.startswith("#CHROM"):
 				break

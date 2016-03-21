@@ -205,7 +205,7 @@ function dl_merge_interval() {
 	# First, match up the GVCF to its index
 	while read dxfn; do
 		GVCF_NAME=$(dx describe --name "$dxfn")
-		GVCF_DXID=$(dx describe --json "$dxfn" | jq .id | sed 's/\"//g')
+		GVCF_DXID=$(dx describe --json "$dxfn" | jq -r .id)
 		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/.vcf\.gz$//')
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
 		
@@ -280,6 +280,10 @@ function merge_intervals(){
 	
 	# download ALL of the indexes (in parallel!)
 	GVCFIDX_FN=$(mktemp)
+	for i in "${!gvcfidx[@]}"; do
+		echo "${gvcfidx[$i]}"
+	done > $GVCFIDX_FN
+
 	dx download "$gvcfidxs" -f -o $GVCFIDX_FN
 	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
 	
@@ -288,7 +292,10 @@ function merge_intervals(){
 	dx download "$target" -f -o $TARGET_FILE
 	
 	GVCF_FN=$(mktemp)
-	dx download "$gvcfs" -f -o $GVCF_FN
+	for i in "${!gvcf[@]}"; do
+		echo "${gvcf[$i]}"
+	done > $GVCF_FN
+	#dx download "$gvcfs" -f -o $GVCF_FN
 	
 	# To reduce startup overhead of GATK, let's do multiple intervals at a time
 	# This variable tells us to use $OVERSUB * $(nproc) different GATK runs
@@ -391,14 +398,21 @@ function single_merge_subjob() {
 	gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq -r .id)
 	gvcffn=$(dx describe "$gvcflist" --json | jq -r .id )
 
-	OVER_SUB=1
 	INTERVAL_LIST=$(mktemp)
 	ORIG_INTERVALS=$(mktemp)
 	SPLIT_DIR=$(mktemp -d)
 	MERGE_ARGS=""
+	
+	JOB_ARGS=""
+	for i in "${!gvcf[@]}"; do
+		JOB_ARGS="$JOB_ARGS -igvcf='${gvcf[$i]}'"
+	done
+	
+	for i in "${!gvcfidx[@]}"; do
+		JOB_ARGS="$JOB_ARGS -igvcfidx='${gvcfidx[$i]}'"
+	done
 
 	if test "$target"; then
-		OVER_SUB=256
 		MERGE_ARGS="$MERGE_ARGS -itargeted:int=1"
 		
 		TARGET_FILE=$(mktemp)
@@ -428,7 +442,7 @@ function single_merge_subjob() {
 			CHR_LIST=$(mktemp)
 			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
 			int_fn=$(dx upload $CHR_LIST --brief)
-			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
+			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS $JOB_ARGS -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
 
 			dx-jobutil-add-output gvcf --array "$merge_jobid:vcf" --class=jobref
 			dx-jobutil-add-output gvcfidx --array "$merge_jobid:vcfidx" --class=jobref	
@@ -460,7 +474,7 @@ function single_merge_subjob() {
 			cat $f
 			int_fn=$(dx upload $f --brief)
 			# run a subjob that merges the input VCFs on the given target file
-			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS -igvcfidxs:file="$gvcfidxfn" -igvcfs:file="$gvcffn" -itarget:file="$int_fn" -iPREFIX="$PREFIX" -iconcat:int=0)
+			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS $JOB_ARGS -itarget:file="$int_fn" -iPREFIX="$PREFIX" -iconcat:int=0)
 			dx-jobutil-add-output gvcf --array "${merge_jobid}:vcf" --class=jobref
 			dx-jobutil-add-output gvcfidx --array "${merge_jobid}:vcfidx" --class=jobref	
 
@@ -484,7 +498,6 @@ function merge_subjob() {
 	fi
 
 	LIST_DIR=$(mktemp -d)
-	dx download "$gvcflist" -o $LIST_DIR/GVCF_LIST
 		
 	N_BATCHES=$nbatch
 	N_CORES=$(nproc --all)
@@ -496,26 +509,30 @@ function merge_subjob() {
 	GVCF_TMP=$(mktemp)
 	GVCF_TMPDIR=$(mktemp -d)
 		
-	sudo chmod a+rw $GVCF_TMP
+	chmod a+rw $GVCF_TMP
 	
+	# we need to make the $LIST_DIR/GVCF_LIST and the GVCFIDX_LIST from the array input here
+	for i in "${!gvcf[@]}"; do
+		echo "${gvcf[$i]}"
+	done > $LIST_DIR/GVCF_LIST
+
+	DX_GVCFIDX_LIST=$(mktemp)
+	for i in "${!gvcfidx[@]}"; do
+		echo "${gvcfidx[$i]}"
+	done > $DX_GVCFIDX_LIST
+	
+	parallel --gnu -j $(nproc --all) parallel_download :::: $DX_GVCFIDX_LIST ::: $GVCF_TMPDIR
+
 	cd  $GVCF_TMPDIR
-		
-	if test "$gvcfidxs"; then
-		DX_GVCFIDX_LIST=$(mktemp)
-		dx download "$gvcfidxs" -f -o $DX_GVCFIDX_LIST
-	
-		parallel --gnu -j $(nproc --all) parallel_download :::: $DX_GVCFIDX_LIST ::: $GVCF_TMPDIR
-	fi
-		
 	GVCF_LIST_SHUF=$(mktemp)
 	cat $LIST_DIR/GVCF_LIST | shuf  > $GVCF_LIST_SHUF
-	split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -n l/$N_BATCHES -d $GVCF_LIST_SHUF "gvcflist."
+	split -a $(echo "scale=0; 1+l($N_BATCHES)/l(10)" | bc -l) -n r/$N_BATCHES -d $GVCF_LIST_SHUF "gvcflist."
 	cd -
-	sudo chmod -R a+rwX $GVCF_TMPDIR
+
+	chmod -R a+rwX $GVCF_TMPDIR
 
 	TMP_GVCF_LIST=$(mktemp)
 	ls -1 ${GVCF_TMPDIR}/gvcflist.* > $TMP_GVCF_LIST
-
 
 	N_CHUNKS=$(cat $TMP_GVCF_LIST | wc -l)	
 	RERUN_FILE=$(mktemp)
@@ -550,23 +567,22 @@ function merge_subjob() {
 	
 	FINAL_DIR=$(mktemp -d)
 	
-	GVCF_SORTED=$(mktemp)
-	sed -i 's|^.*/gvcflist\.\([^.]*\)\.vcf\.gz$|\1\t&|' $GVCF_TMP 
-	sort -k1,1 -n $GVCF_TMP | cut -f2 > $GVCF_SORTED
+	#GVCF_SORTED=$(mktemp)
+	#sed -i 's|^.*/gvcflist\.\([^.]*\)\.vcf\.gz$|\1\t&|' $GVCF_TMP 
+	#sort -k1,1 -n $GVCF_TMP | cut -f2 > $GVCF_SORTED
 	
-	for l in $(cat $GVCF_SORTED); do
-		mv $l ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz
-		mv $l.tbi ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz.tbi
+	while read l; do
+		mv "$l" ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz
+		mv "$l.tbi" ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz.tbi
 			
 		VCF_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz --brief)
 		VCFIDX_DXFN=$(dx upload ${FINAL_DIR}/$PREFIX.$CIDX.vcf.gz.tbi --brief)
 	
-		dx-jobutil-add-output gvcf$CIDX "$VCF_DXFN" --class=file
-		dx-jobutil-add-output gvcfidx$CIDX "$VCFIDX_DXFN" --class=file
+		dx-jobutil-add-output gvcf_out "$VCF_DXFN" --array --class=file
+		dx-jobutil-add-output gvcfidx_out "$VCFIDX_DXFN" --array --class=file
 		
 		CIDX=$((CIDX + 1))
-	done
-
+	done < $GVCF_TMP
 }
 
 
@@ -586,37 +602,41 @@ main() {
 	
 	N_GVCF="${#gvcfs[@]}"
     GVCF_LIST=$(mktemp)
+   	JOINT_LIST=$(mktemp)
+    GVCFIDX_LIST=$(mktemp)
+
     SUBJOB_ARGS=""
 	if test "$N_GVCF" -gt 0 ; then
 	
 		# use the gvcf list provided
 		for i in "${!gvcfs[@]}"; do
-			echo "${gvcfs[$i]}" >> $GVCF_LIST
+			dx describe --json "${gvcfs[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed 's/\t$/\n/' >> $GVCF_LIST
 		done
 
 		# also, pass the gvcf index list as well!
 		if test "${#gvcfidxs[@]}" -gt 0; then
-		    GVCFIDX_LIST=$(mktemp)
 
 			for i in "${!gvcfidxs[@]}"; do
-				echo "${gvcfidxs[$i]}" >> $GVCFIDX_LIST
+				dx describe --json "${gvcfidxs[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $GVCFIDX_LIST
 			done
 			
-			dx_gidxlist=$(dx upload $GVCFIDX_LIST --brief)
-			SUBJOB_ARGS="$SUBJOB_ARGS -igvcfidxs:file=$dx_gidxlist"
+			join -j1 -t$'\t' <(sort -k1,1 -t$'\t' $GVCF_LIST)  <(sort -k1,1 -t$'\t' $GVCFIDX_LIST) > $JOINT_LIST
 			
-			rm $GVCFIDX_LIST
+			if test "$(cat $JOINT_LIST | wc -l)" -ne "$(cat $GVCF_LIST | wc -l)"; then
+				dx-jobutil-report-error "ERROR: Number of gvcf files and tabix indexes do not match"
+			fi
+			
 		fi
 		
 	elif test "$folder"; then
 		FOLDER_LIST=$(mktemp)
 		dx ls -l --delim $'\t' "$project:$folder" | cut -f4,5  > $FOLDER_LIST
-		grep '\.gz\W' $FOLDER_LIST > $GVCF_LIST
-		GVCFIDX_LIST=$(mktemp)
-		grep '\.gz\.tbi\W' $FOLDER_LIST > $GVCFIDX_LIST
-		if test "$(cat $GVCFIDX_LIST | wc -l)" -eq "$(cat $GVCF_LIST | wc -l)"; then
-			dx_gidxlist=$(dx upload $GVCFIDX_LIST --brief)
-			SUBJOB_ARGS="$SUBJOB_ARGS -igvcfidxs:file=$dx_gidxlist"
+		grep $'\.gz\t' $FOLDER_LIST > $GVCF_LIST
+		grep $'\.gz\.tbi\t' $FOLDER_LIST | sed 's/\.tbi\t/\t/' > $GVCFIDX_LIST
+		
+		join -j1 -t$'\t' <(sort -k1,1 -t$'\t' $GVCF_LIST)  <(sort -k1,1 -t$'\t' $GVCFIDX_LIST) > $JOINT_LIST
+		if test "$(cat $GVCFIDX_LIST | wc -l)" -gt 0 -a "$(cat $JOINT_LIST | wc -l)" -ne "$(cat $GVCF_LIST | wc -l)"; then
+			dx-jobutil-report-error "ERROR: Number of gvcf files and tabix indexes do not match"
 		fi
 	else
 		dx-jobutil-report-error "ERROR: you must provide either a list of gvcfs OR a directory containing gvcfs"
@@ -648,15 +668,41 @@ main() {
     # move the special logic testing N_BATCHES==1 here
     if test "$split_merge" = "true" -a \( $N_BATCHES -eq 1 -o "$force_single" = "true" \) ; then
     	
+    	SPLIT_IN=$GVCF_LIST
+    	IDX_GIVEN=0
+    	if test "$(cat $JOINT_LIST | wc -l)" -gt 0; then
+    		SPLIT_IN=$JOINT_LIST
+    		IDX_GIVEN=1
+    	fi
+    	
     	# split the gvcflist into the number of batches
     	SPLIT_DIR=$(mktemp -d)
-    	split -a 3 -d -n l/$N_BATCHES $GVCF_LIST $SPLIT_DIR/gvcflist.
+    	split -a 3 -d -n r/$N_BATCHES $SPLIT_IN $SPLIT_DIR/gvcflist.
     	
     	cd $SPLIT_DIR
     	
+    	FILE_DIR=$(mktemp -d)
+    	
     	for f in $(ls gvcflist.*); do
-			dx_gvcflist=$(dx upload $f --brief)
-			single_job=$(dx-jobutil-new-job single_merge_subjob -iPREFIX="$PREFIX.$(echo $f | cut -d. -f2)" -igvcflist="$dx_gvcflist" $SUBJOB_ARGS)
+    	
+    		
+    		#cut -f2 $f > $FILE_DIR/$f
+			#dx_gvcflist=$(dx upload $FILE_DIR/$f --brief)
+			
+			#if test $IDX_GIVEN -gt 0; then
+			#	cut -f3 $f > $FILE_DIR/$f.idx
+			#	dx_gvcfidxlist=$(dx upload $FILE_DIR/$f.idx --brief)
+			#	JOB_ARGS="-igvcfidxs:file=$dx_gvcfidxlist"
+			#fi
+
+			JOB_ARGS=""			
+			while read l; do
+				fn=$(echo "$l" | cut -f2)
+				idxfn=$(echo "$l" | cut -f3)
+				JOB_ARGS="$JOB_ARGS -igvcf:array:file=$fn -igvcfidx:array:file=$idxfn"			
+			done < $f
+
+			single_job=$(dx-jobutil-new-job single_merge_subjob -iPREFIX="$PREFIX.$(echo $f | cut -d. -f2)" $JOB_ARGS $SUBJOB_ARGS)
 		
 			# If we wanted a single VCF, we now need to merge all of the output
 			if test "$by_chrom" = "false"; then
@@ -676,26 +722,52 @@ main() {
    
 		GVCF_TMPDIR=$(mktemp -d)
 		cd  $GVCF_TMPDIR
-		GVCF_LIST_SHUF=$(mktemp)
-		cat $GVCF_LIST | shuf > $GVCF_LIST_SHUF
-		split -a $(echo "scale=0; 1+l($N_SUBJOB)/l(10)" | bc -l) -n l/$N_SUBJOB -d $GVCF_LIST_SHUF "gvcflist."
-		cd -
-	
-	
+		SPLIT_IN_SHUF=$(mktemp)
+		
+    	SPLIT_IN=$GVCF_LIST
+    	IDX_GIVEN=0
+    	if test "$(cat $JOINT_LIST | wc -l)" -gt 0; then
+    		SPLIT_IN=$JOINT_LIST
+    		IDX_GIVEN=1
+    	fi
+		
+		cat $SPLIT_IN | shuf > $SPLIT_IN_SHUF
+		split -a $(echo "scale=0; 1+l($N_SUBJOB)/l(10)" | bc -l) -n l/$N_SUBJOB -d $SPLIT_IN_SHUF "gvcflist."
 	
 		CIDX=1
 		# Now, kick off the subjobs for every file!
-		for f in $(ls -1 $GVCF_TMPDIR | sed 's|^.*/||'); do
+		FILE_DIR=$(mktemp -d)
+		for f in $(ls -1 gvcflist.*); do
+		
+			FILE_ARGS=""
+			while read l; do
+				fn=$(echo "$l" | cut -f2)
+				idxfn=$(echo "$l" | cut -f3)
+				FILE_ARGS="$FILE_ARGS -igvcf:array:file=$fn -igvcfidx:array:file=$idxfn"
+			done < $f
+		
 			# upload the gvcflist
-			GVCF_DXFN=$(dx upload $GVCF_TMPDIR/$f --brief)
+	   		#cut -f2 $f > $FILE_DIR/$f
+			#dx_gvcflist=$(dx upload $FILE_DIR/$f --brief)
+			#JOB_ARGS=""
+			#if test $IDX_GIVEN -gt 0; then
+			#	cut -f3 $f > $FILE_DIR/$f.idx
+			#	dx_gvcfidxlist=$(dx upload $FILE_DIR/$f.idx --brief)
+			#	JOB_ARGS="-igvcfidxs:file=$dx_gvcfidxlist"
+			#fi
+		
+	
+			#GVCF_DXFN=$(dx upload $FILE_DIR/$f --brief)
+			
 			# start the sub-job with the project, folder and gvcf list
-			subjob=$(dx-jobutil-new-job merge_subjob -iproject="$project" -ifolder="$folder" -igvcflist:file="$GVCF_DXFN" -iPREFIX="$PREFIX" -ijobidx=$CIDX -inbatch=$N_CORE_SUBJOB $SUBJOB_ARGS)
+			
+			subjob=$(dx-jobutil-new-job merge_subjob -iproject="$project" -ifolder="$folder" -iPREFIX="$PREFIX" -ijobidx=$CIDX -inbatch=$N_CORE_SUBJOB $FILE_ARGS $SUBJOB_ARGS)
 		
 			# the output of the subjob will be gvcfN and gvcfidxN, for N=1:#cores
-			for c in $(seq 1 $N_CORE_SUBJOB); do
-				dx-jobutil-add-output vcf_fn --array "${subjob}:gvcf$c" --class=jobref
-				dx-jobutil-add-output vcf_idx_fn --array "${subjob}:gvcfidx$c" --class=jobref
-			done		
+			#for c in $(seq 1 $N_CORE_SUBJOB); do
+			dx-jobutil-add-output vcf_fn --array "${subjob}:gvcf_out" --class=jobref
+			dx-jobutil-add-output vcf_idx_fn --array "${subjob}:gvcfidx_out" --class=jobref
+			#done
 		
 			CIDX=$((CIDX + 1))
 		

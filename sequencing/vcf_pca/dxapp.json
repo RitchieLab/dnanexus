@@ -90,6 +90,20 @@
       "default" : ""
     },
     {
+      "name" : "project_1kg",
+      "label" : "Project onto 1000 Genomes samples",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false
+    },
+    {
+      "name" : "project_superpop",
+      "label" : "Calculate projection using super-populations (EUR, etc.)",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    },
+    {
       "name": "fast_pca",
       "label": "Use Fast Eigenvalue Approx.",
       "class": "boolean",

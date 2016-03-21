@@ -14,6 +14,20 @@
 #
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
+set -x
+install_bioconductor() {
+    R --quiet -e 'source("http://bioconductor.org/biocLite.R"); biocLite(repos="http://cran.rstudio.com/")'
+}
+
+install_gsalib_cran() {
+    R --quiet -e 'install.packages("optparse", repos="http://cran.rstudio.com/")'
+   # wget -q http://cran.rstudio.com/src/contrib/Archive/plyr/plyr_1.8.1.tar.gz
+   # R CMD INSTALL --quiet plyr_1.8.1.tar.gz
+    R --quiet -e 'install.packages("reshape2", repos="http://cran.rstudio.com/")'
+    R --quiet -e 'install.packages("parallel", repos="http://cran.rstudio.com/")'
+    R --quiet -e 'install.packages("doMC", repos="http://cran.rstudio.com/")'
+    R --quiet -e 'install.packages("foreach", repos="http://cran.rstudio.com/")'
+}
 
 main() {
 
@@ -36,7 +50,7 @@ main() {
     #dx download "$genome" -o $FN
     
     cat_cmd="cat"
-    if test "$ext" -eq "gz"; then
+    if test "$ext" == "gz"; then
     	cat_cmd="zcat"
     fi
     
@@ -54,7 +68,7 @@ main() {
 		CMD_ARGS="$CMD_ARGS --order=pref"
 	fi
 	
-	AWK_CMD="{print \$$id1_col "\t" \$$id2_col }"
+	AWK_CMD="{print \$$id1_col "\"\\t\"" \$$id2_col }"
 	if test "$pihat_col" -ne 0; then
 		AWK_CMD="{if(\$$pihat_col < $thresh)$AWK_CMD }"
 	fi
@@ -62,9 +76,10 @@ main() {
 	dx cat "$genome" | $cat_cmd | awk "$AWK_CMD" > related_pair
 	
 	OUTDIR=$(mktemp -d)
-	
 	drop_related.R --pairs related_pair --out $OUTDIR/$prefix.todrop $CMD_ARGS
 
     relateds=$(dx upload $OUTDIR/$prefix.todrop --brief)
     dx-jobutil-add-output relateds "$relateds" --class=file
 }
+
+

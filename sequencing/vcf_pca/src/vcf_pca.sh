@@ -97,7 +97,7 @@ main() {
 			VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 			VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
 	
-			SUBJOB=$(eval dx-jobutil-new-job downsample_vcf "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN")
+			SUBJOB=$(eval dx-jobutil-new-job downsample_vcf "$SUBJOB_ARGS" -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iproject_1kg:boolean="$project_1kg")
 		
 			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
 		
@@ -143,7 +143,7 @@ main() {
 			BIM_DXFN=$(echo "$PLINK_LINE" | cut -f3)
 			FAM_DXFN=$(echo "$PLINK_LINE" | cut -f4)
 	
-			SUBJOB=$(eval dx-jobutil-new-job downsample_plink "$SUBJOB_ARGS" -ibed_fn:file="$BED_DXFN" -ibim_fn:file="$BIM_DXFN" -ifam_fn:file="$FAM_DXFN")
+			SUBJOB=$(eval dx-jobutil-new-job downsample_plink "$SUBJOB_ARGS" -ibed_fn:file="$BED_DXFN" -ibim_fn:file="$BIM_DXFN" -ifam_fn:file="$FAM_DXFN" -iproject_1kg:boolean="$project_1kg")
 		
 			PCA_ARGS="$PCA_ARGS -ibed:array:file=${SUBJOB}:bed -ibim:array:file=${SUBJOB}:bim -ifam:array:file=${SUBJOB}:fam" 
 		
@@ -151,7 +151,7 @@ main() {
 
 	fi	
 
-    pcarun=$(eval dx-jobutil-new-job run_pca "$PCA_ARGS")
+    pcarun=$(eval dx-jobutil-new-job run_pca -iproject_1kg:boolean="$project_1kg" -iproject_superpop:boolean="$project_superpop" "$PCA_ARGS")
 
     dx-jobutil-add-output evec_out "$pcarun:evec_out" --class=jobref
 	dx-jobutil-add-output samp_excl "$pcarun:samp_excl" --class=jobref
@@ -196,7 +196,43 @@ downsample_plink(){
 	PREFIX=$(dx describe --name "$bed_fn" | sed 's/.bed$//')
 	
 	if test -s preld.bed; then
-		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
+		PRELD_NAME="preld"
+		
+		if test "$project_1kg" = "true"; then
+			NCHR=0
+			PLINK_FN=""
+			MERGE_FILE=$(mktemp)
+			SNP_LIST=$(mktemp)
+			GEN_DIR=$(mktemp -d)
+		
+			cut -f2 preld.bim > $SNP_LIST
+			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
+				# download the bed/bim/fam from dnanexus
+				for ext in bed bim fam; do
+					dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+				done
+				# extract the markers in preld
+				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
+			
+				# add the bed/bim/fam to the MERGE_FILE
+				echo -e "$GEN_DIR/ALL.chr$c.extracted.bed\t$GEN_DIR/ALL.chr$c.extracted.bim\t$GEN_DIR/ALL.chr$c.extracted.fam" >> $MERGE_FILE
+			done
+		
+			# now, extract the markers overlapping the 1kg data
+			GEN_SNPS=$(mktemp)
+			for f in $(cut -f2 $MERGE_FILE); do
+				cut -f2 $f >> $GEN_SNPS
+			done
+		
+			plink2 --bfile preld --extract $GEN_SNPS --out premerge --make-bed --allow-no-sex
+
+			PRELD_NAME="postmerge"		
+			# and finally, merge the files together
+			plink2 --bfile premerge --merge-list $MERGE_FILE --out $PRELD_NAME --allow-no-sex --make-bed	
+			
+		fi
+	
+		run_ld "$OUTDIR" "$PREFIX" $PRELD_NAME "$ld_args"
 	else
 		for ext in bed bim fam; do
 			mv preld.$ext $OUTDIR/$PREFIX.$ext
@@ -228,7 +264,45 @@ downsample_vcf() {
 	eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --vcf-filter --biallelic-only strict --snps-only --set-missing-var-ids @:#:\$1 --make-bed --maf $maf "$sel_args" --out preld -allow-no-sex --threads $(nproc --all) || touch preld.bed preld.bim preld.fam
 
 	if test -s preld.bed; then
-		run_ld "$OUTDIR" "$PREFIX" preld "$ld_args"
+		# if we want to project onto 1Kg, let's download only the necessary chromosomes, but make sure only autosomes!		
+		
+		PRELD_NAME="preld"
+		
+		if test "$project_1kg" = "true"; then
+			NCHR=0
+			PLINK_FN=""
+			MERGE_FILE=$(mktemp)
+			SNP_LIST=$(mktemp)
+			GEN_DIR=$(mktemp -d)
+		
+			cut -f2 preld.bim > $SNP_LIST
+			for c in $(join <(seq 1 22 | sort) <(tabix -l input.vcf.gz | sort)); do
+				# download the bed/bim/fam from dnanexus
+				for ext in bed bim fam; do
+					dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+				done
+				# extract the markers in preld
+				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
+			
+				# add the bed/bim/fam to the MERGE_FILE
+				echo -e "$GEN_DIR/ALL.chr$c.extracted.bed\t$GEN_DIR/ALL.chr$c.extracted.bim\t$GEN_DIR/ALL.chr$c.extracted.fam" >> $MERGE_FILE
+			done
+		
+			# now, extract the markers overlapping the 1kg data
+			GEN_SNPS=$(mktemp)
+			for f in $(cut -f2 $MERGE_FILE); do
+				cut -f2 $f >> $GEN_SNPS
+			done
+		
+			plink2 --bfile preld --extract $GEN_SNPS --out premerge --make-bed --allow-no-sex
+
+			PRELD_NAME="postmerge"		
+			# and finally, merge the files together
+			plink2 --bfile premerge --merge-list $MERGE_FILE --out $PRELD_NAME --allow-no-sex --make-bed	
+			
+		fi
+	
+		run_ld "$OUTDIR" "$PREFIX" $PRELD_NAME "$ld_args"
 	else
 		for ext in bed bim fam; do
 			mv preld.$ext $OUTDIR/$PREFIX.$ext
@@ -294,15 +368,45 @@ run_pca() {
 	INPUTDIR=$(mktemp -d)
 
 	# Allow some sample-level dropping to happen here (i.e. geno).
-	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $INPUTDIR/input --make-bed -allow-no-sex
+	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$merge_args" --out $INPUTDIR/input --make-bed -allow-no-sex
 	
 	# get a list of those dropped
 	SAMPLE_DROPPED=$(mktemp)
 	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $INPUTDIR/input.fam | cut -f1-2 | sort -t'\0') > $SAMPLE_DROPPED
+
+	PAR_F=$(mktemp)
+	
+	# OK, now if projecting, we need to add populations
+	if test "$project_1kg" = "true"; then
+		FAM_LINENO=$(mktemp)
+		nl -ba -nln -w1 $INPUTDIR/input.fam | sed -e 's/  */\t/g' > $FAM_LINENO
+		POP_FILE=$(mktemp)
+		dx download "$DX_RESOURCES_ID:/1K_genomes/integrated_call_samples_v3.20130502.ALL.panel" -o $POP_FILE -f
+		
+		POP_COL=2
+		if test "$project_superpop" = "true"; then
+			POP_COL=3
+		fi
+		
+		join -t$'\t' -1 3 -2 1 -a 1 <(sort -t$'\t' -k3,3 $FAM_LINENO | cut -f1-6) <(cut -f1,$POP_COL $POP_FILE | sort -t$'\t' -k1,1) \
+			| sort -k2,2n -t$'\t' | cut -f1,3- \
+			| awk '{if (NF<6) print $0 "\tUNK"; else print $0;}' > $INPUTDIR/input.fam.new
+		
+		mv $INPUTDIR/input.fam $INPUTDIR/input.fam.old
+		mv $INPUTDIR/input.fam.new $INPUTDIR/input.fam
+		
+		POPLIST=$(mktemp)
+		cut -f $POP_COL $POP_FILE | tail -n+2 | sort -u > $POPLIST
+		echo "poplist: $POPLIST" >> $PAR_F
+	
+	else
+		# remove the "-9" in the last column of the PED file
+		sed -i 's/-9$/UNK/' $INPUTDIR/input.fam
+	
+	fi
 	
 	OUTDIR=$(mktemp -d)
 	
-	PAR_F=$(mktemp)
 	echo "genotypename: $INPUTDIR/input.bed" >> $PAR_F
 	echo "snpname: $INPUTDIR/input.bim" >> $PAR_F
 	echo "indivname: $INPUTDIR/input.fam" >> $PAR_F
@@ -318,7 +422,7 @@ run_pca() {
 		echo "outlieroutname: $OUTDIR/$prefix.outlier" >> $PAR_F
 		echo "numoutlierevec: $num_evec" >> $PAR_F	    	
 	else
-		echo "fastmode: yes" >> $PAR_F
+		echo "fastmode: YES" >> $PAR_F
 	fi
 	
 	echo "$pca_opts" | sed 's/"//g' | tr ',' '\n' >> $PAR_F

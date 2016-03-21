@@ -283,7 +283,7 @@ run_ibd() {
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 	TOT_MEM=$((TOT_MEM * 8 / 10))
 	# Allow some sample-level dropping to happen here (i.e. geno).
-	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$plink_args" --out $OUTDIR/$prefix --genome gz --make-bed -allow-no-sex --memory $TOT_MEM
+	eval plink2 --bfile "$FIRST_PREF" --merge-list $MERGE_FILE "$merge_args" --out $OUTDIR/$prefix --genome gz --make-bed -allow-no-sex --memory $TOT_MEM
 	
 	# get a list of those dropped
 	join -v1 -t'\0' $FAM_OVERALL <(sed 's/[ \t][ \t]*/\t/g' $OUTDIR/$prefix.fam | cut -f1-2 | sort -t'\0') > $OUTDIR/$prefix.excluded

@@ -1,7 +1,7 @@
 {
   "name": "vcf_query",
   "title": "Query VCF File",
-  "summary": "Run vcf-query
+  "summary": "Run vcf-query and output a bgzipped result",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -28,10 +28,26 @@
     },
     {
       "name": "query_str",
-      "label": "Query Stringto vcf-query",
+      "label": "Query String to bcftools query",
       "class": "string",
       "optional": false,
-	  "default" : "%CHROM\t%POS\t%ID\t%REF\t%ALT\t%QUAL\t%INFO/QD\t%INFO/AN\t%INFO/AC[%GTR\t]"
+	  "default" : "%CHROM\\t%POS\\t%ID\\t%REF\\t%ALT\\t%QUAL\\t%INFO/QD\\t%INFO/AN\\t%INFO/AC[\\t%GT]\\n"
+    },
+    {
+      "name" : "cat_results",
+      "label" : "Concatenate Results",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : false,
+      "group" : "Concatenation Options"
+    },
+    {
+      "name" : "prefix",
+      "label" : "Prefix for concatenated result",
+      "class" : "string",
+      "optional" : true,
+      "default" : "combined",
+      "group" : "Concatenation Options"
     }
   ],
   "outputSpec": [
@@ -58,7 +74,7 @@
     ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-johnwallace123", "user-auv13"],
+  "developers": ["user-johnwallace123", "user-auv13", "user-bdgeise"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

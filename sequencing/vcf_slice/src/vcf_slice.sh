@@ -31,7 +31,7 @@ function slice_vcf () {
 	OUTDIR=$3
 	OUTFN="$OUTDIR/$PREFIX.sliced.vcf.gz"
 	
-	download_intervals.py -f $VCFFN -i $VCFIDXFN -L "$REGIONFN" -o "$OUTFN"
+	download_intervals.py -H -f $VCFFN -i $VCFIDXFN -L "$REGIONFN" -o "$OUTFN"
 	
 	tabix -p vcf "$OUTFN"
 

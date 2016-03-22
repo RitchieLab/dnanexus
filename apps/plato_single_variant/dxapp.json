@@ -25,7 +25,7 @@
       "name": "regression",
       "label": "Regression",
       "class": "string",
-      "choices": ["regress-auto","linear","logistic"],
+      "choices": ["regress-auto","linear","logistic","firth"],
       "default": "regress-auto", 
       "optional": true
     },
@@ -50,6 +50,14 @@
       "name": "covariates",
       "label": "Covariates (Enter covariates column names)",
       "class": "string",
+      "optional": true
+    },
+    {
+      "group": "Parallel Job Options",
+      "name": "split_phenotype",
+      "label": "Phenotype per job (Provide the number of phenotype to run in each sub job)",
+      "class": "int",
+      "default": 0,
       "optional": true
     },
     {
@@ -115,7 +123,7 @@
       "group": "Filter Options",
       "name": "case_threshold",
       "label": "Case Threshold",
-      "class": "float",
+      "class": "int",
       "optional": true
     },
     
@@ -139,11 +147,17 @@
     "execDepends":[
       {
         "name": "libgsl0ldbl"
+      }],
+    "systemRequirements": {
+      "main": {
+        "instanceType": "mem1_ssd1_x2"
+      },
+      "*": {
+        "instanceType": "mem1_ssd1_x32"
       }
-    ],
+    },
     "interpreter": "bash",
     "file": "src/plato_single_variant.sh"
   },
-  "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "authorizedUsers": ["org-geisinger"]
 }

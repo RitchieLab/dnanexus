@@ -90,7 +90,7 @@ main() {
 			FILE_ARGS="$FILE_ARGS -ivcfidx_fn:file=$VCFIDX_DXFN"
 		fi
 	
-		SUBJOB=$(eval dx-jobutil-new-job run_batch "$FILE_ARGS" "$SUBJOB_ARGS" -iPREFIX:string="$PREFIX.$CIDX")
+		SUBJOB=$(eval dx-jobutil-new-job run_batch "$FILE_ARGS" "$SUBJOB_ARGS" -iPREFIX:string="$PREFIX.$CIDX" -ifisher:boolean="$fisher")
 		
 		CONCAT_ARGS="$CONCAT_ARGS -iassoc_in:array:file=$SUBJOB:assoc_out -ipval_in:array:file=$SUBJOB:pval_list"
 		
@@ -257,6 +257,12 @@ run_batch() {
     PLINK_CMD="--assoc"
     PLINK_SUFF="assoc"
     EXTRA_CMD="cat"
+
+    if test "$fisher" = "true" ; then
+    	PLINK_CMD="--fisher"
+    	PLINK_SUFF="assoc.fisher"
+    fi
+    
     # Now, check for covariates - if so, we'll need to use logistic
     if test "$input_covars"; then
     	PLINK_COVARS=$(mktemp)
@@ -271,7 +277,7 @@ run_batch() {
     
     plink2 --vcf $VCF_FN --double-id --id-delim ' ' $DROP_CMD $PLINK_CMD --out $OUT_DIR/$PREFIX --vcf-filter --pheno $PLINK_PHENO -allow-no-sex --threads $(nproc --all)
     
-    sed -i -e 's/^[ \t]*//' -e's/  */\t/g' $OUT_DIR/$PREFIX.$PLINK_SUFF
+    sed -i -e 's/^[ \t]*//' -e 's/  */\t/g' $OUT_DIR/$PREFIX.$PLINK_SUFF
     if test "$input_covars"; then
 		tail -n+2  $OUT_DIR/$PREFIX.$PLINK_SUFF | eval "$EXTRA_CMD" | cut -f9 | grep -v 'NA' | sort -g > $OUT_DIR/$PREFIX.p_vals
 	else

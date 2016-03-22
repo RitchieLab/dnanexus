@@ -60,29 +60,12 @@ main() {
 	if [[ -f input/input.samples ]]; then
 	
 		# download GATK files
-		DX_RESOURCES_ID="$(dx find projects --name "GATK Resources" --brief)"
 		DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
 		mkdir shared
-		dx download "$(dx find data --brief \
-			--name "GenomeAnalysisTK-3.3-0.jar" \
-			--project "$DX_RESOURCES_ID" \
-			--folder /jar \
-		)" -o shared/GATK.jar
-		dx download "$(dx find data --brief \
-			--name "human_g1k_v37_decoy.fasta" \
-			--project "$DX_RESOURCES_ID" \
-			--folder /resources \
-		)" -o shared/reference.fasta
-		dx download "$(dx find data --brief \
-			--name "human_g1k_v37_decoy.fasta.fai" \
-			--project "$DX_RESOURCES_ID" \
-			--folder /resources \
-		)" -o shared/reference.fasta.fai
-		dx download "$(dx find data --brief \
-			--name "human_g1k_v37_decoy.dict" \
-			--project "$DX_RESOURCES_ID" \
-			--folder /resources \
-		)" -o shared/reference.dict
+		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o shared/GATK.jar
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o shared/reference.fasta
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o shared/reference.fasta.fai
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o shared/reference.dict
 		
 		# run GATK
 		mkdir gatk

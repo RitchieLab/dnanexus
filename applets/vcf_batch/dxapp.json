@@ -55,6 +55,13 @@
       "name": "PREFIX",
       "class": "string",
       "default" : "assoc"
+    },
+    {
+      "label" : "Fisher's Exact",
+      "optional" : false,
+      "name" : "fisher",
+      "class" : "boolean",
+      "default" : false
     }
   ],
   "outputSpec": [

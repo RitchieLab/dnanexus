@@ -11,7 +11,7 @@
       "label": "SQLite file",
       "class": "file",
       "optional": false,
-      "default": {"$dnanexus_link": "file-BkXKpJQ0z9X2xVGxYGPY1kqz"}
+      "default": {"$dnanexus_link": "file-Bpy1Qvj0pB0V4Vy2BQ0f7xGp"}
     },
     {
       "name": "freeze",
@@ -33,14 +33,14 @@
       "group": "ICD Code Options",
       "label": "Case Threshold",
       "class": "int",
-      "optional": true
+      "optional": false
     },
     {
       "name": "count_filter",
       "group": "ICD Code Options",
       "label": "ICD-9 Count Threshold",
       "class": "int",
-      "optional": true
+      "optional": false
     },
     {
       "name": "three_digit_rollup",

@@ -23,7 +23,7 @@ main() {
     echo "Value of case_filter: '$case_filter'"
     echo "Value of count_filter: '$count_filter'"
     echo "Value of count_filter: '$freeze'"
-    
+
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
@@ -54,7 +54,14 @@ main() {
 	mkdir -p output_files
     cd output_files
 	ls -l
-	
+
+	if [ "$freeze" == "40K"]
+	then
+		fid="'Geisinger'"
+	else
+		fid="rgn_id"
+	fi
+
 	freeze=$(echo ${freeze} | sed 's/K//g')
 	if $three_digit_rollup
 	then
@@ -70,17 +77,17 @@ main() {
 		select_icd_reformat=$(echo $select_icd | sed 's/^/"/g' | sed 's/,/","/g' | sed 's/$/"/g')
 		code_list="icd9_code IN (${select_icd_reformat}) and"
 	fi
-	
+
 echo "$icd9_code_matrix"
 
-	#Generate ICD9 Case-Control matrix	
+	#Generate ICD9 Case-Control matrix
 	if [ "$icd9_code_matrix" == true ] || [ "$three_digit_rollup" == true];
 	then
 		#if $three_digit_rollup
 		#then
 			# Query to create case-control matrix
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
-		"select 'Geisinger', \
+		"select ${fid}, \
 		rgn_id, \
 		case when pt_id=-1 \
 		then group_concat(distinct icd9_code) \
@@ -113,8 +120,8 @@ echo "$icd9_code_matrix"
 		join freeze_${freeze}_demographics \
 		using(pt_id) \
 		group by rgn_id" > icd9_out.txt
-		
-		
+
+
 		cat icd9_out.txt | sed 's/|/\t/g' | sed 's/,/\t/g' | sed '1 s/^Geisinger\t/fid\tiid/g' > ${icd9_out_prefix}
 	fi
 
@@ -124,7 +131,7 @@ echo "$icd9_code_matrix"
 	then
 		echo  ${clinical_lab_out_prefix}
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
-		"select 'Geisinger' as fid, \
+		"select ${fid} as fid, \
 		rgn_id as iid, \
 		case when pt_id=-1 \
 		then group_concat(lab_name) \
@@ -146,39 +153,39 @@ echo "$icd9_code_matrix"
 		freeze_${freeze}_demographics \
 		using(pt_id) where lab_name!='X' \
 		group by rgn_id" > clinical_lab_out
-		
-		sed 's/ /_/g' clinical_lab_out | sed 's/|/\t/g' | sed 's/,/\t/g' | sed '1 s/^Geisinger\t/fid\tiid/g' > ${clinical_lab_out_prefix}
+
+		sed 's/ /_/g' clinical_lab_out | sed 's/|/\t/g' | sed 's/,/\t/g' | sed 's/\r//g' | sed '1 s/^Geisinger\t/fid\tiid/g'  > ${clinical_lab_out_prefix}
 	fi
 
 	# Generate covariate file
 	sys_date=$(date +"%Y")
-	
+
 	if [ -n "$cont_covariate" ]
 	then
 		query=$(echo ${cont_covariate[*]} | sed 's/ /,/g')
 		echo "fid,iid,$query" | sed 's/,/\t/g' > ${cont_covariate_out_prefix}
-		
+
 	if [[ "${cont_covariate[age]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age,/$sys_date\-substr(birth_date,1,4) as age,/g") 
+		query=$(echo $query | sed "s/age,/$sys_date\-substr(birth_date,1,4) as age,/g")
 		echo ${query}
-	fi	
-		
+	fi
+
 	if [[ "${cont_covariate[age^2]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age\^2/($sys_date\-substr(birth_date,1,4))*($sys_date-substr(birth_date,1,4)) as \`age\^2\`/g") 
+		query=$(echo $query | sed "s/age\^2/($sys_date\-substr(birth_date,1,4))*($sys_date-substr(birth_date,1,4)) as \`age\^2\`/g")
 		echo ${query}
 	fi
-	
+
 	for i in "${cont_covariate[@]}"
 	do
     		if [ "$i" == "pc1" ] ; then
         	 pca_table="join freeze_${freeze}_pca using(rgn_id)"
     		fi
 	done
-	
+
 	#if [[ ${cont_covariate["pc1"]} ]];
         #then
        # 	pca_table="join freeze_${freeze}_pca using(rgn_id)"
@@ -187,28 +194,28 @@ echo "$icd9_code_matrix"
 
 
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
-		"select 'Geisinger' as fid, \
+		"select ${fid} as fid, \
 		rgn_id as iid, \
 		${query} \
 		from	\
 		freeze_${freeze}_demographics \
 		${pca_table} where sex!='Unknown' and bmi!='' and rgn_id!=''"> cont_covariate_out.txt
-		
+
 		sed 's/|/\t/g' cont_covariate_out.txt >> ${cont_covariate_out_prefix}
 	fi
-	
-	if [ -n "$cat_covariate" ] 
+
+	if [ -n "$cat_covariate" ]
 	then
 		query=$(echo ${cat_covariate[*]} | sed 's/ /,/g')
 		echo "fid,iid,$query" | sed 's/,/\t/g' > ${cat_covariate_out_prefix}
-		
+
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
-		"select 'Geisinger' as fid, \
+		"select ${fid} as fid, \
 		rgn_id as iid, \
 		${query} \
 		from \
 		freeze_${freeze}_demographics where sex!='Unknown' and bmi!='' and rgn_id!=''"  > cat_covariate_out.txt
-		
+
 		sed 's/|/\t/g' cat_covariate_out.txt| sed 's/ /_/g' >> ${cat_covariate_out_prefix}
 	fi
 
@@ -217,29 +224,29 @@ echo "$icd9_code_matrix"
     # that you have used the output field name for the filename for each output,
     # but you can change that behavior to suit your needs.  Run "dx upload -h"
     # to see more options to set metadata.
-	
+
 	if [ -e "${icd9_out_prefix}" ]
 	then
     icd9_out=$(dx upload ${icd9_out_prefix} --brief)
     dx-jobutil-add-output icd9_out "$icd9_out" --class=file
-	fi	
-	
+	fi
+
     if [ -e "${clinical_lab_out_prefix}" ]
     then
     	clinical_out=$(dx upload ${clinical_lab_out_prefix} --brief)
         dx-jobutil-add-output clinical_out "$clinical_out" --class=file
     fi
-    
+
     if [ -e "${cont_covariate_out_prefix}" ]
     then
     	cont_covariate_out=$(dx upload ${cont_covariate_out_prefix} --brief)
     	dx-jobutil-add-output cont_covariate_out "$cont_covariate_out" --class=file
     fi
-    
+
     if [ -e "${cat_covariate_out_prefix}" ]
     then
     	cat_covariate_out=$(dx upload ${cat_covariate_out_prefix} --brief)
     	dx-jobutil-add-output cat_covariate_out "$cat_covariate_out" --class=file
-    fi     
-    
+    fi
+
 }

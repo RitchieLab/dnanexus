@@ -35,7 +35,7 @@ if sys.argv[2] != '.':
 				pos = long(cols[1])
 				alleles = empty
 				if len(cols) > 2:
-					alleles = set(a.strip().upper() for a in cols[2].split(','))
+					alleles = set(allele.strip().upper() for allele in cols[2].split(','))
 				p -= len(chmPosAlleles[chm])
 				a -= len(chmPosAlleles[chm][pos])
 				chmPosAlleles[chm][pos].update(alleles)
@@ -94,7 +94,7 @@ if sys.argv[4] != '.':
 
 print "opening output files ..."
 outputANN = outputSIFT = outputNSFP = outputCLINVAR = None
-headers = ('CHROM','POS','REF','ALT','AF')
+headers = ('CHROM','POS','ID','REF','ALT','AF')
 
 if 'snpeff' in options:
 	headers2 = ('GeneName','GeneID','NumTransInGene','PctTransAffected')
@@ -152,6 +152,7 @@ for line in sys.stdin:
 	cols = line.rstrip('\r\n').split('\t')
 	chm = cols[0].strip().upper()
 	pos = long(cols[1])
+	rsid = cols[2]
 	zone = pos / 100000
 	
 	if chmZoneRegions != None:
@@ -211,8 +212,8 @@ for line in sys.stdin:
 			data1 = annoAltData['ANN'][alt][0] if (len(annoAltData['ANN'][alt]) >= 1) else empty
 			data2 = annoAltData['ANN'][alt][1] if (len(annoAltData['ANN'][alt]) >= 2) else empty
 			data3 = annoAltData['ANN'][alt][2] if (len(annoAltData['ANN'][alt]) >= 3) else empty
-			outputANN.write("%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n" % (
-				chm, pos, ref, alt, altFreq[alt],
+			outputANN.write("%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n" % (
+				chm, pos, rsid, ref, alt, altFreq[alt],
 				'\t'.join( ((lof[i] or 'NA') if (i < len(lof)) else 'NA') for i in xrange(0,4) ),
 				'\t'.join( ((nmd[i] or 'NA') if (i < len(nmd)) else 'NA') for i in xrange(0,4) ),
 				'\t'.join( ((data1[i] or 'NA') if (i < len(data1)) else 'NA') for i in xrange(1,16) ),
@@ -224,8 +225,8 @@ for line in sys.stdin:
 		if outputSIFT and (len(annoAltData['SIFT'][alt]) > 0):
 			annoAltData['SIFT'][alt].sort(key=(lambda data: sum((len(s) > 0) for s in data)), reverse=True)
 			data1 = annoAltData['SIFT'][alt][0]
-			outputSIFT.write("%s\t%d\t%s\t%s\t%s\t%s%s\n" % (
-				chm, pos, ref, alt, altFreq[alt],
+			outputSIFT.write("%s\t%d\t%s\t%s\t%s\t%s\t%s%s\n" % (
+				chm, pos, rsid, ref, alt, altFreq[alt],
 				'\t'.join( ((data1[i] or 'NA') if (i < len(data1)) else 'NA') for i in xrange(1,8) ),
 				('\t'+','.join( '|'.join(data) for data in annoAltData['SIFT'][alt][1:] )) if ('extra' in options) else '',
 			))
@@ -233,8 +234,8 @@ for line in sys.stdin:
 		if outputNSFP and (len(annoAltData['dbNSFP'][alt]) > 0):
 			annoAltData['dbNSFP'][alt].sort(key=(lambda data: sum((len(s) > 0) for s in data)), reverse=True)
 			data1 = annoAltData['dbNSFP'][alt][0]
-			outputNSFP.write("%s\t%d\t%s\t%s\t%s\t%s%s\n" % (
-				chm, pos, ref, alt, altFreq[alt],
+			outputNSFP.write("%s\t%d\t%s\t%s\t%s\t%s\t%s%s\n" % (
+				chm, pos, rsid, ref, alt, altFreq[alt],
 				'\t'.join( ((data1[i] or 'NA') if (i < len(data1)) else 'NA') for i in xrange(1,16) ),
 				('\t'+','.join( '|'.join(data) for data in annoAltData['dbNSFP'][alt][1:] )) if ('extra' in options) else '',
 			))
@@ -242,8 +243,8 @@ for line in sys.stdin:
 		if outputCLINVAR and (len(annoAltData['CLINVAR'][alt]) > 0):
 			annoAltData['CLINVAR'][alt].sort(key=(lambda data: sum((len(s) > 0) for s in data)), reverse=True)
 			data1 = annoAltData['CLINVAR'][alt][0]
-			outputCLINVAR.write("%s\t%d\t%s\t%s\t%s\t%s%s\n" % (
-				chm, pos, ref, alt, altFreq[alt],
+			outputCLINVAR.write("%s\t%d\t%s\t%s\t%s\t%s\t%s%s\n" % (
+				chm, pos, rsid, ref, alt, altFreq[alt],
 				'\t'.join( ((data1[i] or 'NA') if (i < len(data1)) else 'NA') for i in xrange(1,4) ),
 				('\t'+','.join( '|'.join(data) for data in annoAltData['CLINVAR'][alt][1:] )) if ('extra' in options) else '',
 			))

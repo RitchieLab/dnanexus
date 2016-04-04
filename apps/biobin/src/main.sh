@@ -111,7 +111,8 @@ main() {
 	
 	biobin-summary.py \
 		--prefix="biobin/$output_prefix" \
-		> "biobin/${output_prefix}-summary.csv"
+		--output-sep="\t" \
+		> "biobin/${output_prefix}-summary.tsv"
 	
 	
 	# upload output files
@@ -121,7 +122,7 @@ main() {
 		dx-jobutil-add-output bins_files --class="array:file" "$bin_file"
 	done
 	
-	summary_file=$(dx upload biobin/*-summary.csv --brief)
+	summary_file=$(dx upload biobin/*-summary.tsv --brief)
 	dx-jobutil-add-output summary_file --class="file" "$summary_file"
 	
 	locus_file=$(dx upload biobin/*-locus.csv --brief)

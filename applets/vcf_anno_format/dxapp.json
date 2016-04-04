@@ -42,13 +42,14 @@
       "name": "prefix",
       "label": "Output Filename Prefix",
       "class": "string",
-      "default": "vcf_annotate"
+      "default": "vcf_anno_format"
     },
     {
       "name": "annotations",
       "label": "Annotation Types",
       "class": "array:string",
-      "choices": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"]
+      "choices": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"],
+      "default": ["CLINVAR", "dbNSFP", "SIFT", "SNPEff"]
     },
     {
       "name": "extra",
@@ -59,27 +60,9 @@
   ],
   "outputSpec": [
     {
-      "name": "clinvar_output",
-      "label": "CLINVAR Annotations",
-      "class": "file",
-      "optional": true
-    },
-    {
-      "name": "dbnsfp_output",
-      "label": "dbNSFP Annotations",
-      "class": "file",
-      "optional": true
-    },
-    {
-      "name": "sift_output",
-      "label": "SIFT Annotations",
-      "class": "file",
-      "optional": true
-    },
-    {
-      "name": "snpeff_output",
-      "label": "SNPEff Annotations",
-      "class": "file",
+      "name": "annotation_files",
+      "label": "Formatted Annotations",
+      "class": "array:file",
       "optional": true
     }
   ],

@@ -168,7 +168,7 @@ echo "$icd9_code_matrix"
 	if [[ "${cont_covariate[age]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age,/$sys_date\-substr(birth_date,1,4) as age,/g")
+		query=$(echo $query | sed "s/age,/case when vital_status="DECEASED" then substr(death_date,1,4)-substr(birth_date,1,4) else $sys_date\-substr(birth_date,1,4) end  as age/")
 		echo ${query}
 	fi
 

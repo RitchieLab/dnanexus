@@ -1,0 +1,64 @@
+{
+  "name": "pca",
+  "title": "Principal Component Analysis using SMARTPCA",
+  "summary": "pca",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "bed_input",
+      "label": "BED file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "bim_input",
+      "label": "BIM file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "fam_input",
+      "label": "FAM file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "output_prefix",
+      "label": "Output Prefix",
+      "class": "string",
+      "optional": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "evec_out",
+      "label": "Eigenvectors",
+      "class": "file"
+    },
+    {
+      "name": "eval_out",
+      "label": "Eigenvalues",
+      "class": "file"
+    },
+    {
+      "name": "pca_plot",
+      "label": "PCA plot",
+      "class": "file"
+    },
+    {
+      "name": "screeplot",
+      "label": "Screeplot",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/pca.sh"
+  },
+  "access": {
+    "project": "CONTRIBUTE"
+  },
+  "authorizedUsers": []
+}

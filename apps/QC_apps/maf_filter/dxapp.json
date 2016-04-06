@@ -1,0 +1,57 @@
+{
+  "name": "maf_filter",
+  "title": "Marker MAF Rate Filter (PLINK)",
+  "summary": "maf_filter",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Annotation"
+  ],
+  "inputSpec": [
+    {
+      "name": "bed_file",
+      "label": "BED file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "bim_file",
+      "label": "BIM file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "fam_file",
+      "label": "FAM file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "threshold",
+      "label": "MAF Threshold",
+      "class": "float",
+      "optional": true,
+      "default": 0.05
+    },
+    {
+      "name": "old_plink",
+      "label": "Use PLINK version 1.07?",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    }
+
+  ],
+  "outputSpec": [
+    {
+      "name": "drop_list",
+      "label": "Marker Drop List",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/marker_call_filter.sh"
+  },
+  "authorizedUsers": ["org-geisinger"]
+}

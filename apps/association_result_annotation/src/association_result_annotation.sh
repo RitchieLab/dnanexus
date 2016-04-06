@@ -44,16 +44,16 @@ main() {
     # exit code will prematurely exit the script; if no error was
     # reported in the job_error.json file, then the failure reason
     # will be AppInternalError with a generic error message.
-	
+
 	#Get the column names from input file
-	
+
 	icd_tbl_col=$(head -n1 input_file | sed 's/)//g' | sed 's/(//g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g')
 
 	# Create a table for input results file
 	sqlite3 anno.db "create table assoc_result ($icd_tbl_col)"
 
 	# Insert input results to the table.
-	
+
 	sqlite3 anno.db <<!
 .separator \t
 .import input_file assoc_result
@@ -71,7 +71,7 @@ delete from icd9_code_desc where desc='desc';
 select * from icd9_code_desc limit 5;
 .tables
 !
-	
+
 
 	# Create position file of SNPs from the association result file
     cut -f3 input_file | sed 's/:/ /g' | sort -u  > input_file_snp_position.txt
@@ -79,11 +79,11 @@ select * from icd9_code_desc limit 5;
 	# Run biofilter to get gene, upstream gene, downstream gene and GWAS
 	sudo mkdir /usr/share/biofilter
 	sudo chmod a+rwx /usr/share/biofilter
-		
+
 	#dx download -r "$DX_RESOURCES_ID:/biofilter/*" -o /usr/share/biofilter
 	dx download "$DX_RESOURCES_ID:/LOKI/loki-20150427-nosnps.db" -o /usr/share/biofilter/loki.db
-    
-    #python /usr/share/biofilter/biofilter.py biofilter-2 -v -k /.db -P input_file_snp_position.txt -a snp gene upstream downstream
+
+	python /usr/share/biofilter/biofilter.py biofilter-2 -v -k /usr/share/biofilter/loki.db --gbv 37 -P input_file_snp_position.txt -a position gene upstream downstream
 
 	# Import biofilter result into
 	#	gene_gwas_col=$(head -n1 biofilter.position.gene-upstream-downstream |sed 's/^#//g' | sed 's/\//_/g' | sed 's/%/_/g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g' )
@@ -102,7 +102,7 @@ select * from icd9_code_desc limit 5;
 		or_val_query=",exp(var1_beta) as odds_ratio"
 		#,round(exp(log(exp(Var1_beta)) - 1.96*Var1_SE),3) || ',' || round(exp(log(exp(Var1_beta)) + 1.96*Var1_SE),3) as OR_CI"
 	fi
-	
+
 #: '
 	#	if $gene;
 	#	then
@@ -120,7 +120,7 @@ select * from icd9_code_desc limit 5;
 			#			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
 			#			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
 	#	fi
-	
+
 	#	if $down_gene
 	#	then
 		#		if [ ${gene_query} != "" ]
@@ -144,14 +144,14 @@ select * from icd9_code_desc limit 5;
 echo select *${icd9_select}${or_val_query}${case_control_query} from assoc_result a ${icd9_join} ${gene_query};
 
 sqlite3 anno.db <<!
-.load /usr/local/lib/libsqlitefunctions.so 
+.load /usr/local/lib/libsqlitefunctions.so
 .headers on
 .mode tabs
-.output outfile 
+.output outfile
 select a.* $icd9_select $or_val_query from assoc_result a ${icd9_join} ${gene_query};
 !
-    
-	
+
+
 # The following line(s) use the dx command-line tool to upload your file
     # outputs after you have created them on the local file system.  It assumes
     # that you have used the output field name for the filename for each output,

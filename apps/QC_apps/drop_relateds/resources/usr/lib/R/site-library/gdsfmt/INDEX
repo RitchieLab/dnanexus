@@ -1,0 +1,41 @@
+add.gdsn                Add a new GDS node
+addfile.gdsn            Add a GDS node with a file
+addfolder.gdsn          Add a folder to the GDS node
+append.gdsn             Append data to a specified variable
+apply.gdsn              Apply functions over margins
+assign.gdsn             Assign/append data to a GDS node
+cache.gdsn              Caching variable data
+cleanup.gds             Clean up fragments
+closefn.gds             Close a GDS file
+clusterApply.gdsn       Apply functions over matrix margins in parallel
+cnt.gdsn                Return the number of child nodes
+compression.gdsn        Modify compression mode
+createfn.gds            Create a GDS file
+delete.attr.gdsn        Delete an attribute
+delete.gdsn             Delete a GDS node
+diagnosis.gds           Diagnose the GDS file
+gds.class               the class of GDS file
+gdsfmt-package          R Interface to CoreArray Genomic Data Structure
+                        (GDS) files
+gdsn.class              the class of variable node in the GDS file
+get.attr.gdsn           Get attributes
+getfile.gdsn            Output a file from a stream container
+index.gdsn              Return the specified node
+is.element.gdsn         whether the elements are in a set
+lasterr.gds             Return the last error message
+ls.gdsn                 Return the names of child nodes
+moveto.gdsn             Diagnose the GDS file
+name.gdsn               Return the variable name of a node
+objdesp.gdsn            Variable description
+openfn.gds              Open a GDS file
+print.gds.class         Show the information of class "gds.class"
+print.gdsn.class        Show the information of class "gdsn.class"
+put.attr.gdsn           Add an attribute into a GDS node
+read.gdsn               Read data field of a GDS node
+readex.gdsn             Read data field of a GDS node with a selection
+readmode.gdsn           Switch to read mode in the compression settings
+rename.gdsn             Rename a GDS node
+setdim.gdsn             Set the dimension of data field
+showfile.gds            Enumerate opened GDS files
+sync.gds                Synchronize a GDS file
+write.gdsn              Write data to a GDS node

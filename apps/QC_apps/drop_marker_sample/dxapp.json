@@ -1,0 +1,77 @@
+{
+  "name": "drop_marker_sample",
+  "title": "Drop Markers and/or Samples (PLINK)",
+  "summary": "drop_marker_sample",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [
+    "Annotation"
+  ],
+  "inputSpec": [
+    {
+      "name": "bed_file",
+      "label": "BED file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "bim_file",
+      "label": "BIM file",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "fam_file",
+      "label": "FAM file",
+      "class": "file",
+      "optional": false
+    },
+	{
+      "name": "sample_drop",
+      "label": "File of samples to drop",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "marker_drop",
+      "label": "File of markers to drop",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "output_prefix",
+      "label": "Output Prefix",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "old_plink",
+      "label": "Use PLINK version 1.07?",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    }
+  ],
+  "outputSpec": [
+	{
+      "name": "bed_out",
+      "label": "BED file",
+      "class": "file"
+    },
+    {
+      "name": "bim_out",
+      "label": "BIM file",
+      "class": "file"
+    },
+    {
+      "name": "fam_out",
+      "label": "FAM file",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/drop.sh"
+  },
+  "authorizedUsers": ["org-geisinger"]
+}

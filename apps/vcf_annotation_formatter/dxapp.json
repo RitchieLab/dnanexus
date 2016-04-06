@@ -1,5 +1,5 @@
 {
-  "name": "vcf_anno_format",
+  "name": "vcf_annotation_formatter",
   "title": "VCF Annotation Formatter",
   "summary": "Extracts and reformats VCF annotations",
   "dxapi": "1.0.0",

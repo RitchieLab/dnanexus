@@ -111,7 +111,6 @@ main() {
 	
 	biobin-summary.py \
 		--prefix="biobin/$output_prefix" \
-		--output-sep="\t" \
 		> "biobin/${output_prefix}-summary.tsv"
 	
 	

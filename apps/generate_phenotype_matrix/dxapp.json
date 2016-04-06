@@ -149,6 +149,6 @@
       "*"
     ]
   },
-  "authorizedUsers": ["org-geisinger"]
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
 }
 

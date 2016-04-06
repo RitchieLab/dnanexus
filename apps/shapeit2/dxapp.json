@@ -90,5 +90,5 @@
   },
   "openSource" : true,
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["org-geisinger"]
+  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger"]
 }

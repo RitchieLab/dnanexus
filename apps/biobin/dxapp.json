@@ -134,7 +134,7 @@
       { "name": "tabix" }
     ]
   },
-  "authorizedUsers": [
+  "authorizedUsers": ["org-geisinger_affiliate", 
     "org-geisinger"
   ],
   "__disabled__runSpec__execDepends": [

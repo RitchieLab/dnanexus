@@ -159,5 +159,5 @@
     "interpreter": "bash",
     "file": "src/plato_single_variant.sh"
   },
-  "authorizedUsers": ["org-geisinger"]
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
 }

@@ -97,5 +97,5 @@
   "openSource" : true,
   "resources" : "project-BVbg9JQ0K55jzFbQpxBk915J",
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["org-geisinger"]
+  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger"]
 }

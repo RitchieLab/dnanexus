@@ -48,7 +48,7 @@
       "name": "output_filename",
       "label": "Output Filename",
       "class": "string",
-      "optional": true 
+      "optional": true
     },
     {
       "name": "old_plink",
@@ -80,5 +80,5 @@
     "interpreter": "bash",
     "file": "src/extract.sh"
   },
-  "authorizedUsers": []
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
 }

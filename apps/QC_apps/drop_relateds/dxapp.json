@@ -58,7 +58,7 @@
       "name": "out_prefix",
       "label": "Output Prefix",
       "class": "string",
-      "optional": true 
+      "optional": true
     },
     {
       "name": "exact",
@@ -94,5 +94,5 @@
     "interpreter": "bash",
     "file": "src/drop_relateds.sh"
   },
-  "authorizedUsers": []
+  "authorizedUsers": ["org-geisinger_affiliate"]
 }

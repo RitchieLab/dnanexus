@@ -53,5 +53,5 @@
     "interpreter": "bash",
     "file": "src/sample_call_filter.sh"
   },
-  "authorizedUsers": ["org-geisinger"]
+  "authorizedUsers": ["org-geisinger","org-geisinger_affiliate"]
 }

@@ -70,5 +70,5 @@
      "allProjects": "VIEW"
   },
   "developers": ["user-johnwallace123", "user-auv13"],
-  "authorizedUsers" : ["user-johnwallace123", "user-auv13"]
+  "authorizedUsers" : ["org-geisinger_affiliate", "user-johnwallace123", "user-auv13"]
 }

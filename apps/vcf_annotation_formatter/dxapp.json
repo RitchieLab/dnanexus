@@ -3,7 +3,7 @@
   "title": "VCF Annotation Formatter",
   "summary": "Extracts and reformats VCF annotations",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -53,7 +53,7 @@
     },
     {
       "name": "extra",
-      "label": "Extra Annotation Column",
+      "label": "Extra Annotations Column",
       "class": "boolean",
       "default": false
     }

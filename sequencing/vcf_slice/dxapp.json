@@ -27,6 +27,12 @@
       "label": "File of regions (chr:start-stop)",
       "class": "file",
       "optional": false
+    },
+    {
+      "name": "suffix_fn",
+      "label": "Output File name suffix (Optional)",
+      "class": "string",
+      "optional": true
     }
   ],
   "outputSpec": [

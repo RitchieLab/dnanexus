@@ -29,8 +29,12 @@ function slice_vcf () {
 	VCFIDXFN=$(echo "$1" | cut -f5)
 	REGIONFN="$2"
 	OUTDIR=$3
-	OUTFN="$OUTDIR/$PREFIX.sliced.vcf.gz"
-	
+	SUFFIX="$4"
+	if [ -n "$SUFFIX" ]; then
+		SUFFIX="${SUFFIX}."
+	fi
+	OUTFN="$OUTDIR/$PREFIX.sliced.${SUFFIX}vcf.gz"
+
 	download_intervals.py -H -f $VCFFN -i $VCFIDXFN -L "$REGIONFN" -o "$OUTFN"
 	
 	tabix -p vcf "$OUTFN"
@@ -45,6 +49,7 @@ main() {
     echo "Value of vcf_fn: '${vcf_fn[@]}'"
     echo "Value of vcfidx_fn: '${vcfidx_fn[@]}'"
     echo "Value of region_fn: '$region_fn'"
+    echo "Value of suffix_fn: '$suffix_fn'"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
@@ -93,7 +98,7 @@ main() {
 	dx download "$region_fn" -o region.list
     
 	# run the slice_vcf in parallel
-	parallel --gnu -j $(nproc --all) slice_vcf :::: $VCF_ALLINFO ::: $WKDIR/region.list ::: $OUTDIR
+	parallel --gnu -j $(nproc --all) slice_vcf :::: $VCF_ALLINFO ::: $WKDIR/region.list ::: $OUTDIR ::: $suffix_fn
 
 	# upload all the results
 	while read f; do

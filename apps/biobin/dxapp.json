@@ -134,8 +134,14 @@
       { "name": "tabix" }
     ]
   },
-  "authorizedUsers": ["org-geisinger_affiliate", 
-    "org-geisinger"
+  "authorizedUsers": [
+    "org-geisinger",
+    "org-geisinger_affiliate"
+  ],
+  "developers": [
+    "user-johnwallace123",
+    "user-auv13",
+    "user-atf3"
   ],
   "__disabled__runSpec__execDepends": [
       { "name": "gawk" },

@@ -79,15 +79,9 @@
     }
   ],
   "runSpec": {
-      "execDepends": [
-      {"name": "optparse", "package_manager": "cran"},
-      {"name": "reshape2", "package_manager": "cran"},
-      {"name": "doParallel", "package_manager": "cran"},
-      {"name": "foreach", "package_manager": "cran"},
-     {"name": "doMC", "package_manager": "cran"}
-
-    ],
     "interpreter": "bash",
+    "release": "14.04",
+    "distribution": "Ubuntu",
     "file": "src/gen_related_todrop.sh"    
   },
   "access": {"network": ["*"]},

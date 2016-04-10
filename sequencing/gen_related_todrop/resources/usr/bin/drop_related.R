@@ -127,14 +127,11 @@ for (idx in 1:nrow(adjMat)){
 #print(conn_comp)
 #print(comp_num)
 
-to_drop <- c()
 
 # OK, now I have connected components, now time to get a minimal vertex cover
 # We'll do this the easy (and naieve way)
-foreach (cc in conn_comp[lapply(conn_comp, length)>1], .combine=c) %dopar% {
-	#print(cc)
+to_drop<-foreach (cc = conn_comp[lapply(conn_comp, length)>1], .combine=c) %dopar% {
 	vc_fn(adjMat, cc)
-	#to_drop <- c(to_drop, vc_fn(adjMat, cc))
 }
 
 write.table(rownames(adjMat)[to_drop], file=opts$out, row.names=F, col.names=F, quote=F)

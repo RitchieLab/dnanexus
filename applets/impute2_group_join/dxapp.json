@@ -1,0 +1,71 @@
+{
+  "name": "impute2_group_join",
+  "title": "Impute2_group_join",
+  "summary": "This app can be used to merge multiple imputed impute2 files",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "input_prefix1",
+      "label": "Prefix of all input files to merge",
+      "class": "array:file",
+      "optional": false
+    },
+	{
+      "name": "input_prefix2",
+      "label": "Prefix of all input files to merge",
+      "class": "array:file",
+      "optional": false
+    },
+    {
+      "name": "filter_file",
+      "label": "File listing the sample IDs to retain",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "markers_file",
+      "label": "File listing the expected order of all markers",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "dupes_prefix",
+      "label": "Prefix for duplicate sample output files",
+      "class": "array:string",
+      "optional": true
+    },
+    {
+      "name": "output_prefix",
+      "label": "Prefix for sample output files",
+      "class": "array:string",
+      "optional": true
+    }
+  ],
+
+  "outputSpec": [
+    {
+      "name": "impute2_output_files",
+      "label": "Impute2 output files",
+      "class": "array:file"
+    },
+    {
+      "name": "info_output_files",
+      "label": "Info output files",
+      "class": "array:file"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/impute2_group_join.sh",
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem1_ssd1_x4"
+      }
+    },
+    "distribution": "Ubuntu",
+    "release": "12.04"
+  },
+  "authorizedUsers": []
+}

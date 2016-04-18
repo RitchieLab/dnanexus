@@ -78,7 +78,7 @@ main() {
                        #echo "$SSAMPLE_BASENAME"
 			cd ../
 			mkdir output
-			for i in {21..22}
+			for i in {1..22}
 			do
 			impute2-group-join.py -i FFILES/${FIMPUTE2_BASENAME}${i} SFILES/${SIMPUTE2_BASENAME}${i} -o output/"$output_prefix".$i -d output/"$dupes_prefix".$i	
 			done

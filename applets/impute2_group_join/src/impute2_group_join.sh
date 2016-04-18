@@ -82,11 +82,16 @@ main() {
 			do
 			impute2-group-join.py -i FFILES/${FIMPUTE2_BASENAME}${i} SFILES/${SIMPUTE2_BASENAME}${i} -o output/"$output_prefix".$i -d output/"$dupes_prefix".$i	
 			done
-		impute2_output_files=$(dx upload output/*.impute2.gz --brief)
-    	dx-jobutil-add-output impute2_output_files "$impute2_output_files" --class=array:file
-        	info_output_files=$(dx upload output/*.impute2_info.gz --brief)
-    	dx-jobutil-add-output info_output_files "$info_output_files" --class=array:file
-	
+		for i in output/*.impute2.gz
+		do
+			impute2_output_files=$(dx upload $i --brief)
+	    		dx-jobutil-add-output impute2_output_files "$impute2_output_files" --class=array:file
+		done
+		for i in output/*.impute2_info.gz
+		do
+			info_output_files=$(dx upload $i --brief)
+			dx-jobutil-add-output info_output_files "$info_output_files" --class=array:file
+		done
 	#if [ -n "$dupes_prefix.$i.impute2.gz"]
 	#then        
 	#	dupes_output_files=$(dx upload "$dupes_prefix.$i.impute2.gz" --brief)

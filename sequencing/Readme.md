@@ -1,0 +1,6 @@
+-bcftools_view: VCF QC
+  --Apply Recalibration and hard filters to VCF file
+-calc_ibd: Calculate PCs from VCF
+-call_bqsr: Base Quality Score Recalibration
+  --Call GATK BQSR and return the tables for use in HaplotypeCaller
+-call_genotypes: call_genotypes

@@ -17,8 +17,8 @@
 
 set -x
 main() {
-    
-    
+
+
     echo "Value of input_plink_binary: '${input_plink_binary[@]}'"
     echo "Value of input_phenotype: '$input_phenotype'"
     echo "Value of plato_analysis_string: '$plato_analysis_string'"
@@ -30,21 +30,21 @@ main() {
     echo "Value of maf_threshold: '$maf_threshold'"
     echo "Value of Association Type: '${association_type[@]}'"
     echo "Value of Phenotype per job: '$split_phenotype'"
-    
+
      # Process Plink input files
     for i in ${!input_plink_binary[@]}
     do
         name=$(dx describe "${input_plink_binary[$i]}" --name)
 	if [[ "$name" =~ \.bed$ ]]; then
-		bed_file="${input_plink_binary[$i]}" 
+		bed_file="${input_plink_binary[$i]}"
 	elif [[ "$name" =~ \.bim$ ]]; then
     	bim_file="${input_plink_binary[$i]}"
 	elif [[ "$name" =~ \.fam$ ]]; then
     	fam_file="${input_plink_binary[$i]}"
 	fi
     done
-    
-    
+
+
     if [ $split_phenotype -gt 0 ]
     then
     	dx download "$input_phenotype" -o input_phenotype
@@ -52,9 +52,9 @@ main() {
     	head -n 1 input_phenotype | sed 's/ /\t/g' | tr '\t' '\n' | awk '{ print FNR "\t" $0 }' | cut -f1 | tail -n+3  > pheno_col_index
 		# Split the phenotypes
 		split -l ${split_phenotype} -a 3 -d pheno_col_index pheno_job
-		
+
     postprocess_arg=""
-	for i in pheno_job* 
+	for i in pheno_job*
 	do
 		process_jobs[$i]=$(dx-jobutil-new-job plato_reg -ibed_file="${bed_file}" \
 		-ibim_file="${bim_file}" \
@@ -104,7 +104,7 @@ main() {
 		postprocess_arg="$postprocess_arg -iplato_out_files=${process_jobs[$i]}:plato_out -iplato_log_files=${process_jobs[$i]}:plato_log"
 	fi
 
-	postprocess=$(dx-jobutil-new-job postprocess $postprocess_arg -ioutfile:string=$output_filename -icorrection=${correction} --depends-on ${process_jobs[@]})	
+	postprocess=$(dx-jobutil-new-job postprocess $postprocess_arg -ioutfile:string=$output_filename -icorrection=${correction} --depends-on ${process_jobs[@]})
 
 	dx-jobutil-add-output output_files "$postprocess:output_files" --class=jobref
 
@@ -119,8 +119,8 @@ plato_reg() {
 	dx download "$bed_file" -o input_plink.bed
 	dx download "$bim_file" -o input_plink.bim
 	dx download "$fam_file" -o input_plink.fam
-	
-	# Download PLATO, PLINK, PLINK2	
+
+	# Download PLATO, PLINK, PLINK2
 	LAB_RESOURCES="project-Bkp5fYQ0vqZfq1XXPkYK2p1z"
 	dx download "$LAB_RESOURCES:/PLATO/plato" -f -o /usr/bin/
 	dx download "$LAB_RESOURCES:/PLINK/plink" -f -o /usr/bin/
@@ -130,7 +130,7 @@ plato_reg() {
 	chmod a+rx /usr/bin/plink
 	chmod a+rx /usr/bin/plink2
 
-    
+
 	input_dir="../.."
 	# Download Phenotype files
 	dx download "$input_phenotype" -o input_phenotype
@@ -157,14 +157,14 @@ plato_reg() {
 		dx download "$input_categorical_covariate" -o input_categorical_covariate
 		load_cat="load-categorical --file $input_dir/input_categorical_covariate --missing $missingness --extra-samples"
 	fi
-    
+
 	# Download sample file if provided
 	if [ -n "$input_samples" ]
 	then
 		dx download "$input_samples" -o input_samples
 		plinkargs=" --keep input_samples"
 	fi
-    
+
 	#Download marker file if provided
 	if [ -n "$input_markers" ]
 	then
@@ -204,11 +204,11 @@ plato_reg() {
 	# add output variables to your job's output as appropriate for the output
 	# class.  Run "dx-jobutil-add-output -h" for more information on what it
 	# does.
-	
+
 	LD_LIBRARY_PATH=/usr/local/lib/
 	# perform any filtering with plink as specified by sample, marker lists
 	# or maf threshold
-	
+
 	PLINK_CMD='plink2 '
 	if [ -n "$plinkargs" ]; then
 		mv input_plink.bed orig.bed
@@ -223,14 +223,14 @@ plato_reg() {
 	cd out/output_files
 	plato_analysis_string=$plato_analysis_string
 
-	#Check if command-line string provided 
-	if [[ -z "$plato_analysis_string" ]] 
+	#Check if command-line string provided
+	if [[ -z "$plato_analysis_string" ]]
 	then
 		# Regression Type
-		if [[ -n "$regression" ]] 
+		if [[ -n "$regression" ]]
 		then
 			if [[ "$regression" == "firth" ]]
-			then 
+			then
 				regression="logistic --firth"
 		fi
 			# Plato memory option. Use --lowmem by default
@@ -241,7 +241,7 @@ plato_reg() {
 				plato_analysis_string=" $regression"
 			fi
 		fi
-     	
+
 		# Any covariates
 		if [[ -n "$covariates" ]]
 		then
@@ -263,7 +263,7 @@ plato_reg() {
 		# Bonferoni or FDR correction
 		if [[ -n "$correction" ]]
 		then
-			correction_val=$(echo ${correction[*]} | tr ' ' ',')	
+			correction_val=$(echo ${correction[*]} | tr ' ' ',')
 			plato_analysis_string="$plato_analysis_string --correction $correction_val"
 		else
 			plato_analysis_string="$plato_analysis_string"
@@ -280,10 +280,10 @@ plato_reg() {
 		fi
 	else
 		plato_analysis_string="$plato_analysis_string"
-	fi     
+	fi
 
 	# Use all the core in an AWS instance
-	if ! [[ "$plato_analysis_string" =~ --threads ]] 
+	if ! [[ "$plato_analysis_string" =~ --threads ]]
 	then
 		threads="--threads $(nproc)"
 		analysis2=${plato_analysis_string/linear /linear $threads }
@@ -326,7 +326,7 @@ plato_reg() {
 		awk  -v var1="$case_col" -v var2="$case_threshold" 'BEGIN{OFS=FS="\t"}{if($var1>=var2)print $0}' temp/${outfile}_maf > ${outfile}
 	fi
 	rm -rf temp
-	
+
 	# The following line(s) use the utility dx-jobutil-add-output to format and
 	# add output variables to your job's output as appropriate for the output
 	# class.  Run "dx-jobutil-add-output -h" for more information on what it
@@ -340,9 +340,9 @@ plato_reg() {
 }
 
 postprocess(){
-	
+
 	mkdir -p out/output_files
-	
+
 	for i in "${!plato_out_files[@]}"
 	do
 		dx download "${plato_out_files[$i]}" -o plato_out-$i
@@ -354,7 +354,7 @@ postprocess(){
 	do
 		dx download "${plato_log_files[$i]}" -o plato_log-$i
 		head plato_log-$i
-		mv plato_log-$i out/ 
+		mv plato_log-$i out/
 	done
 
 	cd out
@@ -374,9 +374,14 @@ postprocess(){
 	then
 		sort -s -m -gk$pval_col,$pval_col $(ls plato_out-*) | grep -v "Var1" \
 		| cut -f1-$pval_col \
-		| awk 'BEGIN{FS=OFS="\t"}{print $0, 1-(1-$var1)^var2}' \
+		| awk 'BEGIN{FS=OFS="\t"}{print $0, $var1*var2}' \
 		var1=$pval_col \
 		var2=$(ls plato_out-* | xargs -n 1 tail -n+2  | wc -l) \
+    | awk '{if($var3<1) print $0,$var4=$var3; else print $0,$var4=1}'  \
+    var3=$(echo "$pval_col" + 1 | bc -l) \
+    var4=$(echo "$pval_col" + 2 | bc -l) \
+    | awk '{$var3="";print $0}'\
+    var3=$(echo "$pval_col" + 1 | bc -l) \
 		| sed "1i $(echo ${out_header} | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')\tOverall_Pval_adj_Bonferroni" \
 		> output_files/${out_name}
 	elif [ "$correction" == "FDR" ]
@@ -398,5 +403,3 @@ postprocess(){
 		dx-jobutil-add-output output_files "$out" --class=array:file
 	done
 	}
-	
-

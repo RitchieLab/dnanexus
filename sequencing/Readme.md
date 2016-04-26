@@ -1,4 +1,4 @@
-## List of apps in this directory. Discriptions taken from their Readme.md files.  Those anntoated in bold are obvious in their need for updating their readme so this can be updated.
+## List of apps and discriptiptions of them in this directory. 
 
 * bcftools_view: 
   - Calls "bcftools view".  Still in experimental stages.

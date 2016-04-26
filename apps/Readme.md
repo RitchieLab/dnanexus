@@ -20,7 +20,7 @@
   - This app does phasing using SHAPEIT2
 * strand_align: Strand Align
   - Strand Align prior to phasing
-* vcf_annotation_formatter: 
+* vcf_annotation_formatter: VCF Annotation Formatter
   - Extracts and reformats VCF annotations (CLINVAR, dbNSFP, SIFT, SNPEff)
 - **QC_apps folder:**
   * drop_marker_sample: Drop Markers and/or Samples (PLINK)

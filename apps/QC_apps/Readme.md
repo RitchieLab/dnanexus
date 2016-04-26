@@ -1,4 +1,4 @@
-## List of apps and discriptiptions of them in this directory. 
+## List of apps and descriptions of them in this directory. 
 
 * drop_marker_sample: Sample Call Rate Filter
   - sample_call_filter

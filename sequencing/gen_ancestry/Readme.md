@@ -1,7 +1,7 @@
 <!-- dx-header -->
 # Determine Ancestry from PCA (DNAnexus Platform App)
 
-gen_ancestry
+ Determine Ancestry from PCA.  Uses an eigenvector file and training dataset listing known ancestries.  Runs QDA to determine posterior ancestries for all samples, even those in the training set.
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

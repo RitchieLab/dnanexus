@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# VCF QC (DNAnexus Platform App)
+# vcf_query (DNAnexus Platform App)
 
-Apply Recalibration and hard filters to VCF file
+Calls "bcftools query" to extract annotations from the VCF file
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

@@ -1,7 +1,7 @@
 <!-- dx-header -->
 # VCF Concordance (DNAnexus Platform App)
 
-Generate concordance metrics from VCF file(s)
+Generate concordance metrics from VCF file(s) using [GATK GenotypeConcordance](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_variantutils_GenotypeConcordance.php).  Not recommended for large files.
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

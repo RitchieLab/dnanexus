@@ -1,5 +1,5 @@
 <!-- dx-header -->
-# bcftools_view (DNAnexus Platform App)
+# bcftools_view: BCFTools View(DNAnexus Platform App)
 
 Calls "bcftools view".  Still in experimental stages.
 

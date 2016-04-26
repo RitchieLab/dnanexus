@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# Sample Call Rate Filter (PLINK) (DNAnexus Platform App)
+# Marker Call Rate Filter (PLINK) (DNAnexus Platform App)
 
-sample_call_filter
+marker_call_filter
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

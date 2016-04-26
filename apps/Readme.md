@@ -17,7 +17,7 @@
 * rl_sleeper_app: sleeper
   - This App provides some useful tools when working with data in DNANexus. This App is designed to be run on the command line with "dx run --ssh RL_Sleeper_App" in the project that you have data that you want to explore (use "dx select" to switch projects as needed).
 * shapeit2: SHAPEIT2
-  - This app do phasing using SHAPEIT2
+  - This app does phasing using SHAPEIT2
 * strand_align: Strand Align
   - Strand Align prior to phasing
 * vcf_annotation_formatter: 

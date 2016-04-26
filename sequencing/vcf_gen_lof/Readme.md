@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# Annotate VCF File (DNAnexus Platform App)
+#  (DNAnexus Platform App)
 
-Use a variety of tools to annotate a sites-only VCF
+Subset a VCF from vcf_annotate based on the given annotations to get a sites-only VCF of loss-of-function variants.
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

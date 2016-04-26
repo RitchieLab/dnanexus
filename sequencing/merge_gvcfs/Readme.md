@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# call_genotypes (DNAnexus Platform App)
+# merge_gvcfs (DNAnexus Platform App)
 
-call_genotypes
+Calls [GATK CombineGVCFs](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_variantutils_CombineGVCFs.php)
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

@@ -1,4 +1,4 @@
-## List of apps and discriptiptions of them in this directory. 
+## List of apps and descriptions of them in this directory. 
 
 * bcftools_view: 
   - Calls "bcftools view".  Still in experimental stages.

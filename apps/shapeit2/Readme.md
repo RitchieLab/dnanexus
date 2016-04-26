@@ -1,7 +1,7 @@
 <!-- dx-header -->
 # SHAPEIT2 (DNAnexus Platform App)
 
-This app do phasing using SHAPEIT2
+This app does phasing using SHAPEIT2
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

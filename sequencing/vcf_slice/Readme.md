@@ -1,7 +1,7 @@
 <!-- dx-header -->
 # Slice VCF File(s) (DNAnexus Platform App)
 
-vcf_slice
+Return a small section of a VCF file (similar to tabix).  For large output, many small regions, or subsetting samples, use subset_vcf instead.
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

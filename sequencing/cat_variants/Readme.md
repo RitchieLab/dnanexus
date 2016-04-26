@@ -1,5 +1,5 @@
 <!-- dx-header -->
-# combine_variants (DNAnexus Platform App)
+# GATK CatVariants (DNAnexus Platform App)
 
 Combines non-overlapping VCF files with the same subjects.  A reimplementation of GATK CatVariants (GATK CatVariants available upon request)
 

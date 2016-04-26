@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# Calculate PCs from VCF (DNAnexus Platform App)
+# calc_ibd:  (DNAnexus Platform App)
 
-vcf_pca
+Calculates a pairwise IBD estimate from either VCF or PLINK files using PLINK 1.9
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

@@ -23,20 +23,19 @@
 * vcf_annotation_formatter: 
   - Extracts and reformats VCF annotations (CLINVAR, dbNSFP, SIFT, SNPEff)
 - **QC_apps folder:**
-  * drop_marker_sample: Sample Call Rate Filter
-    - sample_call_filter
+  * drop_marker_sample: Drop Markers and/or Samples (PLINK)
+    * drop_marker_sample
   * drop_relateds: Relatedness Filter (IBD)
-    - drop_relateds
-  * extract_marker_sample: Sample Call Rate Filter
-    - sample_call_filter
-  * maf_filter: Sample Call Rate Filter (IBD)
-    - sample_call_filter
-  * marker_call_filter: Sample Call Rate Filter
-    - sample_call_filter
-  * missing_summary: Missingness Summary
-    - Returns missingness rate by sample
+    * drop_relateds
+  * extract_marker_sample: Drop Markers and/or Samples (PLINK)"
+    * extract_marker_sample
+  * maf_filter: Marker MAF Rate Filter (PLINK)
+    * maf_filter
+  * marker_call_filter: Marker Call Rate Filter (PLINK)
+    * marker_call_filter
+  * missing_summary: Missingness Summary (PLINK)
+    * Returns missingness rate by sample
   * pca: Principal Component Analysis using SMARTPCA 
-    - pca
+    * pca
   * sample_call_filter: Sample Call Rate Filter (PLINK)
-    - sample_call_filter
-  
+    * sample_call_filter

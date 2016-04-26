@@ -1,5 +1,5 @@
 <!-- dx-header -->
-# calc_ibd: Calculate IBD from VCF or PLINK file (DNAnexus Platform App)
+# Calculate IBD from VCF or PLINK file (DNAnexus Platform App)
 
 Calculates a pairwise IBD estimate from either VCF or PLINK files using PLINK 1.9
 

@@ -1,5 +1,5 @@
 <!-- dx-header -->
-# call_genotypes (DNAnexus Platform App)
+# call_genotypes: Obsolete, do not use. (DNAnexus Platform App)
 
 Obsolete, do not use; use geno_p instead.  Calls GATK GenotypeGVCFs.
 

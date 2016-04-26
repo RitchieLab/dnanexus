@@ -1,7 +1,7 @@
 <!-- dx-header -->
 # geno_p (DNAnexus Platform App)
 
-geno_p
+Calls [GATK GenotypeGVCFs](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_variantutils_GenotypeGVCFs.php) in parallel by chromosome
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

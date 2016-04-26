@@ -42,7 +42,7 @@ Dnanexus Apps and Scripts
  * Extracts and reformats VCF annotations (CLINVAR, dbNSFP, SIFT, SNPEff)
 * **QC_apps subfolder:**
   * drop_marker_sample: Drop Markers and/or Samples (PLINK)
-   * drop_marker_sample
+    * drop_marker_sample
  * drop_relateds: Relatedness Filter (IBD)
    * drop_relateds
  * extract_marker_sample: Drop Markers and/or Samples (PLINK)"
@@ -54,9 +54,9 @@ Dnanexus Apps and Scripts
  * missing_summary: Missingness Summary (PLINK)
    * Returns missingness rate by sample
  * pca: Principal Component Analysis using SMARTPCA 
-   * pca
+    * pca
  * sample_call_filter: Sample Call Rate Filter (PLINK)
-  * sample_call_filter
+   * sample_call_filter
 
 ## scripts
 * cat_vcf.py

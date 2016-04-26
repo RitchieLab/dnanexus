@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# Calculate PCs from VCF (DNAnexus Platform App)
+# vcf_to_plink (DNAnexus Platform App)
 
-vcf_pca
+Uses PLINK 1.9 to convert VCF files to PLINK bed/bim/fam files
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

@@ -1,7 +1,7 @@
 <!-- dx-header -->
-# VCF QC (DNAnexus Platform App)
+# select_variants: VCF QC (DNAnexus Platform App)
 
-Apply Recalibration and hard filters to VCF file
+Calls [GATK SelectVariants](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants.php)
 
 This is the source code for an app that runs on the DNAnexus Platform.
 For more information about how to run or modify it, see

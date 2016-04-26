@@ -1,8 +1,8 @@
 ## List of apps and descriptions of them in this directory. 
 
-* bcftools_view: 
+* bcftools_view: BCFTools View
   - Calls "bcftools view".  Still in experimental stages.
-* calc_ibd: 
+* calc_ibd: Calculate IBD from VCF or PLINK file
   * Calculates a pairwise IBD estimate from either VCF or PLINK files using PLINK 1.9.
 * call_bqsr: Base Quality Score Recalibration
   * Call [GATK BaseRecalibrator](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_bqsr_BaseRecalibrator.php) and return the tables for use in HaplotypeCaller

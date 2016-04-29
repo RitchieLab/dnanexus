@@ -16,10 +16,11 @@
       "class": "string",
       "choices": [
         "LOKI-20130501-noSNPs.db",
-        "LOKI-20150427-noSNPs.db"
+        "LOKI-20150427-noSNPs.db",
+        "LOKI-20160428-noSNPs.db"
       ],
       "optional": false,
-      "default": "LOKI-20150427-noSNPs.db"
+      "default": "LOKI-20160428-noSNPs.db"
     },
     {
       "name": "vcf_file",

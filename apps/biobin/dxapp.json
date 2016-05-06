@@ -3,7 +3,7 @@
   "title": "BioBin - Latest",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -16,10 +16,11 @@
       "class": "string",
       "choices": [
         "LOKI-20130501-noSNPs.db",
-        "LOKI-20150427-noSNPs.db"
+        "LOKI-20150427-noSNPs.db",
+        "LOKI-20160428-noSNPs.db"
       ],
       "optional": false,
-      "default": "LOKI-20150427-noSNPs.db"
+      "default": "LOKI-20160428-noSNPs.db"
     },
     {
       "name": "vcf_file",

@@ -280,6 +280,7 @@ plato_reg() {
 		fi
 	else
 		plato_analysis_string="$plato_analysis_string"
+    outfile=$(echo $plato_analysis_string | sed 's/^.*--output //g' | sed 's/ .*$//g')
 	fi
 
 	# Use all the core in an AWS instance
@@ -291,7 +292,8 @@ plato_reg() {
 		analysis4=${analysis3/logistic /logistic $threads }
 		plato_analysis_string=$analysis4
 	fi
-
+  OUTDIR=$(mkdir -d)
+  cd $OUTDIR
 	# Plato command
 	plato load-data \
 	--bed $input_dir/input_plink.bed \
@@ -306,8 +308,10 @@ plato_reg() {
 	$load_cat \
 	$plato_analysis_string || touch ${outfile}
 
+
 	# Filter out the results with MAF or Case filter provided.
-	mkdir temp
+
+  mkdir temp
 
 	if [ -n "$maf_threshold" ] && [ -n "$case_threshold" ]
 	then
@@ -325,17 +329,22 @@ plato_reg() {
 		case_col=$(head -n1 temp/${outfile}_maf | tr '\t' '\n' | grep -n "Num_Cases" | cut -d":" -f1)
 		awk  -v var1="$case_col" -v var2="$case_threshold" 'BEGIN{OFS=FS="\t"}{if($var1>=var2)print $0}' temp/${outfile}_maf > ${outfile}
 	fi
-	rm -rf temp
+
+
+  cd
 
 	# The following line(s) use the utility dx-jobutil-add-output to format and
 	# add output variables to your job's output as appropriate for the output
 	# class.  Run "dx-jobutil-add-output -h" for more information on what it
 	# does.
+  for i in $OUTDIR/*
+  do
+    out=$(dx upload --brief $i)
+    dx-jobutil-add-output plato_out "${out}" --class=array:file
+  done
 
-	out=$(dx upload --brief ${outfile})
 	log=$(dx upload --brief plato.log)
 
-	dx-jobutil-add-output plato_out "${out}" --class=file
 	dx-jobutil-add-output plato_log "${log}" --class=file
 }
 

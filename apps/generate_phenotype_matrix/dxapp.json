@@ -11,7 +11,8 @@
       "label": "SQLite file",
       "class": "file",
       "optional": false,
-      "default": {"$dnanexus_link": "file-Bpy1Qvj0pB0V4Vy2BQ0f7xGp"}
+      "default": {"$dnanexus_link": "file-Bvg19Vj0pB0V8P14X0fk4GYv"
+      }
     },
     {
       "name": "freeze",
@@ -56,7 +57,7 @@
       "class": "string",
       "optional": true,
       "default": "icd9_code_matrix.txt"
-    },    
+    },
     {
       "name": "select_icd",
       "group": "ICD Code Options",
@@ -151,4 +152,3 @@
   },
   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
 }
-

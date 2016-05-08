@@ -122,7 +122,7 @@ echo "$icd9_code_matrix"
 		group by rgn_id" > icd9_out.txt
 
 
-		cat icd9_out.txt | sed 's/|/\t/g' | sed 's/,/\t/g' | sed '1 s/^Geisinger\t/fid\tiid/g' > ${icd9_out_prefix}
+		cat icd9_out.txt | sed 's/|/\t/g' | sed 's/,/\t/g' | sed '1 s/^\(Geisinger\|\t\)/fid\tiid/g' > ${icd9_out_prefix}
 	fi
 
 
@@ -154,11 +154,12 @@ echo "$icd9_code_matrix"
 		using(pt_id) where lab_name!='X' \
 		group by rgn_id" > clinical_lab_out
 
-		sed 's/ /_/g' clinical_lab_out | sed 's/|/\t/g' | sed 's/,/\t/g' | sed 's/\r//g' | sed '1 s/^Geisinger\t/fid\tiid/g'  > ${clinical_lab_out_prefix}
+		sed 's/ /_/g' clinical_lab_out | sed 's/|/\t/g' | sed 's/,/\t/g' | sed 's/\r//g' | sed '1 s/^\(Geisinger\|\t\)/fid\tiid/g'  > ${clinical_lab_out_prefix}
 	fi
 
 	# Generate covariate file
-	sys_date=$(date +"%Y")
+  # Last time data was extracted from EHR
+  ehr_date="2015-10-31"
 
 	if [ -n "$cont_covariate" ]
 	then
@@ -168,14 +169,15 @@ echo "$icd9_code_matrix"
 	if [[ "${cont_covariate[age]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age,/case when vital_status="DECEASED" then substr(death_date,1,4)-substr(birth_date,1,4) else $sys_date\-substr(birth_date,1,4) end  as age/")
+    query=$(echo $query | sed "s/age,/case when vital_status=\"DECEASED\" then \(julianday\(death_date\) \- julianday\(birth_date\)\)\/365 else (julianday(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365 end  as age,/")
+    #query=$(echo $query | sed 's/age,/case when vital_status="DECEASED" then datediff\(death_date\,birth_date\)\/365 else datediff\($ehr_date\,birth_date\)\/365 end  as age,/')
 		echo ${query}
 	fi
 
 	if [[ "${cont_covariate[age^2]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age\^2/($sys_date\-substr(birth_date,1,4))*($sys_date-substr(birth_date,1,4)) as \`age\^2\`/g")
+		query=$(echo $query | sed "s/age\^2/case when vital_status=\"DECEASED\" then (\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) else \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) end  as \`age\^2\`/")
 		echo ${query}
 	fi
 
@@ -185,13 +187,6 @@ echo "$icd9_code_matrix"
         	 pca_table="join freeze_${freeze}_pca using(rgn_id)"
     		fi
 	done
-
-	#if [[ ${cont_covariate["pc1"]} ]];
-        #then
-       # 	pca_table="join freeze_${freeze}_pca using(rgn_id)"
-       # fi
-
-
 
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
 		"select ${fid} as fid, \
@@ -231,22 +226,22 @@ echo "$icd9_code_matrix"
     dx-jobutil-add-output icd9_out "$icd9_out" --class=file
 	fi
 
-    if [ -e "${clinical_lab_out_prefix}" ]
-    then
-    	clinical_out=$(dx upload ${clinical_lab_out_prefix} --brief)
-        dx-jobutil-add-output clinical_out "$clinical_out" --class=file
-    fi
+  if [ -e "${clinical_lab_out_prefix}" ]
+  then
+    clinical_out=$(dx upload ${clinical_lab_out_prefix} --brief)
+    dx-jobutil-add-output clinical_out "$clinical_out" --class=file
+  fi
 
-    if [ -e "${cont_covariate_out_prefix}" ]
-    then
-    	cont_covariate_out=$(dx upload ${cont_covariate_out_prefix} --brief)
-    	dx-jobutil-add-output cont_covariate_out "$cont_covariate_out" --class=file
-    fi
+  if [ -e "${cont_covariate_out_prefix}" ]
+  then
+    cont_covariate_out=$(dx upload ${cont_covariate_out_prefix} --brief)
+    dx-jobutil-add-output cont_covariate_out "$cont_covariate_out" --class=file
+  fi
 
-    if [ -e "${cat_covariate_out_prefix}" ]
-    then
-    	cat_covariate_out=$(dx upload ${cat_covariate_out_prefix} --brief)
-    	dx-jobutil-add-output cat_covariate_out "$cat_covariate_out" --class=file
-    fi
+  if [ -e "${cat_covariate_out_prefix}" ]
+  then
+    cat_covariate_out=$(dx upload ${cat_covariate_out_prefix} --brief)
+    dx-jobutil-add-output cat_covariate_out "$cat_covariate_out" --class=file
+  fi
 
 }

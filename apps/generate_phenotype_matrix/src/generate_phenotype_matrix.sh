@@ -194,7 +194,7 @@ echo "$icd9_code_matrix"
 		${query} \
 		from	\
 		freeze_${freeze}_demographics \
-		${pca_table} where sex!='Unknown' and bmi!='' and rgn_id!=''"> cont_covariate_out.txt
+		${pca_table} where sex!='Unknown' and rgn_id!=''"> cont_covariate_out.txt
 
 		sed 's/|/\t/g' cont_covariate_out.txt >> ${cont_covariate_out_prefix}
 	fi
@@ -209,7 +209,7 @@ echo "$icd9_code_matrix"
 		rgn_id as iid, \
 		${query} \
 		from \
-		freeze_${freeze}_demographics where sex!='Unknown' and bmi!='' and rgn_id!=''"  > cat_covariate_out.txt
+		freeze_${freeze}_demographics where sex!='Unknown' and rgn_id!=''"  > cat_covariate_out.txt
 
 		sed 's/|/\t/g' cat_covariate_out.txt| sed 's/ /_/g' >> ${cat_covariate_out_prefix}
 	fi

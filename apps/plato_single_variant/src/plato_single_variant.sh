@@ -398,11 +398,15 @@ postprocess(){
 
   for i in "${!plato_other_files[@]}"
 	do
-    if [ -s $i ]
+    name=$(dx describe "${plato_other_files[$i]}" --name)
+    dx download "${plato_other_files[$i]}" -o $name
+    if [ -s "$name" ]
     then
-      name=$(dx describe "${plato_other_files[$i]}" --name)
-      dx download "${plato_other_files[$i]}" -o $name
+      echo "File is not empty! Moving to output_files/"
       mv $name $OUTPUTDIR/output_files/
+    else
+      echo "File is empty! Removing empty file"
+      rm $name
     fi
 	done
 

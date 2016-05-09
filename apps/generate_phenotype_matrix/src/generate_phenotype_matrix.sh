@@ -164,7 +164,8 @@ echo "$icd9_code_matrix"
 	if [ -n "$cont_covariate" ]
 	then
 		query=$(echo ${cont_covariate[*]} | sed 's/ /,/g')
-		echo "fid,iid,$query" | sed 's/,/\t/g' > ${cont_covariate_out_prefix}
+		echo "fid,iid,$query" | sed 's/,/\t/g'  > ${cont_covariate_out_prefix}
+    query=$(echo $query | sed 's/bmi/coalesce\(bmi\,\"NA\"\) as bmi/')
 
 	if [[ "${cont_covariate[age]}" ]]
 	then
@@ -203,6 +204,7 @@ echo "$icd9_code_matrix"
 	then
 		query=$(echo ${cat_covariate[*]} | sed 's/ /,/g')
 		echo "fid,iid,$query" | sed 's/,/\t/g' > ${cat_covariate_out_prefix}
+    query=$(echo $query | sed 's/sex/lower\(sex\) as sex/' | sed 's/race/lower\(race\) as race/')
 
 		sqlite3 -init ../regex_lib_path.txt ../sql_file \
 		"select ${fid} as fid, \

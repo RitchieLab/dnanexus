@@ -48,7 +48,8 @@
       "group": "ICD Code Options",
       "label": "3digit Rollup",
       "class": "boolean",
-      "optional": true
+      "optional": true,
+      "default": false
     },
     {
       "name": "icd9_out_prefix",

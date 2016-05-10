@@ -170,7 +170,7 @@ echo "$icd9_code_matrix"
 	if [[ "${cont_covariate[age]}" ]]
 	then
 		echo "true"
-    query=$(echo $query | sed "s/age,/case when vital_status=\"DECEASED\" and replace(death_date,'-','')<"20151031" then \(julianday\(death_date\) \- julianday\(birth_date\)\)\/365 else (julianday(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365 end  as age,/")
+    query=$(echo $query | sed "s/age,/case when vital_status=\"DECEASED\" and replace(death_date,\'-\',\'\')<\"20151031\" then \(julianday\(death_date\) \- julianday\(birth_date\)\)\/365 else (julianday(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365 end  as age,/")
     #query=$(echo $query | sed 's/age,/case when vital_status="DECEASED" then datediff\(death_date\,birth_date\)\/365 else datediff\($ehr_date\,birth_date\)\/365 end  as age,/')
 		echo ${query}
 	fi
@@ -178,7 +178,7 @@ echo "$icd9_code_matrix"
 	if [[ "${cont_covariate[age^2]}" ]]
 	then
 		echo "true"
-		query=$(echo $query | sed "s/age\^2/case when vital_status=\"DECEASED\" and replace(death_date,'-','')<"20151031" then (\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) else \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) end  as \`age\^2\`/")
+		query=$(echo $query | sed "s/age\^2/case when vital_status=\"DECEASED\" and replace(death_date,\'-\',\'\')<\"20151031\" then (\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(death_date\) \- julianday\(birth_date\)\)\/365\) else \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) * \(\(julianday\(\'$ehr_date\'\) \- julianday\(birth_date\)\)\/365\) end  as \`age\^2\`/")
 		echo ${query}
 	fi
 

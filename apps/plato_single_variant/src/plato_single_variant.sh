@@ -323,7 +323,7 @@ plato_reg() {
 	if [ -n "$maf_threshold" ] && [ -n "$case_threshold" ]
 	then
 		awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$4)}1' ${outfile}  | sed 's/Var1_MAF/Var1_Allele\tMAF/g' | awk -v var1="$maf_threshold" 'BEGIN{OFS=FS="\t"}{if($5>var1) print $0}' > temp/${outfile}_maf_threshold
-		cat temp/${outfile}_maf_threshold
+	#	cat temp/${outfile}_maf_threshold
 		case_col=$(head -n1 temp/${outfile}_maf_threshold | tr '\t' '\n' | grep -n "Num_Cases" | cut -d":" -f1)
 		awk -v var1="$case_col" -v var2="$case_threshold" 'BEGIN{OFS=FS="\t"}{if($var1>=var2)print $0}' temp/${outfile}_maf_threshold > $outfile
 	elif [ -n "$maf_threshold" ]

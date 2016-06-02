@@ -1,0 +1,196 @@
+#!/bin/bash
+
+#set -x
+
+function usage(){
+echo \
+"Usage: $(basename $0) [-t <date>] [-f <date>] [-o org] [-p project]
+
+Calculates the cost of a single project or all projects in a given org over 
+the given time interval.  Results will show the name of the project(s), the
+user responsible for creating the project, the project ID, the monthly storage
+cost, and the compute cost over the given interval.
+
+All input dates are interpreted using 'date -s', and output is given in 
+csv-friendly format.
+
+Options:
+    -t Date to use as the endpoint of the window (default: today)
+    -f Date to use as the start of the window (default: today - 1 month)
+    -o Organization to calculate cost for
+    -p Project to calculate cost for
+    
+NOTE: if both the organization and project are given, the output will only be
+shown for the given project.  You must have already logged into DNAnexus and
+have either ADMIN permission on the org, or VIEW permission on the project.
+"
+
+exit 1
+}
+
+
+DATE_FROM="today - 1 month"
+DATE_TO="today"
+ORG=""
+PROJECT=""
+
+while getopts f:t:o:p:h flag; do
+	case $flag in
+	f)
+		DATE_FROM="$OPTARG";
+		;;
+	t)
+		DATE_TO="$OPTARG";
+		;;
+	o)
+		ORG="$OPTARG";
+		;;
+	p)
+		PROJECT="$OPTARG";
+		;;
+	h)
+		usage
+		;;
+	\?)
+		echo "Invalid option: -$OPTARG"
+		usage
+		;;
+	esac
+done
+
+if test -z "$ORG" -a -z "$PROJECT"; then
+	echo "ERROR: You must supply either an org or a project"
+	exit 2
+fi
+
+DATE_FMT_TO=$(date -d"$DATE_TO" +%s%3N)
+if test $? -ne 0; then
+	echo "ERROR: invalid date format for end of window"
+	exit 3
+fi
+DATE_FMT_FROM=$(date -d"$DATE_FROM" +%s%3N)
+if test $? -ne 0; then
+	echo "ERROR: invalid date format for start of window"
+	exit 3
+fi
+
+CURR_USER=$(dx whoami --id)
+if test -z "$CURR_USER"; then
+	echo "ERROR: No dx user found; please login using 'dx login'"
+	exit 4
+fi
+
+PROJ_ID=""
+# if we have a project, get the ID, please!
+if test "$PROJECT"; then
+	PROJ_ID=$(dx find projects --brief --name "$PROJECT")
+	
+	# if nothing here, perhaps this is a 
+	if test -z "$PROJ_ID"; then
+		PROJ_ID=$(dx describe --json "$PROJECT" | jq -r '[.class,.id] | @csv' | tr -d '"' | grep '^project' | sed 's/^project,//')
+	fi
+	
+	if test -z "$PROJ_ID"; then
+		echo "ERROR: Could not find DNAnexus project '$PROJECT'"
+		exit 5
+	else
+		PROJ_ID=$(dx describe --json "$PROJ_ID" | jq -r '[.id,.createdBy.user,.storageCost,.name] | @csv')
+	fi
+fi
+
+PROJ_LIST_FN=$(mktemp)
+
+if test "$PROJ_ID"; then
+	echo "$PROJ_ID" > $PROJ_LIST_FN
+else
+	# go through the org to get the list of projects
+	PROJ_START_STR=" "
+	while test "$PROJ_START_STR"; do
+		PROJ_IN_JSON=$(echo "'"'{"limit": 1000, "describe" : true'$PROJ_START_STR"}'")
+		PROJ_RES_JSON=$(eval dx api $ORG findProjects "$PROJ_IN_JSON")
+		
+		echo $PROJ_RES_JSON | jq -r '.results | .[] | [.id, .describe.createdBy.user,.describe.storageCost,.describe.name] | @csv' >> $PROJ_LIST_FN
+		
+		NEXT_PROJ=$(echo $PROJ_RES_JSON | jq .next)
+		if test ! "$NEXT_PROJ" == "null"; then
+			PROJ_START_STR=", \"starting\" : $NEXT_PROJ"
+		else
+			PROJ_START_STR=""
+		fi
+	done
+fi
+
+while read proj_desc; do
+
+	P_ID=$(echo "$proj_desc" | cut -d, -f1 | tr -d '"')
+	
+	INVITED=0
+	
+	# get the access level
+	ACCESS=$(dx describe --json $P_ID | jq -r .level)
+	if test "$ACCESS" == "NONE"; then
+		INVITED=1
+		INVITE_JSON=$(echo "'"'{"invitee": "'$CURR_USER'","level": "VIEW", "suppressEmailNotification": true}'"'")
+		eval dx api $P_ID invite "$INVITE_JSON"
+	fi
+	
+	# Now, programmatically list all jobs between the dates, getting the totalCost
+	START_STR=" "
+	COST_SUM=0
+	while test "$START_STR"; do
+		IN_JSON=$(echo "'"'{"class": "job", "includeSubjobs" : false, "limit" : 1000, "project" : "'$P_ID'", "describe" : true, "created" : { "before" :'$DATE_FMT_TO', "after" :'$DATE_FMT_FROM'}'$START_STR' }'"'")
+		RES_JSON=$(eval dx api system findJobs "$IN_JSON")
+		
+		# iterate over the resultant jobs, adding to COST_SUM
+		COST_SUM=$(cat <(echo $COST_SUM) <(echo $RES_JSON | jq -r '.results | .[] | [.describe.totalPrice] | @csv') | awk '{s+=$1}END{print s}')
+		
+		NEXT_JOB=$(echo $RES_JSON | jq .next)
+		if test ! "$NEXT_JOB" == "null"; then
+			START_STR=", \"starting\" : $NEXT_JOB"
+		else
+			START_STR=""
+		fi
+	done
+
+	if test $INVITED -ne 0; then
+		dx api $P_ID leave
+	fi
+	
+	# now, output correctly
+	# print the name...
+	echo -n "$(echo "$proj_desc" | cut -d, -f4-),"
+	# And the user
+	echo -n "$(echo "$proj_desc" | cut -d, -f2),"
+	# ID and storage cost
+	echo -n "$(echo "$proj_desc" | cut -d, -f1,3),"
+	# and compute cost
+	echo $COST_SUM
+	
+
+done < $PROJ_LIST_FN
+
+rm $PROJ_LIST_FN
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+

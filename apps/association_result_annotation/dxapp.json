@@ -1,6 +1,6 @@
 {
   "name": "association_result_annotation",
-  "title": "Annotate GWAS, PheWAS Assocaitions",
+  "title": "Annotate GWAS, PheWAS Associations",
   "summary": "association_result_annotation",
   "dxapi": "1.0.0",
   "version": "0.0.1",
@@ -12,8 +12,33 @@
       "class": "file",
       "optional": false
     },
-    {  "name": "icd9_desc",
+    {
+      "name": "sql_file",
+      "label": "SQLite file",
+      "class": "file",
+      "hidden": true,
+      "default": {
+        "$dnanexus_link":
+        {
+          "project": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+          "id": "file-BvyV66Q0pB0Y2482b8Y6k1gG"
+      }
+      }
+    },
+    { "name": "icd9_desc",
       "label": "ICD-9 description",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    { "name": "ebi_gwas",
+      "label": "EBI GWAS catalog",
+      "class": "boolean",
+      "default": false,
+      "optional": false
+    },
+    { "name": "grasp",
+      "label": "GRASP",
       "class": "boolean",
       "default": false,
       "optional": false
@@ -62,6 +87,9 @@
     }
   ],
   "runSpec": {
+    "execDepends": [
+      {"name": "python-apsw"}
+    ],
     "interpreter": "bash",
     "file": "src/association_result_annotation.sh"
   },

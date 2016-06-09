@@ -16,20 +16,22 @@
 # to modify this file.
 set -x
 main() {
-	ls -l /usr/local/lib
+	  echo "Value of input_file: '$input_file'"
+		echo "Value of input_file: '$sql_file'"
 
-    echo "Value of input_file: '$input_file'"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
     # recover the original filenames, you can use the output of "dx describe
     # "$variable" --name".
 
-    dx download "$input_file" -o input_file
+		input_filename=$(dx describe --name "$input_file")
+		dx download "$input_file" -o input_file
+		dx download "$sql_file" -o anno.db
+		out_suffix=""
 
 	# Create SQLite database
 
-	sqlite3 anno.db
 
     # Fill in your application code here.
     #
@@ -45,9 +47,12 @@ main() {
     # reported in the job_error.json file, then the failure reason
     # will be AppInternalError with a generic error message.
 
-	#Get the column names from input file
+	# Seperate Var1_Pos to "chr" and "pos" columns
 
-	icd_tbl_col=$(head -n1 input_file | sed 's/)//g' | sed 's/(//g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g')
+	awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$3)}1' input_file | sed 's/Var1_Pos/chr\tPos/g' > up_input_file
+	# Get the column names from input file
+
+	icd_tbl_col=$(head -n1 up_input_file | sed 's/)//g' | sed 's/(//g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g')
 
 	# Create a table for input results file
 	sqlite3 anno.db "create table assoc_result ($icd_tbl_col)"
@@ -56,7 +61,7 @@ main() {
 
 	sqlite3 anno.db <<!
 .separator \t
-.import input_file assoc_result
+.import up_input_file assoc_result
 delete from assoc_result where outcome='Outcome';
 !
 
@@ -68,97 +73,138 @@ create table icd9_code_desc (icd9_code varchar(8), desc text);
 .separator "\t"
 .import icd9_code_desc.txt icd9_code_desc
 delete from icd9_code_desc where desc='desc';
-select * from icd9_code_desc limit 5;
-.tables
+!
+	if [ "$gene" == true || "$up_gene" == true || "$down_gene" == true ];
+	then
+		# Create position file of SNPs from the association result file
+		cut -f3,4 up_input_file |  sort -u  > input_file_snp_position.txt
+
+		# Run biofilter to get gene, upstream gene, downstream gene and GWAS
+
+		sudo mkdir /usr/share/biofilter
+		sudo chmod a+rwx /usr/share/biofilter
+
+
+		dx download -r "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/Biofilter/2.4/*" -o /usr/share/biofilter/
+		dx download "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
+
+
+		python2.7 /usr/share/biofilter/biofilter.py -v -k /usr/share/biofilter/loki.db --gbv 37 -P input_file_snp_position.txt -a position gene upstream downstream
+		awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$2)}1' biofilter.position.gene-upstream-downstream | sed 's/chr//g' | sed 's/position/chr_37\tpos_37/g' > biofilter_snp_anno
+		# Import biofilter result into
+		biofilter_anno_col=$(head -n1 biofilter_snp_anno | \
+		sed 's/^#/chr/g' | \
+		sed 's/\//_/g' | \
+		sed 's/%/_/g'  | \
+		awk 'BEGIN{OFS=FS="\t"}{gsub("distance","up_distance",$7)}1' | \
+		awk 'BEGIN{OFS=FS="\t"}{gsub("distance","down_distance",$9)}1' | \
+		sed 's/\t/ varchar(255),/g' | \
+		sed 's/$/ varchar(255)/g' )
+
+		sqlite3 anno.db "create table biofilter_anno ($biofilter_anno_col)"
+
+		sqlite3 anno.db <<!
+.separator \t
+.import biofilter_snp_anno biofilter_anno
+delete from biofilter_anno where chr='#';
 !
 
+	fi
 
-	# Create position file of SNPs from the association result file
-    cut -f3 input_file | sed 's/:/ /g' | sort -u  > input_file_snp_position.txt
-
-	# Run biofilter to get gene, upstream gene, downstream gene and GWAS
-	sudo mkdir /usr/share/biofilter
-	sudo chmod a+rwx /usr/share/biofilter
-
-	#dx download -r "$DX_RESOURCES_ID:/biofilter/*" -o /usr/share/biofilter
-	dx download "$DX_RESOURCES_ID:/LOKI/loki-20150427-nosnps.db" -o /usr/share/biofilter/loki.db
-
-	python /usr/share/biofilter/biofilter.py biofilter-2 -v -k /usr/share/biofilter/loki.db --gbv 37 -P input_file_snp_position.txt -a position gene upstream downstream
-
-	# Import biofilter result into
-	#	gene_gwas_col=$(head -n1 biofilter.position.gene-upstream-downstream |sed 's/^#//g' | sed 's/\//_/g' | sed 's/%/_/g' | sed 's/\t/ varchar(255),/g' | sed 's/$/ varchar(255)/g' )
-	#sqlite3 anno.db "create table biofilter_anno ($gene_gwas_col)
-	#echo -e '.separator "\t"\n.import biofilter.position.gene-upstream-downstream biofilter_anno' | sqlite3 anno.db
 
 	if [ "$icd9_desc" == true ];
 	then
 		icd9_join="left join icd9_code_desc b on a.outcome=b.icd9_code"
 		icd9_select=",b.desc as icd9_description"
+		out_suffix="_icd9-desc"
 
 	fi
 #exp(log(exp(Var1_beta)) - 1.96*Var1_SE) || ',' || exp(log(exp(Var1_beta)) + 1.96*Var1_SE) as OR_CI "
 	if [ "$or_val" == true ];
 	then
-		or_val_query=",exp(var1_beta) as odds_ratio"
-		#,round(exp(log(exp(Var1_beta)) - 1.96*Var1_SE),3) || ',' || round(exp(log(exp(Var1_beta)) + 1.96*Var1_SE),3) as OR_CI"
+		or_val_query=",exp(var1_beta) as odds_ratio,round(exp(log(exp(Var1_beta)) - 1.96*Var1_SE),3) || ',' || round(exp(log(exp(Var1_beta)) + 1.96*Var1_SE),3) as OR_95CI"
+		out_suffix="${out_suffix}_or"
 	fi
 
-#: '
-	#	if $gene;
-	#	then
-		#	gene_query="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-		#gene_col="gene as Gene"
-	#fi
+
+	if $gene;
+	then
+		gene_query="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
+		gene_col=",gene as Gene"
+		out_suffix="${out_suffix}_gene"
+	fi
 
 
-	#if $up_gene;
-	#then
-		#		if [ ${gene_query} != "" ]
-		#	then
-			#			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
-		#		else
-			#			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-			#			up_gene_col="upstream as `Upstream Gene`, up_distance as `Upstream Distance`"
-	#	fi
+	if $up_gene;
+	then
+		if [ "${gene_query}" != "" ]
+		then
+			up_gene_col=",b.upstream as 'Upstream Gene', b.up_distance as 'Upstream Distance'"
+			out_suffix="${out_suffix}_up-gene"
+		else
+			gene_query="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
+			up_gene_col=",b.upstream as 'Upstream Gene', b.up_distance as 'Upstream Distance'"
+			out_suffix="${out_suffix}_up-gene"
+		fi
+	fi
 
-	#	if $down_gene
-	#	then
-		#		if [ ${gene_query} != "" ]
-		#		then
-			#			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
-		#		else
-			#			gene_guery="left join biofilter_geno on Var1_Pos=replace(position,'chr','')"
-			#			down_gene_col="upstream as `Downstream Gene`, up_distance as `Downstream Distance`"
-	#	fi
+	if $down_gene
+	then
+		if [ "${gene_query}" != "" ]
+		then
+			down_gene_col=",b.downstream as 'Downstream Gene', b.down_distance as 'Downstream Distance'"
+			out_suffix="${out_suffix}_down-gene"
+		else
+			gene_guery="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
+			down_gene_col=",b.downstream as 'Downstream Gene', b.down_distance as 'Downstream Distance'"
+			out_suffix="${out_suffix}_down-gene"
+		fi
+	fi
 
 	if [ "$case_control_num" == true ];
 	then
-		case_control_query="Num_Cases as Cases, Num_NonMissing-Num_Cases as Controls"
+		case_control_query=",Num_Cases as Cases, Num_NonMissing-Num_Cases as Controls"
+		out_suffix="${out_suffix}_case-control"
 	fi
 
-	#	if $gwas;
-	#then
-			#		gwas_query="trait as GWAS Trait"
-	#	fi
-#'
-echo select *${icd9_select}${or_val_query}${case_control_query} from assoc_result a ${icd9_join} ${gene_query};
+	if [ "$ebi_gwas" == true ];
+	then
+		gwas_join='left join ebi_gwas_pos egp on b.chr=egp.chr and b.pos=egp.pos left join ebi_gwas eg on eg.chr_id=egp.chr_hg38 and eg.chr_pos=egp.pos_hg38'
+		gwas_query=",group_concat(distinct DISEASE_TRAIT) as GWAS_trait"
+		out_suffix="${out_suffix}_gwas"
+	fi
+
+	if [ "$grasp" == true ];
+	then
+		grasp_join='left join grasp g on a.chr=g.chr and a.Pos=g.pos where g.Pvalue<0.00001'
+		grasp_query=",group_concat(distinct Phenotype) as GRASP_Trait"
+		out_suffix="${out_suffix}_grasp"
+	fi
+
+echo "
+sqlite3 anno.db <<!
+.load /usr/local/lib/libsqlitefunctions.so
+.headers on
+.mode tabs
+.output ${input_filename}${out_suffix}
+select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join};
+!
+"
 
 sqlite3 anno.db <<!
 .load /usr/local/lib/libsqlitefunctions.so
 .headers on
 .mode tabs
-.output outfile
-select a.* $icd9_select $or_val_query from assoc_result a ${icd9_join} ${gene_query};
+.output ${input_filename}${out_suffix}
+select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join};
 !
-
-
 # The following line(s) use the dx command-line tool to upload your file
     # outputs after you have created them on the local file system.  It assumes
     # that you have used the output field name for the filename for each output,
     # but you can change that behavior to suit your needs.  Run "dx upload -h"
     # to see more options to set metadata.
-ls -l
-    out_file=$(dx upload outfile --brief)
+
+    out_file=$(dx upload ${input_filename}${out_suffix} --brief)
 
     # The following line(s) use the utility dx-jobutil-add-output to format and
     # add output variables to your job's output as appropriate for the output
@@ -166,5 +212,4 @@ ls -l
     # does.
 
     dx-jobutil-add-output out_file "$out_file" --class=file
-    ls -l
 }

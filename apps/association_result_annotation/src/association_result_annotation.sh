@@ -169,8 +169,8 @@ delete from biofilter_anno where chr='#';
 
 	if [ "$ebi_gwas" == true ];
 	then
-		gwas_join='left join ebi_gwas_pos egp on b.chr=egp.chr and b.pos=egp.pos left join ebi_gwas eg on eg.chr_id=egp.chr_hg38 and eg.chr_pos=egp.pos_hg38'
-		gwas_query=",group_concat(distinct DISEASE_TRAIT) as GWAS_trait"
+		gwas_join='left join ebi_gwas_pos egp on a.chr=egp.chr and a.pos=egp.pos left join ebi_gwas eg on eg.chr_id=egp.chr_hg38 and eg.chr_pos=egp.pos_hg38'
+		gwas_query=",group_concat(distinct eg.DISEASE_TRAIT) as GWAS_trait"
 		out_suffix="${out_suffix}_gwas"
 	fi
 

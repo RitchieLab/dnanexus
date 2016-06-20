@@ -115,7 +115,7 @@ delete from biofilter_anno where chr='#';
 	if [ "$icd9_desc" == true ];
 	then
 		icd9_join="left join icd9_code_desc b on a.outcome=b.icd9_code"
-		icd9_select=",b.desc as icd9_description"
+		icd9_select=",IFNULL(b.desc, 'NA') as icd9_description"
 		out_suffix="_icd9-desc"
 
 	fi
@@ -130,7 +130,7 @@ delete from biofilter_anno where chr='#';
 	if $gene;
 	then
 		gene_query="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
-		gene_col=",gene as Gene"
+		gene_col=",IFNULL(group_concat(gene), 'NA') as Gene"
 		out_suffix="${out_suffix}_gene"
 	fi
 
@@ -139,11 +139,11 @@ delete from biofilter_anno where chr='#';
 	then
 		if [ "${gene_query}" != "" ]
 		then
-			up_gene_col=",b.upstream as 'Upstream Gene', b.up_distance as 'Upstream Distance'"
+			up_gene_col=",IFNULL(group_concat(b.upstream), 'NA') as 'Upstream Gene', IFNULL(group_concat(b.up_distance), 'NA') as 'Upstream Distance'"
 			out_suffix="${out_suffix}_up-gene"
 		else
 			gene_query="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
-			up_gene_col=",b.upstream as 'Upstream Gene', b.up_distance as 'Upstream Distance'"
+			up_gene_col=",IFNULL(group_concat(b.upstream), 'NA') as 'Upstream Gene', IFNULL(group_concat(b.up_distance), 'NA') as 'Upstream Distance'"
 			out_suffix="${out_suffix}_up-gene"
 		fi
 	fi
@@ -152,11 +152,11 @@ delete from biofilter_anno where chr='#';
 	then
 		if [ "${gene_query}" != "" ]
 		then
-			down_gene_col=",b.downstream as 'Downstream Gene', b.down_distance as 'Downstream Distance'"
+			down_gene_col=",IFNULL(group_concat(b.downstream), 'NA') as 'Downstream Gene', IFNULL(group_concat(b.down_distance), 'NA') as 'Downstream Distance'"
 			out_suffix="${out_suffix}_down-gene"
 		else
 			gene_guery="left join biofilter_anno b on a.chr=b.chr_37 and a.Pos=b.pos_37"
-			down_gene_col=",b.downstream as 'Downstream Gene', b.down_distance as 'Downstream Distance'"
+			down_gene_col=",IFNULL(group_concat(b.downstream), 'NA') as 'Downstream Gene', IFNULL(group_concat(b.down_distance), 'NA') as 'Downstream Distance'"
 			out_suffix="${out_suffix}_down-gene"
 		fi
 	fi
@@ -170,14 +170,14 @@ delete from biofilter_anno where chr='#';
 	if [ "$ebi_gwas" == true ];
 	then
 		gwas_join='left join ebi_gwas_pos egp on a.chr=egp.chr and a.pos=egp.pos left join ebi_gwas eg on eg.chr_id=egp.chr_hg38 and eg.chr_pos=egp.pos_hg38'
-		gwas_query=",group_concat(distinct eg.DISEASE_TRAIT) as GWAS_trait"
+		gwas_query=",IFNULL(group_concat(distinct eg.DISEASE_TRAIT), 'NA') as GWAS_trait"
 		out_suffix="${out_suffix}_gwas"
 	fi
 
 	if [ "$grasp" == true ];
 	then
-		grasp_join='left join grasp g on a.chr=g.chr and a.Pos=g.pos where g.Pvalue<0.00001'
-		grasp_query=",group_concat(distinct Phenotype) as GRASP_Trait"
+		grasp_join='left join (select * from grasp g where g.Pvalue<0.00001) as g on a.chr=g.chr and a.pos=g.pos '
+		grasp_query=",IFNULL(group_concat(distinct Phenotype), 'NA') as GRASP_Trait"
 		out_suffix="${out_suffix}_grasp"
 	fi
 
@@ -196,7 +196,7 @@ sqlite3 anno.db <<!
 .headers on
 .mode tabs
 .output ${input_filename}${out_suffix}
-select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join};
+select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join} group by a.Outcome, a.Var1_ID;
 !
 # The following line(s) use the dx command-line tool to upload your file
     # outputs after you have created them on the local file system.  It assumes

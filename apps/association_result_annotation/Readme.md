@@ -15,6 +15,8 @@ Also, app can annotate following irrespective of association results:
 
 App requires a tab separated file.
 
+**Note: App works with Human genome build 37 only**
+
 ## Usage
 ### Options
 **ICD-9 Description**

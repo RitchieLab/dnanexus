@@ -3,7 +3,7 @@
   "title": "BioBin - Latest",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -97,6 +97,13 @@
       "class": "string",
       "optional": true,
       "default": "--weight-loci Y  --bin-pathways N  --bin-regions Y  --bin-minimum-size 1"
+    },
+    {
+      "name": "permu_count",
+      "label": "Permutation Count (0 to disable)",
+      "class": "int",
+      "optional": true,
+      "default": 0
     }
   ],
   "outputSpec": [
@@ -124,6 +131,12 @@
       "name": "unlifted_files",
       "label": "Unlifted Variants Files",
       "class": "array:file",
+      "optional": true
+    },
+    {
+      "name": "permu_file",
+      "label": "Permutation Summary File",
+      "class": "file",
       "optional": true
     }
   ],

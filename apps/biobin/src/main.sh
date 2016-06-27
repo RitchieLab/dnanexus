@@ -114,6 +114,40 @@ main() {
 		> "biobin/${output_prefix}-summary.tsv"
 	
 	
+	# permute, if enabled
+	if [[ "$permu_count" -gt 0 ]]; then
+		mkdir permu
+		for p in $(seq 1 $permu_count) ; do
+			mkdir permu/$p
+			biobin-permute-pheno.py input/input.phenotype $p > permu/$p/input.phenotype
+			biobin \
+				--threads "$NUM_CORES" \
+				--settings-db shared/loki.db \
+				--vcf-file "$VCF_FILE" \
+				$BIOBIN_ROLE_ARG \
+				--phenotype-file permu/$p/input.phenotype \
+				$BIOBIN_COVAR_ARG \
+				$BIOBIN_TEST_ARG \
+				$BIOBIN_WEIGHT_ARG \
+				$BIOBIN_REGION_ARG \
+				$BIOBIN_INCLUDE_REGION_ARG \
+				--report-prefix "permu/$p/$output" \
+				$biobin_args \
+			2>&1 | tee -a permu/$p/output.log
+			biobin-summary.py \
+				--prefix=permu/$p/output \
+				> permu/$p/output-summary.tsv
+		done
+		biobin-permute-collate.py \
+			"biobin/${output_prefix}-summary.tsv" \
+			"permu/%d/output-summary.tsv" \
+			$p \
+		> "permu/${output_prefix}-permute-summary.tsv"
+		permu_file=$(dx upload permu/*-permute-summary.tsv --brief)
+		dx-jobutil-add-output permu_file --class="file" "$permu_file"
+	fi
+	
+	
 	# upload output files
 	
 	for f in biobin/*-bins.csv ; do

@@ -25,58 +25,99 @@
       }
       }
     },
-    { "name": "icd9_desc",
+    {
+      "name": "icd9_desc",
       "label": "ICD-9 description",
       "class": "boolean",
       "default": false,
-      "optional": false
+      "optional": true,
+      "group": "ICD-9 Description"
     },
+    {
+      "name": "icd9_col",
+      "label": "ICD-9 Column Name",
+      "help" : "Provide column name that contains ICD-9 codes in the input file",
+      "class": "string",
+      "optional": true,
+      "group": "ICD-9 Description"
+   },
     { "name": "ebi_gwas",
       "label": "EBI GWAS catalog",
       "class": "boolean",
       "default": false,
-      "optional": false
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
     },
     { "name": "grasp",
       "label": "GRASP",
       "class": "boolean",
       "default": false,
-      "optional": false
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
+    },
+    { "name": "grasp_pval",
+      "label": "GRASP p-value threshold",
+      "help": "GRASP reports association from known GWAS with pvalue <0.01. We suggest to use a lower significance to reduce result lookup",
+      "class": "string",
+      "default": "0.00001",
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
     },
     {
       "name": "or_val",
       "label": "Odds Ratio",
       "class": "boolean",
       "default": false,
-      "optional": false
-    },
-    {
-      "name": "gene",
-      "label": "Gene",
-      "class": "boolean",
-      "default": false,
-      "optional": false
-    },
-    {
-      "name": "up_gene",
-      "label": "Upstream Gene",
-      "class": "boolean",
-      "default": false,
-      "optional": false
-    },
-    {
-      "name": "down_gene",
-      "label": "Downstream Gene",
-      "class": "boolean",
-      "default": false,
-      "optional": false
+      "optional": true,
+      "group": "Statistics (Only works with PLATO output)"
     },
     {
       "name": "case_control_num",
       "label": "Case-Control Numbers",
       "class": "boolean",
       "default": false,
-      "optional": false
+      "optional": true,
+      "group": "Statistics (Only works with PLATO output)"
+    },
+    {
+      "name": "gene",
+      "label": "Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
+    },
+    {
+      "name": "up_gene",
+      "label": "Upstream Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
+    },
+    {
+      "name": "down_gene",
+      "label": "Downstream Gene",
+      "class": "boolean",
+      "default": false,
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
+    },
+    {
+      "name": "chr_col",
+      "label": "Chromosome Column name",
+      "help" : "Provide column name that contains chromosome number in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "class": "string",
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
+    },
+    {
+      "name": "pos_col",
+      "label": "Basepair position Column name",
+      "help" : "Provide column name that contains basepair postion of a SNP in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "class": "string",
+      "optional": true,
+      "group": "Gene and GWAS Catalog"
     }
   ],
   "outputSpec": [

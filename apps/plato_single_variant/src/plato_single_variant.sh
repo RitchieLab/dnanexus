@@ -131,8 +131,8 @@ plato_reg() {
 	# Download PLATO, PLINK, PLINK2
 	LAB_RESOURCES="project-Bkp5fYQ0vqZfq1XXPkYK2p1z"
 	dx download "$LAB_RESOURCES:/PLATO/plato" -f -o /usr/bin/
-	dx download "$LAB_RESOURCES:/PLINK/plink" -f -o /usr/bin/
-	dx download "$LAB_RESOURCES:/PLINK/plink2" -f -o /usr/bin/
+#	dx download "$LAB_RESOURCES:/PLINK/plink" -f -o /usr/bin/
+#	dx download "$LAB_RESOURCES:/PLINK/plink2" -f -o /usr/bin/
 
 	chmod a+rx /usr/bin/plato
 	chmod a+rx /usr/bin/plink

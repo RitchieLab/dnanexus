@@ -114,7 +114,7 @@ Dnanexus Apps and Scripts
 * vcf_qc:
   * Calls [GATK ApplyRecalibration](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_variantrecalibration_VariantRecalibrator.php) and [GATK VariantFiltration](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_filters_VariantFiltration.php) to apply filters to VCF files.
 * vcf_query:
-  * Calls "bcftools query" to extract annotations from the VCF file
+  * Calls "bcftools query" to extract annotations from the VCF file.  Used in the stripping of files for MEGAbase
 * vcf_sitesonly: VCF QC
   * Generates a sites-only file from full VCF files.
 * vcf_slice: Slice VCF File(s)

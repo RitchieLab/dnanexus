@@ -85,6 +85,12 @@
       "label": "Additional Command Line parameters to SelectVariants",
       "class": "string",
       "optional": true
+      },
+    {
+      "name": "out_suffix",
+      "label": "Output Filename suffix",
+      "class": "string",
+      "optional": true
     }
   ],
   "outputSpec": [

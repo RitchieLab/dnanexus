@@ -145,11 +145,11 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
 			then
 				if [ "${gene_query}" != "" ]
 				then
-					up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream Distance'"
+					up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream_Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream_Distance'"
 					out_suffix="${out_suffix}_up-gene"
 				else
 					gene_query="left join biofilter_anno b on a.'$chr_col'=b.chr_37 and a."$pos_col"=b.pos_37"
-					up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream Distance'"
+					up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream_Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream_Distance'"
 					out_suffix="${out_suffix}_up-gene"
 				fi
 			fi
@@ -158,11 +158,11 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
 			then
 				if [ "${gene_query}" != "" ]
 				then
-					down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream Distance'"
+					down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream_Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream_Distance'"
 					out_suffix="${out_suffix}_down-gene"
 				else
 					gene_guery="left join biofilter_anno b on a."$chr_col"=b.chr_37 and a."$pos_col"=b.pos_37"
-					down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream Distance'"
+					down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream_Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream_Distance'"
 					out_suffix="${out_suffix}_down-gene"
 				fi
 			fi

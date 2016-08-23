@@ -65,8 +65,13 @@ main() {
 		dx download "$VCF_IDX_LINE" -o raw.vcf.gz.tbi
 	
 		# get a list of chromosomes and run SelectVariants on the chromosomes independently
-		CONCAT_ARGS="-iprefix=$PREFIX"
-		CONCAT_HDR_ARGS="-iprefix=header.$PREFIX"
+		if test "$out_suffix"; then
+			CONCAT_PREFIX="${PREFIX}.${out_suffix}"
+		else
+			CONCAT_PREFIX="$PREFIX"
+		fi
+		CONCAT_ARGS="-iprefix=$CONCAT_PREFIX"
+		CONCAT_HDR_ARGS="-iprefix=header.$CONCAT_PREFIX"
 		
 		N_CHR=$(tabix -l raw.vcf.gz | wc -l)
 		

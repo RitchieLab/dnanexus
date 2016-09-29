@@ -40,7 +40,7 @@
       "label": "Interval Padding",
       "class": "int",
       "optional": true,
-      "default": 50
+      "default": 20
     },
     {
       "group": "GATK Options",

@@ -48,7 +48,7 @@
       "name": "padding",
       "class": "int",
       "optional": true,
-      "default" : 0
+      "default" : 20
     },
     {
       "group": "GATK Options",

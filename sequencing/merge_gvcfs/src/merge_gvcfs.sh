@@ -481,7 +481,7 @@ function single_merge_subjob() {
 			CHR_LIST=$(mktemp)
 			cat $INTERVAL_LIST | sed -n "/^$CHR[ \t].*/p" > $CHR_LIST
 			int_fn=$(dx upload $CHR_LIST --brief)
-			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS $JOB_ARGS -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
+			merge_jobid=$(eval dx-jobutil-new-job merge_intervals "$MERGE_ARGS" "$JOB_ARGS" -itarget:file="$int_fn" -iPREFIX:string="$PREFIX.$CHR" -iconcat:int=1)
 
 			dx-jobutil-add-output gvcf --array "$merge_jobid:vcf" --class=jobref
 			dx-jobutil-add-output gvcfidx --array "$merge_jobid:vcfidx" --class=jobref

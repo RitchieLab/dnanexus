@@ -32,14 +32,6 @@ fi
 
 set -x
 
-RERUN=1
-
-while test $RERUN -ne 0; do
-	sudo pip install pytabix
-	RERUN="$?"
-done
-
-
 #mkfifo /LOG_SPLITTER
 #stdbuf -oL tee /LOGS < /LOG_SPLITTER &
 
@@ -434,8 +426,6 @@ function merge_intervals(){
 # entry point for merging into a single gVCF
 function single_merge_subjob() {
 
-	set -x
-
 	echo "Resources: $DX_RESOURCES_ID"
 
 	# set the shell to work w/ GNU parallel
@@ -443,9 +433,6 @@ function single_merge_subjob() {
 
 	# If we are working with both GVCFs and their index files, let's break it up by interval
 	# If no interval given, just break up by chromosome
-
-	gvcfidxfn=$(dx describe "$gvcfidxs" --json | jq -r .id)
-	gvcffn=$(dx describe "$gvcflist" --json | jq -r .id )
 
 	INTERVAL_LIST=$(mktemp)
 	ORIG_INTERVALS=$(mktemp)
@@ -460,6 +447,9 @@ function single_merge_subjob() {
 	for i in "${!gvcfidx[@]}"; do
 		JOB_ARGS="$JOB_ARGS -igvcfidx='${gvcfidx[$i]}'"
 	done
+	
+	# start setting up logging here
+	set -x
 
 	if test "$target"; then
 		MERGE_ARGS="$MERGE_ARGS -itargeted:int=1"

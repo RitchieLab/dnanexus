@@ -30,7 +30,7 @@ else
 	sudo apt-get install --yes openjdk-8-jre-headless
 fi
 
-set -x
+#set -x
 
 #mkfifo /LOG_SPLITTER
 #stdbuf -oL tee /LOGS < /LOG_SPLITTER &
@@ -192,7 +192,7 @@ function upload_files() {
 export -f upload_files
 
 function dl_merge_interval() {
-	set -x
+	#set -x
 	INTERVAL_FILE=$1
 
 	# If we have no intervals, just exit
@@ -306,12 +306,11 @@ function merge_intervals(){
 	INDEX_DIR=$(mktemp -d)
 
 	# download ALL of the indexes (in parallel!)
-	GVCFIDX_FN=$(mktemp)
-	for i in "${!gvcfidx[@]}"; do
-		echo "${gvcfidx[$i]}"
-	done > $GVCFIDX_FN
-
-	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
+	TARF=$(mktemp)
+	dx download "$gvcfidxtar" -f -o $TARF
+	
+	tar -xf $TARF -C $INDEX_DIR
+	rm $TARF
 
 	# download the target file and the list of GVCFs
 	TARGET_FILE=$(mktemp)
@@ -431,13 +430,33 @@ function single_merge_subjob() {
 	MERGE_ARGS=""
 
 	JOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
+	
 	for i in "${!gvcf[@]}"; do
 		JOB_ARGS="$JOB_ARGS -igvcf='${gvcf[$i]}'"
 	done
 
+	# we're going to download all of the indices here, then create a tarball
+	
+	# download ALL of the indexes (in parallel!)
+	INDEX_DIR=$(mktemp -d)
+	GVCFIDX_FN=$(mktemp)
 	for i in "${!gvcfidx[@]}"; do
-		JOB_ARGS="$JOB_ARGS -igvcfidx='${gvcfidx[$i]}'"
-	done
+		echo "${gvcfidx[$i]}"
+	done > $GVCFIDX_FN
+
+	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
+	
+	cd $INDEX_DIR
+	TAR_DIR=$(mktemp -d)
+	tar -cf $TAR_DIR/gvcfidx.tar *
+	cd -
+	
+	TAR_DXF=$(dx upload --brief $TAR_DIR/gvcfidx.tar)
+	JOB_ARGS="$JOB_ARGS -igvcfidxtar:file=$TAR_DXF"
+	
+	#for i in "${!gvcfidx[@]}"; do
+	#	JOB_ARGS="$JOB_ARGS -igvcfidx='${gvcfidx[$i]}'"
+	#done
 	
 	# start setting up logging here
 	set -x

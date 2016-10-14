@@ -325,7 +325,7 @@ function merge_intervals(){
 		echo "${gvcfidx[$i]}"
 	done > $GVCFIDX_FN
 
-	dx download "$gvcfidxs" -f -o $GVCFIDX_FN
+	#dx download "$gvcfidxs" -f -o $GVCFIDX_FN
 	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
 
 	# download the target file and the list of GVCFs

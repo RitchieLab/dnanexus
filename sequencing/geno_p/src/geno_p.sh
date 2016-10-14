@@ -24,8 +24,6 @@ sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get install --yes parallel
 
-sudo pip install pytabix
-
 function parallel_download() {
 	set -x
 	cd $2

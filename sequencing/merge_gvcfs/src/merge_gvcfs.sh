@@ -232,7 +232,7 @@ function dl_merge_interval() {
 		# No dx describe here, please!  DX_GVCF_ILES now has 2 columns, the first is 
 		# the name, and the second is the download ID (
 		GVCF_NAME=$(echo "$dxfn" | cut -f1)
-		GVCF_DXID=$(echo "$dxfn" | cut -f2 | jq -r '.["\$dnanexus_link"]')
+		GVCF_DXID=$(echo "$dxfn" | cut -f2 | jq -r '.["$dnanexus_link"]')
 		GVCF_BASE=$(echo "$GVCF_NAME" | sed 's/.vcf\.gz$//')
 		GVCF_IDX=$(join -o '2.2' -j1 <(echo "$GVCF_NAME") $IDX_NAMES)
 
@@ -335,7 +335,7 @@ function merge_intervals(){
 		split -a 2 -d -n l/$NPROC $TARGET_FILE "interval_split."
 		
 		# STOP: SANITY check.  Make sure the total number of lines is the same
-		if test $(cat interval_split.* | wc -l) -ne $(cat $TARGET_FILE | wc -l);
+		if test $(cat interval_split.* | wc -l) -ne $(cat $TARGET_FILE | wc -l); then
 			dx-jobutil-report-error "ERROR: bug in split - need a code change."
 		fi
 	else
@@ -430,7 +430,7 @@ function single_merge_subjob() {
 	SPLIT_DIR=$(mktemp -d)
 	MERGE_ARGS=""
 
-	JOB_ARGS=""
+	JOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
 	for i in "${!gvcf[@]}"; do
 		JOB_ARGS="$JOB_ARGS -igvcf='${gvcf[$i]}'"
 	done
@@ -500,7 +500,7 @@ function single_merge_subjob() {
 			cat $f
 			int_fn=$(dx upload $f --brief)
 			# run a subjob that merges the input VCFs on the given target file
-			merge_jobid=$(dx-jobutil-new-job merge_intervals $MERGE_ARGS $JOB_ARGS -itarget:file="$int_fn" -iPREFIX="$PREFIX" -iconcat:int=0)
+			merge_jobid=$(eval dx-jobutil-new-job merge_intervals "$MERGE_ARGS" "$JOB_ARGS" -itarget:file="$int_fn" -iPREFIX="$PREFIX" -iconcat:int=0)
 			dx-jobutil-add-output gvcf --array "${merge_jobid}:vcf" --class=jobref
 			dx-jobutil-add-output gvcfidx --array "${merge_jobid}:vcfidx" --class=jobref
 
@@ -631,7 +631,7 @@ main() {
    	JOINT_LIST=$(mktemp)
     GVCFIDX_LIST=$(mktemp)
 
-    SUBJOB_ARGS=""
+    SUBJOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
 	if test "$N_GVCF" -gt 0 ; then
 
 		# use the gvcf list provided

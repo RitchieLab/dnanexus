@@ -106,11 +106,17 @@ main() {
 	2>&1 | tee -a output.log
 	ls -laR biobin
 	
+	RGX="--force-all-control[[:space:]]+(y|Y)"
+	ALL_CONTROL=""
+	if [[ $biobin_args =~ $RGX ]]; then
+		ALL_CONTROL="--all-control"
+	fi
 	
 	# run summary script
 	
 	biobin-summary.py \
 		--prefix="biobin/$output_prefix" \
+		$ALL_CONTROL \
 		> "biobin/${output_prefix}-summary.tsv"
 	
 	
@@ -136,6 +142,7 @@ main() {
 			2>&1 | tee -a permu/$p/output.log
 			biobin-summary.py \
 				--prefix=permu/$p/output \
+				$ALL_CONTROL \
 				> permu/$p/output-summary.tsv
 		done
 		biobin-permute-collate.py \

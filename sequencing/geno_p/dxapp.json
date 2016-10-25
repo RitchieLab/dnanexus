@@ -23,7 +23,7 @@
       "patterns": [
         "*.tbi"
       ]
-    },    
+    },
     {
       "name": "target_file",
       "class": "file",
@@ -41,7 +41,25 @@
       "name": "padding",
       "class": "int",
       "optional": true,
-      "default" : 0
+      "default" : 20
+    },
+    {
+      "group": "GATK Options",
+      "name": "gatk_version",
+      "label": "GATK Version",
+      "class": "string",
+      "choices": ["3.6","3.4-46"],
+      "default": "3.6",
+      "optional": true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b38",
+      "optional": true
     }
 
   ],
@@ -90,7 +108,7 @@
         "name": "pigz"
       },
       {
-        "name": "openjdk-7-jre-headless"
+        "name": "parallel"
       },
       {
         "name": "tabix"
@@ -98,9 +116,20 @@
     ],
     "systemRequirements": {
       "merge_vcf": {
-        "instanceType": "mem2_hdd2_x4"
+        "instanceType": "mem3_ssd1_x4"
       }
     },
+    "restartableEntryPoints": "all",
+    "executionPolicy": {
+      "restartOn": {
+        "UnresponsiveWorker": 2,
+        "JMInternalError": 1,
+        "ExecutionError": 1,
+        "AppInternalError": 1
+      }
+    },
+    "distribution": "Ubuntu",
+    "release": "14.04",
     "file": "src/geno_p.sh"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",

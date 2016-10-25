@@ -1,0 +1,75 @@
+{
+  "name": "filter_bams",
+  "title": "Filter Bam files based off bed file",
+  "summary": "Filter bam files base off of a bed file",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "inputSpec": [
+    {
+      "name": "bam_files",
+      "label": "bam_files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.bam"
+      ],
+      "help": ""
+    },
+    {
+      "name": "bai_files",
+      "label": "bai_files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.bai"
+      ],
+      "help": ""
+    },
+    {
+      "name": "bed_file",
+      "label": "bed_file",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.bed"
+      ],
+      "help": ""
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "filtered_bam_files",
+      "label": "filtered_bam_files",
+      "class": "array:file",
+      "patterns": [
+        "*.ba*"
+      ],
+      "help": ""
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+        {
+          "name": "samtools"
+        },
+        {
+          "name": "parallel"
+        }
+      ],
+    "interpreter": "bash",
+    "file": "src/filter_bams.sh",
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem2_ssd1_x4"
+      }
+    },
+    "distribution": "Ubuntu",
+    "release": "14.04"
+  },
+  "access": {
+    "project": "CONTRIBUTE",
+    "network": [
+      "*"
+    ]
+  }
+}

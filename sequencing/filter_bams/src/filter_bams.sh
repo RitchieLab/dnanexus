@@ -14,6 +14,39 @@
 #
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
+set -x
+
+
+
+
+function parallel_download() {
+	#set -x
+	cd $2
+	dx download "$1"
+	cd - >/dev/null
+}
+export -f parallel_download
+
+function parallel_download_and_subset() {
+	set -x
+	cd $2
+
+  dx download "$1"
+
+  IN_BAM=$(echo "$1")
+
+  echo "$1"
+
+  echo $IN_BAM
+
+  echo ${IN_BAM%.*}
+
+	samtools view -b -L filter.bed ${IN_BAM%.*}.bam > $HOME/out/filtered_bam_files/${IN_BAM%.*}.g76.bam
+	samtools index $HOME/out/filtered_bam_files/${IN_BAM%.*}.g76.bam
+	rm ${IN_BAM%.*}.*
+
+}
+export -f parallel_download_and_subset
 
 echo "Value of bam_files: '${bam_files[@]}'"
 echo "Value of bai_files: '${bai_files[@]}'"
@@ -30,25 +63,9 @@ DXBAI_LIST=$(mktemp)
 cd $WKDIR
 
 
-function parallel_download() {
-	#set -x
-	cd $2
-	dx download "$1"
-	cd - >/dev/null
-}
-export -f parallel_download
-
-function parallel_download_and_subset() {
-	set -x
-	cd $2
-	samtools view -b -L filter.bed $1 > $HOME/out/filtered_bam_files/${1%.*}.g76.bam
-	samtools index $HOME/out/filtered_bam_files/${1%.*}.g76.bam
-	rm ${1%.*}.*
-
-}
-
-
 main() {
+
+  export SHELL="/bin/bash"
 
     cd $WKDIR
 
@@ -58,6 +75,10 @@ main() {
     done
 
     parallel -j $(nproc --all) -u --gnu parallel_download :::: $DXBAI_LIST ::: $WKDIR
+
+    echo "BAI downloaded"
+
+    ls
 
     for i in "${!bam_files[@]}"; do
   		echo "${bam_files[$i]}" >> $DXBAM_LIST

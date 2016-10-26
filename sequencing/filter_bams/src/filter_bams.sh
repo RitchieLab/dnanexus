@@ -16,8 +16,7 @@
 # to modify this file.
 set -x
 
-
-
+df -h
 
 function parallel_download() {
 	#set -x
@@ -28,21 +27,24 @@ function parallel_download() {
 export -f parallel_download
 
 function parallel_download_and_subset() {
-	set -x
+	#set -x
 	cd $2
 
   dx download "$1"
 
-  IN_BAM=$(echo "$1")
+	IN_BAM=$(dx describe "$1" --name)
 
-  echo "$1"
+	#samtools view -b -L filter.bed $IN_BAM > $HOME/out/filtered_bam_files/${IN_BAM%.*}.$filter_flag.bam
+	#samtools index $HOME/out/filtered_bam_files/${IN_BAM%.*}.$filter_flag.bam
+	samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
+	samtools index ${IN_BAM%.*}.$filter_flag.bam
 
-  echo $IN_BAM
+	BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
+	BAI_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam.bai)
 
-  echo ${IN_BAM%.*}
+	dx-jobutil-add-output filtered_bam_files "$BAM_UP" --class=array:file
+	dx-jobutil-add-output filtered_bam_files "$BAI_UP" --class=array:file
 
-	samtools view -b -L filter.bed ${IN_BAM%.*}.bam > $HOME/out/filtered_bam_files/${IN_BAM%.*}.g76.bam
-	samtools index $HOME/out/filtered_bam_files/${IN_BAM%.*}.g76.bam
 	rm ${IN_BAM%.*}.*
 
 }
@@ -52,15 +54,17 @@ echo "Value of bam_files: '${bam_files[@]}'"
 echo "Value of bai_files: '${bai_files[@]}'"
 echo "Value of bed_file: '$bed_file'"
 
-dx download "$bed_file" -o filter.bed
 
-mkdir -p $HOME/out/filtered_bam_files
+
+#mkdir -p $HOME/out/filtered_bam_files
 
 WKDIR=$(mktemp -d)
 DXBAM_LIST=$(mktemp)
 DXBAI_LIST=$(mktemp)
 
 cd $WKDIR
+
+dx download "$bed_file" -o filter.bed
 
 
 main() {
@@ -121,7 +125,9 @@ main() {
     # class.  Run "dx-jobutil-add-output -h" for more information on what it
     # does.
 
+		df -h
+
     #dx-jobutil-add-output filtered_bam_files "$filtered_bam_files" --class=array:file
 
-    dx-upload-all-outputs --parallel
+    #dx-upload-all-outputs --parallel
 }

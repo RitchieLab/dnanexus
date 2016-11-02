@@ -137,7 +137,7 @@ main() {
 				$BIOBIN_WEIGHT_ARG \
 				$BIOBIN_REGION_ARG \
 				$BIOBIN_INCLUDE_REGION_ARG \
-				--report-prefix "permu/$p/$output" \
+				--report-prefix "permu/$p/output" \
 				$biobin_args \
 			2>&1 | tee -a permu/$p/output.log
 			biobin-summary.py \
@@ -145,6 +145,7 @@ main() {
 				$ALL_CONTROL \
 				> permu/$p/output-summary.tsv
 		done
+		ls -laR permu
 		biobin-permute-collate.py \
 			"biobin/${output_prefix}-summary.tsv" \
 			"permu/%d/output-summary.tsv" \

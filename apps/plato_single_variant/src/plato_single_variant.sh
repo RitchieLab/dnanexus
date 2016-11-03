@@ -431,12 +431,12 @@ postprocess(){
 		| awk 'BEGIN{FS=OFS="\t"}{print $0, $var1*var2}' \
 		var1=$pval_col \
 		var2=$(ls plato_out-* | xargs -n 1 tail -n+2  | wc -l) \
-    | awk '{if($var3<1) print $0,$var4=$var3; else print $0,$var4=1}'  \
+    | awk 'BEGIN{FS=OFS="\t"}{if($var3<1) print $0,$var4=$var3; else print $0,$var4=1}'  \
     var3=$(echo "$pval_col" + 1 | bc -l) \
     var4=$(echo "$pval_col" + 2 | bc -l) \
-    | awk '{$var3="";print $0}' \
+    | awk 'BEGIN{FS=OFS="\t"}{$var3="";print $0}' \
     var3=$(echo "$pval_col" + 1 | bc -l) \
-		| sed "1i $(echo ${out_header} | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')\tOverall_Pval_adj_Bonferroni" \
+		| sed "1i $(echo ${out_header} | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')Overall_Pval_adj_Bonferroni" \
 		> output_files/${out_name}
 	elif [ "$correction" == "FDR" ]
 	then
@@ -455,7 +455,7 @@ postprocess(){
     fi);iter=$(($iter+1)); \
     pmax=$(printf %e ${pmax}); echo $pmax ; \
     done | tac) | sed "1i $(echo ${out_header} \
-    | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')\tOverall_Pval_adj_FDR" > output_files/${out_name}
+    | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')Overall_Pval_adj_FDR" > output_files/${out_name}
 	else
 		sort -s -m -gk$pval_col,$pval_col $(ls plato_out-*) | grep -v "Var1" | sed "1i ${out_header}" > output_files/${out_name}
 	fi

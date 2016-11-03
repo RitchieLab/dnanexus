@@ -1,0 +1,46 @@
+{
+  "name": "av_sleeper_app",
+  "title": "AV_Sleeper_App",
+  "summary": "Ritchie Lab App for useful tools via an SSH terminal",
+  "dxapi": "1.0.0",
+  "version": "1.1.0",
+  "inputSpec": [
+    {
+      "default": "1h",
+      "optional": true,
+      "name": "sleep_time",
+      "class": "string"
+    },
+	{
+	  "name" : "files",
+	  "class" : "array:file",
+	  "optional" : true
+	}
+  ],
+  "outputSpec": [],
+  "distribution": "Ubuntu",
+  "release": "14.04",
+  "runSpec": {
+    "execDepends": [
+      {"name": "libgsl0ldbl"},
+      {"name": "libgsl0-dev"},
+      {"name": "tabix"},
+      {"name": "openjdk-7-jre-headless"},
+      {"name": "pigz"},
+	  {"name": "vcftools"},
+	  {"name": "subversion"},
+	  {"name": "libtool"}
+    ],
+    "file": "src/code.sh",
+    "interpreter": "bash"
+  },
+  "openSource" : true,
+  "access": {
+    "network": [
+      "*"
+    ],
+    "allProjects": "CONTRIBUTE"
+  },
+  "developers": ["user-johnwallace123", "user-auv13", "user-atf3", "user-sud23"],
+  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger"]
+}

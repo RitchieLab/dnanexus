@@ -1,0 +1,72 @@
+SNPGDSFileClass         SNPGDSFileClass
+SNPRelate-package       Parallel Computing Toolset for Genome-Wide
+                        Association Studies
+hapmap_geno             SNP genotypes of HapMap samples
+snpgdsAdmixProp         Estimate ancestral proportions from the
+                        eigen-analysis
+snpgdsAlleleSwitch      Allele-switching
+snpgdsApartSelection    Select SNPs with a basepair distance
+snpgdsBED2GDS           Conversion from PLINK BED to GDS
+snpgdsClose             Close the SNP GDS File
+snpgdsCombineGeno       Merge SNP datasets
+snpgdsCreateGeno        Create a SNP genotype dataset from a matrix
+snpgdsCreateGenoSet     Create a SNP genotype dataset from a GDS file
+snpgdsCutTree           Determine clusters of individuals
+snpgdsDiss              Individual dissimilarity analysis
+snpgdsDrawTree          Draw a dendrogram
+snpgdsEIGMIX            Eigen-analysis on SNP genotype data
+snpgdsErrMsg            Get the last error information
+snpgdsExampleFileName   Example GDS file
+snpgdsFst               Relatedness estimation - Fst
+snpgdsGDS2BED           Conversion from GDS to PLINK BED
+snpgdsGDS2Eigen         Conversion from GDS to Eigen (EIGENSTRAT)
+snpgdsGDS2PED           Conversion from GDS to PED
+snpgdsGEN2GDS           Conversion from Oxford GEN format to GDS
+snpgdsGRM               Genetic Relationship Matrix (GRM) for SNP
+                        genotype data
+snpgdsGetGeno           To get a genotype matrix
+snpgdsHCluster          Hierarchical cluster analysis
+snpgdsIBDKING           KING method of moment for the
+                        identity-by-descent (IBD) analysis
+snpgdsIBDMLE            Maximum likelihood estimation (MLE) for the
+                        Identity-By-Descent (IBD) Analysis
+snpgdsIBDMLELogLik      Log likelihood for MLE method in the
+                        Identity-By-Descent (IBD) Analysis
+snpgdsIBDMoM            PLINK method of moment (MoM) for the
+                        Identity-By-Descent (IBD) Analysis
+snpgdsIBDSelection      Get a table of IBD coefficients
+snpgdsIBS               Identity-By-State (IBS) proportion
+snpgdsIBSNum            Identity-By-State (IBS)
+snpgdsIndInb            Individual Inbreeding Coefficients
+snpgdsIndInbCoef        Individual Inbreeding Coefficient
+snpgdsLDMat             Linkage Disequilibrium (LD) analysis
+snpgdsLDpair            Linkage Disequilibrium (LD)
+snpgdsLDpruning         Linkage Disequilibrium (LD) based SNP pruning
+snpgdsOpen              Open a SNP GDS File
+snpgdsOption            Option settings: chromosome coding, etc
+snpgdsPCA               Principal Component Analysis (PCA) on SNP
+                        genotype data
+snpgdsPCACorr           PCA-correlated SNPs in principal component
+                        analysis
+snpgdsPCASNPLoading     SNP loadings in principal component analysis
+snpgdsPCASampLoading    Project individuals onto existing principal
+                        component axes
+snpgdsPairIBD           Calculate Identity-By-Descent (IBD)
+                        Coefficients
+snpgdsPairIBDMLELogLik
+                        Log likelihood for MLE method in the
+                        Identity-By-Descent (IBD) Analysis
+snpgdsSNPList           Create a SNP list object
+snpgdsSNPListClass      the class of a SNP list
+snpgdsSNPListIntersect
+                        Get a common SNP list between two SNP list
+                        objects
+snpgdsSNPListStrand     Switch allele strand.
+snpgdsSNPRateFreq       Allele Frequency, Minor Allele Frequency,
+                        Missing Rate of SNPs
+snpgdsSampMissRate      Missing Rate of Samples
+snpgdsSelectSNP         SNP selection
+snpgdsSlidingWindow     Sliding window
+snpgdsSummary           Summary of GDS genotype file
+snpgdsTranspose         Transpose genotypic matrix
+snpgdsVCF2GDS           Reformat a VCF file

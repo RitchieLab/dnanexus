@@ -40,6 +40,10 @@ main() {
 		SUBJOB_ARGS="$SUBJOB_ARGS -iEXTRA_CMD:string='$EXTRA_CMD'"
 	fi
 
+	if test "$out_suffix"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -iout_suffix:string='$out_suffix'"
+	fi
+
 	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$headers"
 
 	WKDIR=$(mktemp -d)
@@ -61,8 +65,13 @@ main() {
 		dx download "$VCF_IDX_LINE" -o raw.vcf.gz.tbi
 	
 		# get a list of chromosomes and run SelectVariants on the chromosomes independently
-		CONCAT_ARGS="-iprefix=$PREFIX"
-		CONCAT_HDR_ARGS="-iprefix=header.$PREFIX"
+		if test "$out_suffix"; then
+			CONCAT_PREFIX="${PREFIX}.${out_suffix}"
+		else
+			CONCAT_PREFIX="$PREFIX"
+		fi
+		CONCAT_ARGS="-iprefix=$CONCAT_PREFIX"
+		CONCAT_HDR_ARGS="-iprefix=header.$CONCAT_PREFIX"
 		
 		N_CHR=$(tabix -l raw.vcf.gz | wc -l)
 		
@@ -173,6 +182,7 @@ run_sv() {
 	if test -z "$SV_ARGS" -a -z "$concord_vcf"; then
 		dx-jobutil-report-error "ERROR: Nothing to do!"
 	fi
+
 	
 	# get the resources we need in /usr/share/GATK
 	sudo mkdir -p /usr/share/GATK/resources
@@ -224,15 +234,19 @@ run_sv() {
 		PREFIX="$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//').subset"
 	fi
 
+	if test "$out_suffix"; then
+		SUFFIX="${out_suffix}."
+	fi
+
 	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar \
 		-T SelectVariants \
 		-nt $(nproc --all) \
 		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		-V raw.vcf.gz "$SV_ARGS" \
-		-o $OUT_DIR/$PREFIX.vcf.gz
+		-o $OUT_DIR/$PREFIX."$SUFFIX"vcf.gz
 	
-	vcf_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz --brief)
-    vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.vcf.gz.tbi --brief)
+	vcf_out=$(dx upload $OUT_DIR/$PREFIX.${SUFFIX}vcf.gz --brief)
+	vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.${SUFFIX}vcf.gz.tbi --brief)
 
     # The following line(s) use the utility dx-jobutil-add-output to format and
     # add output variables to your job's output as appropriate for the output
@@ -244,14 +258,14 @@ run_sv() {
     
     if test "$header" = "true"; then
        	# get only the 1st 8 (summary) columns - will be helpful when running VQSR or other variant-level information
-		pigz -dc "$OUT_DIR/$PREFIX.vcf.gz" | cut -f1-8 | bgzip -c > "$OUT_DIR/header.$PREFIX.vcf.gz"
-		tabix -p vcf "$OUT_DIR/header.$PREFIX.vcf.gz"
+		pigz -dc "$OUT_DIR/$PREFIX.${SUFFIX}vcf.gz" | cut -f1-8 | bgzip -c > "$OUT_DIR/header.$PREFIX.${SUFFIX}vcf.gz"
+		tabix -p vcf "$OUT_DIR/header.$PREFIX.${SUFFIX}vcf.gz"
 		
     
-	   	vcf_hdr_fn=$(dx upload "$OUT_DIR/header.$PREFIX.vcf.gz" --brief)
-    	vcf_idx_hdr_fn=$(dx upload "$OUT_DIR/header.$PREFIX.vcf.gz.tbi" --brief)
+		vcf_hdr_fn=$(dx upload "$OUT_DIR/header.$PREFIX.${SUFFIX}vcf.gz" --brief)
+		vcf_idx_hdr_fn=$(dx upload "$OUT_DIR/header.$PREFIX.${SUFFIX}vcf.gz.tbi" --brief)
 
-    	dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
-    	dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
+		dx-jobutil-add-output vcf_hdr_out "$vcf_hdr_fn" --class=file
+		dx-jobutil-add-output vcfidx_hdr_out "$vcf_idx_hdr_fn" --class=file
     fi
 }

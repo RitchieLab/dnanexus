@@ -35,8 +35,7 @@ with open(sys.argv[1],'rU') as infile:
 		l += 1
 		cols = line.strip().split("\t")
 		if len(cols) != len(tests) + 11:
-			print "ERROR: found %d columns on line %d of %s, expected %d" % (len(cols),l,sys.argv[1],len(tests)+11)
-			sys.exit(1)
+			sys.exit("ERROR: found %d columns on line %d of %s, expected %d" % (len(cols),l,sys.argv[1],len(tests)+11))
 		result = (cols[0],cols[1])
 		results.append(result)
 		for c in xrange(11,len(cols)):
@@ -56,8 +55,7 @@ for p in xrange(pMin,pMax+1):
 			l += 1
 			cols = line.strip().split("\t")
 			if len(cols) != len(tests) + 11:
-				print "ERROR: found %d columns on line %d of %s, expected %d" % (len(cols),l,filename,len(tests)+11)
-				sys.exit(1)
+				sys.exit("ERROR: found %d columns on line %d of %s, expected %d" % (len(cols),l,filename,len(tests)+11))
 			result = (cols[0],cols[1])
 			for c in xrange(11,len(cols)):
 				test = tests[c - 11]

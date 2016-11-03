@@ -25,7 +25,7 @@
       "class": "array:file",
       "optional": true,
       "patterns": [
-        "*vcf.gz" 
+        "*vcf.gz"
       ]
     },
     {
@@ -48,14 +48,32 @@
       "label" : "Interval Padding",
       "class" : "int",
       "optional" : true,
-      "default" : 0
+      "default" : 20
+    },
+    {
+      "group": "GATK Options",
+      "name": "gatk_version",
+      "label": "GATK Version",
+      "class": "string",
+      "choices": ["3.6","3.4-46"],
+      "default": "3.6",
+      "optional": true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b38",
+      "optional": true
     },
     {
       "name": "N_BATCHES",
       "label": "Number of resulting GVCFs",
       "class": "int",
       "optional": false,
-      "default": 64
+      "default": 200
     },
     {
       "name": "PREFIX",
@@ -75,7 +93,7 @@
       "label" : "Output Chromosomal merged gVCFs (single merge only)",
       "class" : "boolean",
       "optional" : false,
-      "default" : false
+      "default" : true
     },
     {
       "name" : "split_merge",
@@ -103,9 +121,6 @@
         "name": "pigz"
       },
       {
-        "name": "openjdk-7-jre-headless"
-      },
-      {
         "name": "tabix"
       },
       {
@@ -114,9 +129,20 @@
     ],
     "systemRequirements": {
       "concatenate_gvcfs": {
-        "instanceType": "mem2_hdd2_x4"
+        "instanceType": "mem3_ssd1_x4"
       }
     },
+    "restartableEntryPoints": "all",
+    "executionPolicy": {
+      "restartOn": {
+        "UnresponsiveWorker": 2,
+        "JMInternalError": 1,
+        "ExecutionError": 1,
+        "AppInternalError": 1
+      }
+    },
+    "distribution": "Ubuntu",
+    "release": "14.04",
     "interpreter": "bash",
     "file": "src/merge_gvcfs.sh"
   },

@@ -18,16 +18,41 @@
 
 # install GNU parallel!
 #sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes parallel
+
+function install_package() {
+
+	RETRY=1
+	N_TRY=0
+	while test $RETRY -ne 0 -a $N_TRY -lt 5; do
+
+		N_TRY=$((N_TRY + 1))
+		sudo apt-get update
+		sudo apt-get install --yes $1
+
+		RETRY=$?
+		if test $RETRY -ne 0; then
+			sudo rm -rf /var/lib/apt/lists/*
+		fi
+	done
+
+	if test $RETRY -ne 0; then
+		dx-jobutil-report-error "Error during package upload.  How embarrassing, this shouldn't happen."
+	fi
+
+}
+export -f install_package
+
+install_package parallel
+
+#sudo apt-get update
+#sudo apt-get install --yes parallel
 
 if [ "$gatk_version" == "3.4-46" ]
 then
-	sudo apt-get install --yes openjdk-7-jre-headless
+	install_package openjdk-7-jre-headless
 else
 	echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
-	sudo apt-get update
-	sudo apt-get install --yes openjdk-8-jre-headless
+	install_package openjdk-8-jre-headless
 fi
 
 #set -x

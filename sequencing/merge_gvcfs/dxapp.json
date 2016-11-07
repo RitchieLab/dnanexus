@@ -136,9 +136,9 @@
     "executionPolicy": {
       "restartOn": {
         "UnresponsiveWorker": 2,
-        "JMInternalError": 1,
-        "ExecutionError": 1,
-        "AppInternalError": 1
+        "JMInternalError": 2,
+        "ExecutionError": 2,
+        "AppInternalError": 2
       }
     },
     "distribution": "Ubuntu",

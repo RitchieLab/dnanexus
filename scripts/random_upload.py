@@ -25,7 +25,7 @@ if __name__ == "__main__":
     API_token={"auth_token_type" : "Bearer", "auth_token" : "Y1WoDbANKOKDF0ZfPV0wt9cQaIotIOWC"}
     # try to find the remote path
     # by default use "/From_<hostname>"
-    remote_path = "/From+" + socket.gethostname()
+    remote_path = "/From_" + socket.gethostname()
     
     # create a random named file
     

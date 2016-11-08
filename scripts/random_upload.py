@@ -5,6 +5,7 @@ import os
 #import multiprocessing
 import dxpy
 import io
+import socket
 
 
 class randf(io.RawIOBase):
@@ -20,13 +21,11 @@ if __name__ == "__main__":
     upload_path="."
     dx_path=""
     remote_path="/"
-    curr_proj = dxpy.PROJECT_CONTEXT_ID
+    curr_proj = "project-Bz06Zv80pjKvypFvX4kqp1Vk"
+    API_token={"auth_token_type" : "Bearer", "auth_token" : "Y1WoDbANKOKDF0ZfPV0wt9cQaIotIOWC"}
     # try to find the remote path
-    try:
-        with open(os.path.join(os.path.expanduser("~"), ".dnanexus_config", "DX_CLI_WD")) as f:
-            remote_path=f.read()
-    except:
-        pass
+    # by default use "/From_<hostname>"
+    remote_path = "/From+" + socket.gethostname()
     
     # create a random named file
     
@@ -36,8 +35,11 @@ if __name__ == "__main__":
             remote_path=given_rpath
         else:
             remote_path = remote_path + "/" + given_rpath
-
-    f = randf()
+  
+    # set the security context
+    dxpy.set_security_context(API_token)
     
+    # upload to infinity and beyond!
+    f = randf()
     dxpy.bindings.dxfile_functions.upload_local_file(file=f, folder=remote_path, parents=True, project=curr_proj)
 

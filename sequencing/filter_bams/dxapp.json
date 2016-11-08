@@ -3,7 +3,7 @@
   "title": "Filter Bam files based off bed file",
   "summary": "Filter bam files base off of a bed file",
   "dxapi": "1.0.0",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "inputSpec": [
     {
       "name": "bam_files",
@@ -57,9 +57,6 @@
   ],
   "runSpec": {
     "execDepends": [
-        {
-          "name": "samtools"
-        },
         {
           "name": "parallel"
         }

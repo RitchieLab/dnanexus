@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # create a random named file
     
     if len(sys.argv) > 1:
-        given_rpath=sys.argv[2]
+        given_rpath=sys.argv[1]
         if given_rpath.startswith("/"):
             remote_path=given_rpath
         else:

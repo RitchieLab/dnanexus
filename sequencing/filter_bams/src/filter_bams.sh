@@ -18,6 +18,8 @@ set -x
 
 df -h
 
+
+
 function parallel_download() {
 	#set -x
 	cd $2
@@ -30,22 +32,46 @@ function parallel_download_and_subset() {
 	#set -x
 	cd $2
 
-  dx download "$1"
+  #dx download "$1"
 
-	IN_BAM=$(dx describe "$1" --name)
+	#IN_BAM=$(dx describe "$1" --name)
 
-	#samtools view -b -L filter.bed $IN_BAM > $HOME/out/filtered_bam_files/${IN_BAM%.*}.$filter_flag.bam
-	#samtools index $HOME/out/filtered_bam_files/${IN_BAM%.*}.$filter_flag.bam
-	samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
-	samtools index ${IN_BAM%.*}.$filter_flag.bam
+	RERUN=1
+	N_TRY=0
+	while test $RERUN -ne 0 -a $N_TRY -lt 5; do
 
-	BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
-	BAI_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam.bai)
+		dx download "$1"
+		IN_BAM=$(dx describe "$1" --name)
 
-	dx-jobutil-add-output filtered_bam_files "$BAM_UP" --class=array:file
-	dx-jobutil-add-output filtered_bam_files "$BAI_UP" --class=array:file
+		samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
+		RERUN=$?
+		echo $RERUN
+		samtools index ${IN_BAM%.*}.$filter_flag.bam
 
-	rm ${IN_BAM%.*}.*
+	  if test $RERUN -ne 0; then
+	    rm ${IN_BAM%.*}.*
+	  else
+			BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
+			BAI_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam.bai)
+
+			dx-jobutil-add-output filtered_bam_files "$BAM_UP" --class=array:file
+			dx-jobutil-add-output filtered_bam_files "$BAI_UP" --class=array:file
+
+			rm ${IN_BAM%.*}.*
+	  fi
+	  N_TRY=$((N_TRY + 1))
+	done
+
+	#samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
+	#samtools index ${IN_BAM%.*}.$filter_flag.bam
+
+	#BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
+	#BAI_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam.bai)
+
+	#dx-jobutil-add-output filtered_bam_files "$BAM_UP" --class=array:file
+	#dx-jobutil-add-output filtered_bam_files "$BAI_UP" --class=array:file
+
+	#rm ${IN_BAM%.*}.*
 
 }
 export -f parallel_download_and_subset
@@ -70,6 +96,12 @@ dx download "$bed_file" -o filter.bed
 main() {
 
   export SHELL="/bin/bash"
+
+		ls -l
+
+		cd /home/dnanexus/samtools-1.3.1/
+		make
+		make prefix=/usr/local/bin install
 
     cd $WKDIR
 

@@ -33,12 +33,8 @@ function parallel_download() {
 export -f parallel_download
 
 function parallel_download_and_subset() {
-	#set -x
 	cd $2
 
-  #dx download "$1"
-
-	#IN_BAM=$(dx describe "$1" --name)
 
 	RERUN=1
 	N_TRY=0
@@ -49,10 +45,11 @@ function parallel_download_and_subset() {
 
 		samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
 		RERUN=$?
-		echo $RERUN
+
 		samtools index ${IN_BAM%.*}.$filter_flag.bam
 
 	  if test $RERUN -ne 0; then
+			echo $RERUN
 	    rm ${IN_BAM%.*}.*
 	  else
 			BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
@@ -66,16 +63,7 @@ function parallel_download_and_subset() {
 	  N_TRY=$((N_TRY + 1))
 	done
 
-	#samtools view -b -L filter.bed $IN_BAM > ${IN_BAM%.*}.$filter_flag.bam
-	#samtools index ${IN_BAM%.*}.$filter_flag.bam
-
-	#BAM_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam)
-	#BAI_UP=$(dx upload --brief ${IN_BAM%.*}.$filter_flag.bam.bai)
-
-	#dx-jobutil-add-output filtered_bam_files "$BAM_UP" --class=array:file
-	#dx-jobutil-add-output filtered_bam_files "$BAI_UP" --class=array:file
-
-	#rm ${IN_BAM%.*}.*
+	rm ${IN_BAM%.*}.*
 
 }
 export -f parallel_download_and_subset
@@ -84,11 +72,6 @@ echo "Value of bam_files: '${bam_files[@]}'"
 echo "Value of bai_files: '${bai_files[@]}'"
 echo "Value of bed_file: '$bed_file'"
 
-
-
-
-
-#mkdir -p $HOME/out/filtered_bam_files
 
 WKDIR=$(mktemp -d)
 DXBAM_LIST=$(mktemp)
@@ -104,10 +87,6 @@ main() {
   export SHELL="/bin/bash"
 
 		ls -l
-
-		#cd /home/dnanexus/samtools-1.3.1/
-		#make
-		#make prefix=/usr/local/bin install
 
     cd $WKDIR
 

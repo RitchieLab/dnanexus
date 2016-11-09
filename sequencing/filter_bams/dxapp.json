@@ -3,7 +3,7 @@
   "title": "Filter Bam files based off bed file",
   "summary": "Filter bam files base off of a bed file",
   "dxapi": "1.0.0",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "inputSpec": [
     {
       "name": "bam_files",
@@ -65,7 +65,7 @@
     "file": "src/filter_bams.sh",
     "systemRequirements": {
       "*": {
-        "instanceType": "mem1_ssd1_x8"
+        "instanceType": "mem1_ssd1_x32"
       }
     },
     "distribution": "Ubuntu",

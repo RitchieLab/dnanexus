@@ -18,6 +18,10 @@ set -x
 
 df -h
 
+cd /home/dnanexus/samtools-1.3.1/
+make
+make prefix=/usr/local/ install
+
 
 
 function parallel_download() {
@@ -82,6 +86,8 @@ echo "Value of bed_file: '$bed_file'"
 
 
 
+
+
 #mkdir -p $HOME/out/filtered_bam_files
 
 WKDIR=$(mktemp -d)
@@ -99,9 +105,9 @@ main() {
 
 		ls -l
 
-		cd /home/dnanexus/samtools-1.3.1/
-		make
-		make prefix=/usr/local/bin install
+		#cd /home/dnanexus/samtools-1.3.1/
+		#make
+		#make prefix=/usr/local/bin install
 
     cd $WKDIR
 

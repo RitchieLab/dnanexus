@@ -57,27 +57,33 @@ main() {
 	fi
 	
 	
-	# fetch the latest executable(s) and shared resource file(s)
+	# fetch the executable(s) and shared resource file(s)
 	
-#	DX_RESOURCES_ID="$(dx find projects --name "App Resources" --brief)"
-#	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+	mkdir bin
 	mkdir shared
-	dx download \
-		"$(dx find data \
+#	DX_RESOURCES_ID="$(dx find projects --name "App Resources" --brief)"
+#	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"	
+	
+	if [[ -z "$biobin_binary_exec" ]]; then
+		biobin_binary_exec="$(dx find data \
 			--path "Ritchie Lab Software:/BioBin" \
 			--name "biobin" \
 			--brief \
-		)" \
-		--output /usr/bin/biobin
-	chmod +x /usr/bin/biobin
-	dx download \
-		"$(dx find data \
+		)"
+	fi
+	dx download "$biobin_binary_exec" -o bin/biobin
+	chmod +x bin/biobin
+	
+	if [[ -z "$biobin_summary_script" ]]; then
+		biobin_summary_script="$(dx find data \
 			--path "Ritchie Lab Software:/BioBin" \
 			--name "biobin-summary.py" \
 			--brief
-		)" \
-		--output /usr/bin/biobin-summary.py
-	chmod +x /usr/bin/biobin-summary.py
+		)"
+	fi
+	dx download "$biobin_summary_script" -o bin/biobin-summary.py
+	chmod +x bin/biobin-summary.py
+	
 	dx download \
 		"$(dx find data \
 			--path "Ritchie Lab Software:/LOKI" \
@@ -90,7 +96,7 @@ main() {
 	# run biobin
 	
 	mkdir biobin
-	biobin \
+	./bin/biobin \
 		--threads "$NUM_CORES" \
 		--settings-db shared/loki.db \
 		--vcf-file "$VCF_FILE" \
@@ -114,7 +120,7 @@ main() {
 	
 	# run summary script
 	
-	biobin-summary.py \
+	python bin/biobin-summary.py \
 		--prefix="biobin/$output_prefix" \
 		$ALL_CONTROL \
 		> "biobin/${output_prefix}-summary.tsv"
@@ -126,7 +132,7 @@ main() {
 		for p in $(seq 1 $permu_count) ; do
 			mkdir permu/$p
 			biobin-permute-pheno.py input/input.phenotype $p > permu/$p/input.phenotype
-			biobin \
+			./bin/biobin \
 				--threads "$NUM_CORES" \
 				--settings-db shared/loki.db \
 				--vcf-file "$VCF_FILE" \
@@ -140,7 +146,7 @@ main() {
 				--report-prefix "permu/$p/output" \
 				$biobin_args \
 			2>&1 | tee -a permu/$p/output.log
-			biobin-summary.py \
+			python bin/biobin-summary.py \
 				--prefix=permu/$p/output \
 				$ALL_CONTROL \
 				> permu/$p/output-summary.tsv

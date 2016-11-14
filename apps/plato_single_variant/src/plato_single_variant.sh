@@ -169,7 +169,7 @@ plato_reg() {
 	if [ -n "$input_samples" ]
 	then
 		dx download "$input_samples" -o input_samples
-		plinkargs=" --keep /$INPUTDIR/input_samples"
+		plinkargs=" --keep $INPUTDIR/input_samples"
 	fi
 
 	#Download marker file if provided

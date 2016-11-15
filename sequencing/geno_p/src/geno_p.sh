@@ -158,7 +158,7 @@ main() {
 
     for i in "${!gvcfs[@]}"; do
 		echo -e "${gvcfs_name[$i]}\t${gvcfs[$i]}"
-	done > $VCF_ID_LIST_FN
+	done > $VCF_ID_LIST
 #	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCF_LIST ::: $VCF_ID_LIST
 
 	

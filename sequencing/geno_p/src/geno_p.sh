@@ -41,20 +41,21 @@ function parallel_download() {
 }
 export -f parallel_download
 
-function parallel_name_dxid() {
-	dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $2
-}
-export -f parallel_name_dxid
+#function parallel_name_dxid() {
+#	dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $2
+#}
+#export -f parallel_name_dxid
 
 function dl_part_index() {
 	set -x
 	echo "'$1', '$2', '$3', '$4'"
 	cd "$2"
-	fn_id=$(dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$//')
+	fn_id="$1"
+	#$(dx describe --json "$1" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$//')
 
 	fn=$(echo "$fn_id" | cut -f1)
 	fn_base=$(echo "$fn" | sed 's/.vcf.gz$//')
-	file_dxid=$(echo "$fn_id" | cut -f2)
+	file_dxid=$(echo "$fn_id" | cut -f2 | jq -r '.["$dnanexus_link"]')
 	idxfn=$(ls "$2/$fn.tbi")
 
 	set -o 'pipefail'
@@ -73,6 +74,7 @@ function dl_part_index() {
 	if test "$RERUN" -eq 0; then
 		tabix -p vcf "$4/$fn_base.$INTV.vcf.gz"
 	fi
+	cd -
 }
 
 export -f dl_part_index
@@ -99,7 +101,7 @@ main() {
 
 	PADDED=0
 
-	SUBJOB_ARGS=""
+	SUBJOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
 	if test "$target_file"; then
 		tgt_id=$(dx describe "$target_file" --json | jq -r .id )
 		SUBJOB_ARGS="$SUBJOB_ARGS -itarget_file:file=$tgt_id"
@@ -154,15 +156,23 @@ main() {
 	VCF_ID_LIST=$(mktemp)
 	VCFIDX_ID_LIST=$(mktemp)
 
-	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCF_LIST ::: $VCF_ID_LIST
-	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCFIDX_LIST ::: $VCFIDX_ID_LIST
+    for i in "${!gvcfs[@]}"; do
+		echo -e "${gvcfs_name[$i]}\t${gvcfs[$i]}"
+	done > $VCF_ID_LIST_FN
+#	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCF_LIST ::: $VCF_ID_LIST
+
+	
+	for i in "${!gvcfidxs[@]}"; do
+		echo -e "${gvcfidxs_name[$i]}\t${gvcfidxs[$i]}"
+	done > $VCFIDX_ID_LIST
+#	parallel -u -j $(nproc) --gnu parallel_name_dxid :::: $DXGVCFIDX_LIST ::: $VCFIDX_ID_LIST
 
 	# remove the tbi extension on the VCFIDX list
 	sed -i 's/\.tbi\t/\t/' $VCFIDX_ID_LIST
 
 	#OK, now join everything together
 	JOINT_ID_LIST=$(mktemp)
-	join -t$'\t' -j1 <(sort -k1,1 $VCF_ID_LIST) <(sort -k1,1 $VCFIDX_ID_LIST) > $JOINT_ID_LIST
+	join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $VCF_ID_LIST) <(sort -t$'\t' -k1,1 $VCFIDX_ID_LIST) > $JOINT_ID_LIST
 
 	# sanity check, should have same # of lines!
 	if test "$(cat $VCF_ID_LIST | wc -l)" -ne "$(cat $VCFIDX_ID_LIST | wc -l)" -o "$(cat $JOINT_ID_LIST | wc -l)" -ne "$(cat $VCF_ID_LIST | wc -l)"; then
@@ -188,27 +198,43 @@ main() {
 		echo "$chrom" | cut -f2- | tr '\t' '\n' > $CHR_FN_LIST
 		CHR=$(echo "$chrom" | cut -f1)
 		SINGLE_VCF_LIST=$(mktemp)
-		join -t$'\t' -j1 <(sort -k1,1 $CHR_FN_LIST) <(sort -k1,1 $JOINT_ID_LIST) | cut -f2 > $SINGLE_VCF_LIST
-		SINGLE_VCFIDX_LIST=$(mktemp)
-		join -t$'\t' -j1 <(sort -k1,1 $CHR_FN_LIST) <(sort -k1,1 $JOINT_ID_LIST) | cut -f3 > $SINGLE_VCFIDX_LIST
+		join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $CHR_FN_LIST) <(sort -t$'\t' -k1,1 $JOINT_ID_LIST) | cut -f2 > $SINGLE_VCF_LIST
+		#SINGLE_VCFIDX_LIST=$(mktemp)
+		#join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $CHR_FN_LIST) <(sort -t$'\t' -k1,1 $JOINT_ID_LIST) | cut -f3 > $SINGLE_VCFIDX_LIST
 
 		echo "CHR_FN_LIST":
 		cat $CHR_FN_LIST
-
+		
 		echo "SINGLE_VCF_LIST:"
 		cat $SINGLE_VCF_LIST
 
 		echo "SINGLE_VCFIDX_LIST:"
 		cat $SINGLE_VCFIDX_LIST
+		
+		# Create a tarball of the VCFidx files
+		TARDIR=$(mktemp -d)
+		cd $WKDIR
+		while read f; do 
+		    tar --append -f $TARDIR/gvcfidx.$chrom.tar $f.tbi
+		done < $CHR_FN_LIST
+		cd -
+		
+		DX_VCFIDX_TARBALL=$(dx upload --brief $TARDIR/gvcfidx.$chrom.tar $f.tbi)
+		
+	    DX_VCF_ARGS=""
+		while read f; do
+		    DX_VCF_ARGS="-ivcf_files:array:file='$f' $DX_VCF_ARGS"
+		done < $SINGLE_VCF_LIST
+		
+		#DX_VCF_LIST=$(dx upload $SINGLE_VCF_LIST --brief)
+		#DX_VCFIDX_LIST=$(dx upload $SINGLE_VCFIDX_LIST --brief)
 
-		DX_VCF_LIST=$(dx upload $SINGLE_VCF_LIST --brief)
-		DX_VCFIDX_LIST=$(dx upload $SINGLE_VCFIDX_LIST --brief)
-
+        rm -rf $TARDIR
 		rm $CHR_FN_LIST
 		rm $SINGLE_VCF_LIST
-		rm $SINGLE_VCFIDX_LIST
+		#rm $SINGLE_VCFIDX_LIST
 
-		process_job=$(dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CHR -ichrom=$CHR -ivcf_files:file="$DX_VCF_LIST" -ivcfidx_files:file="$DX_VCFIDX_LIST" $SUBJOB_ARGS)
+		process_job=$(eval dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CHR -ichrom=$CHR "DX_VCF_ARGS" -ivcfidx_tarball:file="$DX_VCFIDX_TARBALL" "$SUBJOB_ARGS")
 		#pparg="$pparg -ivcfs=${process_jobs[$CIDX]}:vcf_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_out"
 		#pp_hdr_arg="$pp_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_hdr_out"
 		#pp_pad_arg="$pp_pad_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_out"
@@ -293,11 +319,16 @@ genotype_gvcfs() {
 	GVCF_LIST=$(mktemp)
 	DXGVCF_LIST=$(mktemp)
 	DXGVCFIDX_LIST=$(mktemp)
+	TARDIR=$(mktemp -d)
+
+    cd $TARDIR
+   	dx download "${vcfidx_tarball}" -f -o vcfidx.tar	
+   	tar -xf vcfidx.tar -C $WKDIR
 
 	cd $WKDIR
+	rm -rf $TARDIR
 
-	dx download "${vcfidx_files}" -f -o $DXGVCFIDX_LIST
-	parallel -u -j $(nproc --all) --gnu parallel_download :::: $DXGVCFIDX_LIST ::: $WKDIR
+	#parallel -u -j $(nproc --all) --gnu parallel_download :::: $DXGVCFIDX_LIST ::: $WKDIR
 
 	# Let's first check to ensure that we have enough room for the VCF sections, with 10% leftover
 	# only really possible in a targeted analysis, as we're already broken down by chrom!
@@ -343,7 +374,7 @@ genotype_gvcfs() {
 			DX_VCF_LIST=$(dx describe --json "${vcf_files}" | jq -r .id)
 			DX_VCFIDX_LIST=$(dx describe --json "${vcfidx_files}" | jq -r .id)
 
-			SUBJOB_ARGS=""
+        	SUBJOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
 			if test $PADDED -ne 0; then
 				SUBJOB_ARGS="-ipadding:int=$padding"
 			fi
@@ -360,7 +391,7 @@ genotype_gvcfs() {
 				DX_TGT_FN=$(dx upload "$SPLIT_DIR/target_split.$n.bed" --brief)
 
 				#start this section anew
-				subchr_job=$(dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcf_files:file="$DX_VCF_LIST" -ivcfidx_files:file="$DX_VCFIDX_LIST" -itarget_file:file=$DX_TGT_FN $SUBJOB_ARGS)
+				subchr_job=$(dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcfidx_tarball="${vcfidx_tarball}" -ivcf_files="${vcf_files}" -itarget_file:file=$DX_TGT_FN $SUBJOB_ARGS)
 
 				# add the args to the concatenator
 				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_out -ivcfs:array:file=${subchr_job}:vcf_out"
@@ -399,7 +430,11 @@ genotype_gvcfs() {
 
 	# if N_JOBS > 1, we're already done (run in a subjob)
 	if test $N_JOBS -eq 1; then
-		dx download "${vcf_files}" -f -o $DXGVCF_LIST
+	
+	    for i in "${!vcf_files[@]}"; do
+    		echo -e "${vcf_files_name[$i]}\t${vcf_files[$i]}"
+	    done > $DXGVCF_LIST
+		#dx download "${vcf_files}" -f -o $DXGVCF_LIST
 
 		TODL=$chrom
 		if test "$subchrom"; then

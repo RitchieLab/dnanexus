@@ -192,13 +192,14 @@ main() {
 	pp_hdr_arg=""
 	pp_pad_arg=""
 	pp_pad_hdr_arg=""
-	while read chrom; do
+	while read chrom_fn; do
 		# get the filename of the
 		CHR_FN_LIST=$(mktemp)
-		echo "$chrom" | cut -f2- | tr '\t' '\n' > $CHR_FN_LIST
-		CHR=$(echo "$chrom" | cut -f1)
+		
+		echo "$chrom_fn" | cut -f2- | tr '\t' '\n' > $CHR_FN_LIST
+		CHR=$(echo "$chrom_fn" | cut -f1)
 		SINGLE_VCF_LIST=$(mktemp)
-		join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $CHR_FN_LIST) <(sort -t$'\t' -k1,1 $JOINT_ID_LIST) | cut -f2 > $SINGLE_VCF_LIST
+		join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $CHR_FN_LIST) <(sort -t$'\t' -k1,1 $JOINT_ID_LIST) | cut -d$'\t' -f2 | tee $SINGLE_VCF_LIST
 		#SINGLE_VCFIDX_LIST=$(mktemp)
 		#join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $CHR_FN_LIST) <(sort -t$'\t' -k1,1 $JOINT_ID_LIST) | cut -f3 > $SINGLE_VCFIDX_LIST
 
@@ -208,18 +209,18 @@ main() {
 		echo "SINGLE_VCF_LIST:"
 		cat $SINGLE_VCF_LIST
 
-		echo "SINGLE_VCFIDX_LIST:"
-		cat $SINGLE_VCFIDX_LIST
+		#echo "SINGLE_VCFIDX_LIST:"
+		#cat $SINGLE_VCFIDX_LIST
 		
 		# Create a tarball of the VCFidx files
 		TARDIR=$(mktemp -d)
 		cd $WKDIR
 		while read f; do 
-		    tar --append -f $TARDIR/gvcfidx.$chrom.tar $f.tbi
+		    tar --append -f $TARDIR/gvcfidx.$CHR.tar $f.tbi
 		done < $CHR_FN_LIST
 		cd -
 		
-		DX_VCFIDX_TARBALL=$(dx upload --brief $TARDIR/gvcfidx.$chrom.tar $f.tbi)
+		DX_VCFIDX_TARBALL=$(dx upload --brief $TARDIR/gvcfidx.$CHR.tar)
 		
 	    DX_VCF_ARGS=""
 		while read f; do
@@ -234,7 +235,7 @@ main() {
 		rm $SINGLE_VCF_LIST
 		#rm $SINGLE_VCFIDX_LIST
 
-		process_job=$(eval dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CHR -ichrom=$CHR "DX_VCF_ARGS" -ivcfidx_tarball:file="$DX_VCFIDX_TARBALL" "$SUBJOB_ARGS")
+		process_job=$(eval dx-jobutil-new-job genotype_gvcfs -iPREFIX=$PREFIX.$CHR -ichrom=$CHR "$DX_VCF_ARGS" -ivcfidx_tarball:file="$DX_VCFIDX_TARBALL" "$SUBJOB_ARGS")
 		#pparg="$pparg -ivcfs=${process_jobs[$CIDX]}:vcf_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_out"
 		#pp_hdr_arg="$pp_hdr_arg -ivcfs=${process_jobs[$CIDX]}:vcf_hdr_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_hdr_out"
 		#pp_pad_arg="$pp_pad_arg -ivcfs=${process_jobs[$CIDX]}:vcf_pad_out -ivcfidxs=${process_jobs[$CIDX]}:vcfidx_pad_out"
@@ -338,7 +339,7 @@ genotype_gvcfs() {
 	INTERVAL="$chrom"
 
 	if test "$target_file"; then
-		bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 6 / 10 ))
+		bytes_avail=$(( 1024 * $( df | grep " /$" | awk '{print $4}' ) * 6 / 10 ))
 		INTERVAL="$(head -1 $RAW_TGT_FN | cut -f1-2 | tr '\t' ':')-$(tail -1 $RAW_TGT_FN | cut -f3)"
 
 		EST_SZ=0
@@ -357,7 +358,7 @@ genotype_gvcfs() {
 		if test $N_JOBS -gt 1; then
 
 			# let's give a wider allowance for bytes_avail (70%)
-			bytes_avail=$(( 1024 * $( df | grep rootfs | awk '{print $4}' ) * 5 / 10 ))
+			bytes_avail=$(( 1024 * $( df | grep " /$" | awk '{print $4}' ) * 5 / 10 ))
 			N_JOBS=$((1 + EST_SZ / bytes_avail ))
 
 			INTV_SPLIT_FN=$(mktemp)

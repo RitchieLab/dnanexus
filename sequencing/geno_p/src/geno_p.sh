@@ -287,6 +287,9 @@ main() {
 
 genotype_gvcfs() {
 
+    echo "VCF Files:"
+    echo "${vcf_files}"
+
 	export SHELL="/bin/bash"
 	ADDL_CMD=""
 
@@ -390,9 +393,13 @@ genotype_gvcfs() {
 
 				# and upload the file
 				DX_TGT_FN=$(dx upload "$SPLIT_DIR/target_split.$n.bed" --brief)
+				
+        	    for i in "${!vcf_files[@]}"; do
+            		SUBJOB_ARGS="$SUBJOB_ARGS -ivcf_files:array:file='${vcf_files[$i]}'"
+	            done 
 
 				#start this section anew
-				subchr_job=$(dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcfidx_tarball="${vcfidx_tarball}" -ivcf_files="${vcf_files}" -itarget_file:file=$DX_TGT_FN $SUBJOB_ARGS)
+				subchr_job=$(eval dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcfidx_tarball="${vcfidx_tarball}" -itarget_file:file=$DX_TGT_FN "$SUBJOB_ARGS")
 
 				# add the args to the concatenator
 				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_out -ivcfs:array:file=${subchr_job}:vcf_out"

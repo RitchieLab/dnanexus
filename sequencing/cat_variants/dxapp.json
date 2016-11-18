@@ -38,6 +38,15 @@
       "label": "Prefix",
       "class": "string",
       "optional": true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b38",
+      "optional": true
     }
   ],
   "outputSpec": [
@@ -58,7 +67,7 @@
         "name": "pigz"
       },
       {
-        "name": "openjdk-7-jre-headless"
+        "name": "parallel"
       },
       {
         "name": "tabix"
@@ -69,9 +78,11 @@
     ],
     "systemRequirements": {
       "*": {
-        "instanceType": "mem2_hdd2_x4"
+        "instanceType": "mem2_ssd2_x4"
       }
     },
+    "distribution": "Ubuntu",
+    "release": "14.04",
     "interpreter": "bash",
     "file": "src/cat_variants.sh"
   },

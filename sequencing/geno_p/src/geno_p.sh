@@ -399,7 +399,7 @@ genotype_gvcfs() {
 	            done 
 
 				#start this section anew
-				subchr_job=$(eval dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcfidx_tarball="${vcfidx_tarball}" -itarget_file:file=$DX_TGT_FN "$SUBJOB_ARGS")
+				subchr_job=$(eval dx-jobutil-new-job genotype_gvcfs -isubchrom:string=true -iPREFIX=$PREFIX.$n -ichrom=$chrom -ivcfidx_tarball="'${vcfidx_tarball}'" -itarget_file:file=$DX_TGT_FN "$SUBJOB_ARGS")
 
 				# add the args to the concatenator
 				CONCAT_ARGS="$CONCAT_ARGS -ivcfidxs:array:file=${subchr_job}:vcfidx_out -ivcfs:array:file=${subchr_job}:vcf_out"

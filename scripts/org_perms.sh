@@ -97,6 +97,10 @@ done < <(cat $PROJ_MEMBERS_JS | jq -r '.[] | [.id, .projectAccess] | @csv' | sed
 rm $PROJ_ADMINS_JS
 rm $PROJ_MEMBERS_JS
 
+if test $MEMBER_ONLY -ne 0; then
+	exit 0
+fi
+
 # Get a list of projects
 PROJ_LIST_FN=$(mktemp)
 

@@ -46,7 +46,7 @@
       "optional" : true,
       "default" : 0,
       "class" : "int"
-    },    	
+    },
     {
       "name": "SNP_tranches",
       "label": "SNP tranches file",
@@ -120,9 +120,6 @@
   "execDepends": [
       {
         "name": "pigz"
-      },
-      {
-        "name": "openjdk-7-jre-headless"
       },
       {
         "name": "tabix"

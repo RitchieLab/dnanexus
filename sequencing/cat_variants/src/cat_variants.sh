@@ -22,6 +22,10 @@
 
 set -x
 
+echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get install --yes openjdk-8-jre-headless
+
 function download_resources() {
 
 	# get the resources we need in /usr/share/GATK

@@ -17,6 +17,10 @@
 
 set -x
 
+echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get install --yes openjdk-8-jre-headless
+
 main() {
 
 
@@ -38,46 +42,46 @@ main() {
 	# first, we need to match up the VCF and tabix index files
 	# To do that, we'll get files of filename -> dxfile ID
 	VCF_LIST=$(mktemp)
-	for i in "${!vcf_fn[@]}"; do	
+	for i in "${!vcf_fn[@]}"; do
 		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 	done
-	
+
 	VCFIDX_LIST=$(mktemp)
-	for i in "${!vcfidx_fn[@]}"; do	
+	for i in "${!vcfidx_fn[@]}"; do
 		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 	done
-	
+
 	# Now, get the prefix (strip off any .tbi) and join them
 	JOINT_LIST=$(mktemp)
 	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
-		
+
 	# Ensure that we still have the same number of files; throw an error if not
 	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
 		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 	fi
-	
+
 	JOB_ARGS=""
 	if test "$target" -a "$max_sz"; then
 		if test -n "$padding"; then
 			padding=0
 		fi
-	
+
 		JOB_ARGS="-itarget:file=$(dx describe --json "$target" | jq -r .id) -imax_sz:int=$max_sz -ipadding:int=$padding"
 	fi
 
 	# and loop through the file, submitting sub-jobs
 	while read VCF_LINE; do
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
-		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
-	
+		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
+
 		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
-		
+
 		# for each subjob, add the output to our array
     	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
 	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
-		
+
 	done < $JOINT_LIST
-	
+
 }
 
 
@@ -101,44 +105,44 @@ run_qc() {
     dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//')
     SUBJOBS=0
-    
+
 	if test -z "$INTERVAL" -a "$target" -a "$max_sz"; then
-	
+
 		if test "$(dx describe --json "$vcf_fn" | jq -r .size)" -gt "$((max_sz * 1000 * 1000))"; then
 			SUBJOBS=1
 			CAT_ARGS=""
 			for chr in $(tabix -l raw.vcf.gz); do
 				EST_SZ=$(estimate_size.py -i raw.vcf.gz.tbi -L $chr -H)
 				N_JOBS=$((EST_SZ / (max_sz * 1000 * 1000) + 1))
-				
+
 				TGT_FN=$(mktemp)
 				dx cat "$target" | grep "^$chr\W" | interval_pad.py $padding $N_JOBS > $TGT_FN
-			
+
 				for n in $(cut -d: -f1 $TGT_FN | uniq); do
 					INTV_FN=$(mktemp)
 					grep "^$n:" $TGT_FN | cut -d: -f2 > $INTV_FN
 					START=$(($(head -1 $INTV_FN | cut -f2 | tr -d '\n') - padding))
 					STOP=$(($(tail -1 $INTV_FN | cut -f3 | tr -d '\n') + padding))
-					
+
 					INTV="$chr:$START-$STOP"
 					rm $INTV_FN
-					
+
 					new_job=$(dx-jobutil-new-job run_qc -ivcf_fn="$vcf_fn" -ivcfidx_fn="$vcfidx_fn" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter" -iINTERVAL:string="$INTV")
 					CAT_ARGS="$CAT_ARGS -ivcfidxs:array:file=${new_job}:vcfidx_out -ivcfs:array:file=${new_job}:vcf_out"
 				done
-				
+
 				rm $TGT_FN
 			done
-			
+
 			# run the concatenation
 			cat_job=$(dx run cat_variants -iprefix="$PREFIX.filtered" $CAT_ARGS --brief --instance-type mem2_hdd2_x2)
-			
+
 			# dx jobutil-add-output
 			dx-jobutil-add-output vcf_out "$cat_job:vcf_out" --class=jobref
 			dx-jobutil-add-output vcfidx_out "$cat_job:vcfidx_out" --class=jobref
 		fi
-					
-				
+
+
 	fi
 
 	# only continue if SUBJOB==0, which means no subjobs requested!
@@ -154,16 +158,16 @@ run_qc() {
 			rm raw.vcf.gz.tbi
 			tabix -p vcf raw.vcf.gz
 		fi
-		
+
 		RUN_SNP_RECAL=0
 		if [ -n "$SNP_tranches" ]; then
 		    dx download "$SNP_tranches" -o SNP_tranches
 		    if [ -n "$SNP_recal" ]; then
 			    dx download "$SNP_recal" -o SNP_recal
-			    RUN_SNP_RECAL=1	        
+			    RUN_SNP_RECAL=1
 			fi
 		fi
-		
+
 		RUN_INDEL_RECAL=0
 		if [ -n "$INDEL_tranches" ]; then
 		    dx download "$INDEL_tranches" -o INDEL_tranches
@@ -172,7 +176,7 @@ run_qc() {
 			    RUN_INDEL_RECAL=1
 			fi
 		fi
-		
+
 		RUN_FILTERS=0
 		if test -n "$addl_filter"; then
 			RUN_FILTERS=1
@@ -181,7 +185,7 @@ run_qc() {
 		# get the resources we need in /usr/share/GATK
 		sudo mkdir -p /usr/share/GATK/resources
 		sudo chmod -R a+rwX /usr/share/GATK
-			
+
 		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46-custom.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
@@ -204,12 +208,12 @@ run_qc() {
 			-recalFile SNP_recal \
 			-mode SNP --ts_filter_level $SNP_ts \
 			-o $SNP_RECAL_DIR/filtered.vcf.gz
-		
+
 			rm $BASE_VCF
 			rm $BASE_VCF.tbi
 			BASE_VCF=$SNP_RECAL_DIR/filtered.vcf.gz
 		fi
-	
+
 		if test $RUN_INDEL_RECAL -ne 0; then
 			INDEL_RECAL_DIR=$(mktemp -d)
 			java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar \
@@ -221,24 +225,24 @@ run_qc() {
 			-recalFile INDEL_recal \
 			-mode INDEL --ts_filter_level $INDEL_ts \
 			-o $INDEL_RECAL_DIR/filtered.vcf.gz
-		
+
 			rm $BASE_VCF
 			rm $BASE_VCF.tbi
 			BASE_VCF=$INDEL_RECAL_DIR/filtered.vcf.gz
 		fi
-	
+
 		if test $RUN_FILTERS -ne 0; then
 			FILTER_DIR=$(mktemp -d)
-		
+
 			eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar $GATK_INTERVAL -T VariantFiltration -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
 
 			BASE_VCF=$FILTER_DIR/filtered.vcf.gz
 		fi
-	
+
 		OUT_DIR=$(mktemp -d)
 		mv $BASE_VCF $OUT_DIR/$PREFIX.filtered.vcf.gz
 		mv $BASE_VCF.tbi $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi
-	
+
 		vcf_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz --brief)
 		vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi --brief)
 

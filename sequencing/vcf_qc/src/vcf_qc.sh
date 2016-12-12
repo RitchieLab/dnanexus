@@ -186,10 +186,28 @@ run_qc() {
 		sudo mkdir -p /usr/share/GATK/resources
 		sudo chmod -R a+rwX /usr/share/GATK
 
-		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46-custom.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+		#dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46-custom.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+
+    dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.6.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+
+    if [ "$build_version" == "b37_decoy" ]
+  	then
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+
+  	else
+
+  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
+  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+
+
+  	fi
+
 
 		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 		# only ask for 90% of total system memory
@@ -199,10 +217,10 @@ run_qc() {
 
 		if test $RUN_SNP_RECAL -ne 0; then
 			SNP_RECAL_DIR=$(mktemp -d)
-			java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar \
+			java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
 			-T ApplyRecalibration $GATK_INTERVAL \
 			-nt $(nproc --all) \
-			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+			-R /usr/share/GATK/resources/build.fasta \
 			-input $BASE_VCF \
 			-tranchesFile SNP_tranches \
 			-recalFile SNP_recal \
@@ -216,10 +234,10 @@ run_qc() {
 
 		if test $RUN_INDEL_RECAL -ne 0; then
 			INDEL_RECAL_DIR=$(mktemp -d)
-			java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar \
+			java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
 			-T ApplyRecalibration $GATK_INTERVAL  \
 			-nt $(nproc --all) \
-			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+			-R /usr/share/GATK/resources/build.fasta \
 			-input $BASE_VCF \
 			-tranchesFile INDEL_tranches \
 			-recalFile INDEL_recal \
@@ -234,7 +252,7 @@ run_qc() {
 		if test $RUN_FILTERS -ne 0; then
 			FILTER_DIR=$(mktemp -d)
 
-			eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar $GATK_INTERVAL -T VariantFiltration -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
+			eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar $GATK_INTERVAL -T VariantFiltration -R /usr/share/GATK/resources/build.fasta -V $BASE_VCF "$addl_filter" -o $FILTER_DIR/filtered.vcf.gz
 
 			BASE_VCF=$FILTER_DIR/filtered.vcf.gz
 		fi

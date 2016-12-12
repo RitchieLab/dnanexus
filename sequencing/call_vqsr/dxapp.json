@@ -50,6 +50,15 @@
       "class": "float",
       "optional": false,
       "default": 2.15
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b38",
+      "optional": true
     }
   ],
   "outputSpec": [
@@ -78,11 +87,15 @@
   "execDepends": [
       {
         "name": "pigz"
-      },
-      {
-        "name": "openjdk-7-jre-headless"
       }
     ],
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem3_ssd1_x8"
+      }
+    },
+    "distribution": "Ubuntu",
+    "release": "14.04",
     "interpreter": "bash",
     "file": "src/call_vqsr.sh"
   },
@@ -91,7 +104,7 @@
     "network": [ "*" ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

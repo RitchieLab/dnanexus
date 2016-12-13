@@ -64,7 +64,10 @@
   "outputSpec": [
     {
       "name": "recal_file",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.recal"
+      ]
     },
     {
       "name": "recal_idx_file",
@@ -72,7 +75,10 @@
     },
     {
       "name": "tranches_file",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.tranches"
+      ]
     },
     {
       "name": "rscript_file",

@@ -117,12 +117,18 @@
     {
       "name": "vcf_out",
       "label": "Filtered VCF file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.tbi"
+      ]
     }
   ],
   "runSpec": {

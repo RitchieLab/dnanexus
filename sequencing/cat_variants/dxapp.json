@@ -53,12 +53,18 @@
     {
       "name": "vcf_out",
       "label": "Combined VCF",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_out",
       "label": "Combined VCF Index File",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.tbi"
+      ]
     }
   ],
   "runSpec": {

@@ -79,14 +79,6 @@
       "patterns": [
         "*.tranches"
       ]
-    },
-    {
-      "name": "rscript_file",
-      "class": "file"
-    },
-    {
-      "name": "pdf_files",
-      "class": "array:file"
     }
   ],
   "runSpec": {

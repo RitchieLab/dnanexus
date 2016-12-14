@@ -124,10 +124,10 @@ main() {
   		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp.vcf.gz"
   	else
 
-      dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/hapmap_3.3.vcf.gz
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.hg38.chr.vcf.gz.tbi" -o /usr/share/GATK/resources/hapmap_3.3.vcf.gz.tbi
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/1000G_omni2.5.vcf.gz
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.hg38.chr.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_omni2.5.vcf.gz.tbi
+      dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.hg38.chr.new.vcf.gz" -o /usr/share/GATK/resources/hapmap_3.3.vcf.gz
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.hg38.chr.new.vcf.gz.tbi" -o /usr/share/GATK/resources/hapmap_3.3.vcf.gz.tbi
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.hg38.chr.new.vcf.gz" -o /usr/share/GATK/resources/1000G_omni2.5.vcf.gz
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.hg38.chr.new.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_omni2.5.vcf.gz.tbi
   		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.vcf.gz
   		dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.hg38.chr.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.vcf.gz.tbi
 
@@ -198,13 +198,13 @@ main() {
 	-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0 \
 	-recalFile recalibrate_$mode.recal \
 	-tranchesFile recalibrate_$mode.tranches \
-	-rscriptFile recalibrate_${mode}.plots.R
+	#-rscriptFile recalibrate_${mode}.plots.R
 
 	# regenerate the tranches.pdf file in SNP mode to get around GATK bug
-	if test "$mode" = "SNP"; then
-		rm recalibrate_$mode.tranches.pdf
-		plotTranches.R recalibrate_$mode.tranches $target_titv || true
-	fi
+	#if test "$mode" = "SNP"; then
+		#mv recalibrate_$mode.tranches.pdf recalibrate_$mode.tranches.old.pdf
+		#plotTranches.R recalibrate_$mode.tranches $target_titv || true
+	#fi
 
     # The following line(s) use the dx command-line tool to upload your file
     # outputs after you have created them on the local file system.  It assumes
@@ -215,12 +215,12 @@ main() {
     recal_file=$(dx upload recalibrate_$mode.recal --brief)
     recal_idx_file=$(dx upload recalibrate_$mode.recal.idx --brief)
     tranches_file=$(dx upload recalibrate_$mode.tranches --brief)
-    rscript_file=$(dx upload recalibrate_${mode}.plots.R --brief)
+    #rscript_file=$(dx upload recalibrate_${mode}.plots.R --brief)
 
-    for f in $(ls | grep '\.pdf$'); do
-    	pdf_f=$(dx upload $f --brief)
-    	dx-jobutil-add-output pdf_files --array "$pdf_f" --class=file
-    done
+    #for f in $(ls | grep '\.pdf$'); do
+    #	pdf_f=$(dx upload $f --brief)
+    #	dx-jobutil-add-output pdf_files --array "$pdf_f" --class=file
+    #done
 
     # The following line(s) use the utility dx-jobutil-add-output to format and
     # add output variables to your job's output as appropriate for the output
@@ -230,7 +230,7 @@ main() {
     dx-jobutil-add-output recal_file "$recal_file" --class=file
     dx-jobutil-add-output recal_idx_file "$recal_idx_file" --class=file
     dx-jobutil-add-output tranches_file "$tranches_file" --class=file
-    dx-jobutil-add-output rscript_file "$rscript_file" --class=file
+    #dx-jobutil-add-output rscript_file "$rscript_file" --class=file
 
     sleep 30
 

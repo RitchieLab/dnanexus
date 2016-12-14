@@ -28,10 +28,10 @@
     },
     {
       "name" : "use_gatk",
-      "label" : "Use GATK CatVariants (alt: custom script)",
+      "label" : "Use GATK CatVariants (alt: custom script, NOTE: Custom script in beta and may not function properly)",
       "class": "boolean",
       "optional" : false,
-      "default" : false
+      "default" : true
     },
     {
       "name": "prefix",

@@ -434,8 +434,7 @@ postprocess(){
     | awk 'BEGIN{FS=OFS="\t"}{if($var3<1) print $0,$var4=$var3; else print $0,$var4=1}'  \
     var3=$(echo "$pval_col" + 1 | bc -l) \
     var4=$(echo "$pval_col" + 2 | bc -l) \
-    | awk 'BEGIN{FS=OFS="\t"}{$var3="";print $0}' \
-    var3=$(echo "$pval_col" + 1 | bc -l) \
+    | cut --complement -f$(echo "$pval_col" + 1 | bc -l) \
 		| sed "1i $(echo ${out_header} | sed -E 's/Overall_Pval_adj_Bonferroni|Overall_Pval_adj_FDR//g')Overall_Pval_adj_Bonferroni" \
 		> output_files/${out_name}
 	elif [ "$correction" == "FDR" ]

@@ -78,7 +78,6 @@
     "execDepends": [
       {"name": "libgsl0ldbl"},
       {"name": "pigz"},
-      {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"}
     ],
     "interpreter": "bash",

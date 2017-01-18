@@ -67,7 +67,7 @@
       "class": "float",
       "optional": false,
       "default" : 0.05
-    },    
+    },
     {
       "name": "sel_args",
       "label": "PLINK Marker selection arguments",
@@ -115,6 +115,6 @@
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
+  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

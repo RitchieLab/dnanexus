@@ -52,25 +52,37 @@
       "name": "vcf_out",
       "label": "Filtered VCF file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "name": "vcf_hdr_out",
       "label": "Filtered VCF Sites-only file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_hdr_out",
       "label": "Filtered VCF Sites-only Index file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "group": "Build Options",

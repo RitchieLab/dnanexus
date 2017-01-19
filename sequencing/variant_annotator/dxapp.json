@@ -71,15 +71,21 @@
       "label": "Filtered VCF Sites-only Index file",
       "class": "array:file",
       "optional" : true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b37_decoy",
+      "optional": true
     }
   ],
   "runSpec": {
   "execDepends": [
       {
         "name": "pigz"
-      },
-      {
-        "name": "openjdk-7-jre-headless"
       },
       {
         "name": "tabix"
@@ -95,7 +101,7 @@
     ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

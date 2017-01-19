@@ -91,30 +91,6 @@
       "label": "Output Filename suffix",
       "class": "string",
       "optional": true
-    }
-  ],
-  "outputSpec": [
-    {
-      "name": "vcf_out",
-      "label": "Filtered VCF file",
-      "class": "array:file"
-    },
-    {
-      "name": "vcfidx_out",
-      "label": "Filtered VCF Index file",
-      "class": "array:file"
-    },
-    {
-      "name": "vcf_hdr_out",
-      "label": "Filtered VCF sites-only file",
-      "class": "array:file",
-      "optional" : true
-    },
-    {
-      "name": "vcfidx_hdr_out",
-      "label": "Filtered VCF sites-only Index file",
-      "class": "array:file",
-      "optional" : true
     },
     {
       "group": "Build Options",
@@ -124,6 +100,42 @@
       "choices": ["b38","b37_decoy"],
       "default": "b37_decoy",
       "optional": true
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "vcf_out",
+      "label": "Filtered VCF file",
+      "class": "array:file",
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Filtered VCF Index file",
+      "class": "array:file",
+      "patterns": [
+        "*.tbi"
+      ]
+    },
+    {
+      "name": "vcf_hdr_out",
+      "label": "Filtered VCF sites-only file",
+      "class": "array:file",
+      "optional" : true,
+      "patterns": [
+        "*.vcf.gz"
+      ]
+    },
+    {
+      "name": "vcfidx_hdr_out",
+      "label": "Filtered VCF sites-only Index file",
+      "class": "array:file",
+      "optional" : true,
+      "patterns": [
+        "*.tbi"
+      ]
     }
   ],
   "runSpec": {

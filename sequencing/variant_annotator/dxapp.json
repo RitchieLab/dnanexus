@@ -45,6 +45,15 @@
       "label": "VariantAnnotator Parameters",
       "class": "string",
       "optional": false
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b37_decoy",
+      "optional": true
     }
   ],
   "outputSpec": [
@@ -83,15 +92,6 @@
       "patterns": [
         "*.tbi"
       ]
-    },
-    {
-      "group": "Build Options",
-      "name": "build_version",
-      "label": "NCBI Build Version",
-      "class": "string",
-      "choices": ["b38","b37_decoy"],
-      "default": "b37_decoy",
-      "optional": true
     }
   ],
   "runSpec": {

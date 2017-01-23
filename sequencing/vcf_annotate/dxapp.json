@@ -48,6 +48,15 @@
       "class" : "boolean",
       "optional" : false,
       "default" : true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b37_decoy",
+      "optional": true
     }
   ],
   "outputSpec": [
@@ -65,7 +74,6 @@
   "runSpec": {
     "execDepends": [
       {"name": "pigz"},
-      {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
       {"name": "vcftools"},
       {"name": "libtie-ixhash-perl"},
@@ -74,7 +82,7 @@
       {"name": "perl-doc"},
       {"name": "libdbd-sqlite3-perl"},
       {"name": "libxml-simple-perl"}
-    ],  
+    ],
     "interpreter": "bash",
     "file": "src/vcf_annotate.sh"
   },
@@ -85,7 +93,7 @@
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
+  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 
 }

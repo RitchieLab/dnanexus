@@ -67,17 +67,26 @@
     {
       "name": "bed_out",
       "label": "PLINK BED file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.bed"
+      ]
     },
     {
       "name": "bim_out",
       "label": "PLINK BIM file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.bim"
+      ]
     },
     {
       "name": "fam_out",
       "label": "PLINK FAM file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.fam"
+      ]
     }
   ],
   "runSpec": {

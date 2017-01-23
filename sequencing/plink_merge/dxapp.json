@@ -55,17 +55,26 @@
    {
       "name": "bed_out",
       "label": "PLINK BED file",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.bed"
+      ]
     },
     {
       "name": "bim_out",
       "label": "PLINK BIM file",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.bim"
+      ]
     },
     {
       "name": "fam_out",
       "label": "PLINK FAM file",
-      "class": "file"
+      "class": "file",
+      "patterns": [
+        "*.fam"
+      ]
     },
     {
       "name": "samp_excl",

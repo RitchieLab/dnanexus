@@ -16,6 +16,37 @@
 # to modify this file.
 
 set -x
+export SHELL="/bin/bash"
+
+
+
+dx download "$DX_RESOURCES_ID:/GATK/resources/jre-8u101-linux-x64.tar.gz" -o /usr/share/jre-8u101-linux-x64.tar.gz
+tar -zxvf /usr/share/jre-8u101-linux-x64.tar.gz -C /usr/share/
+
+function download_resources() {
+
+	# get the resources we need in /usr/share/GATK
+	sudo mkdir -p /usr/share/GATK/resources
+	sudo chmod -R a+rwX /usr/share/GATK
+
+		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.7.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+
+	if [ "$build_version" == "b37_decoy" ]
+	then
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+
+	else
+
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+
+		fi
+
+
+}
 
 main() {
 
@@ -38,29 +69,29 @@ main() {
 	# first, we need to match up the VCF and tabix index files
 	# To do that, we'll get files of filename -> dxfile ID
 	VCF_LIST=$(mktemp)
-	for i in "${!vcf_fn[@]}"; do	
+	for i in "${!vcf_fn[@]}"; do
 		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 	done
-	
+
 	VCFIDX_LIST=$(mktemp)
-	for i in "${!vcfidx_fn[@]}"; do	
+	for i in "${!vcfidx_fn[@]}"; do
 		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 	done
-	
+
 	# Now, get the prefix (strip off any .tbi) and join them
 	JOINT_LIST=$(mktemp)
 	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
-		
+
 	# Ensure that we still have the same number of files; throw an error if not
 	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
 		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 	fi
-	
+
 	# and loop through the file, submitting sub-jobs
 	while read VCF_LINE; do
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
-		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)		
-	
+		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
+
 		SUBJOB=$(dx-jobutil-new-job run_anno -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -icmd_params:string="$cmd_params" -ihdr_only:boolean=$hdr_only -ino_geno:boolean=$no_geno)
 		if test "$no_geno" = "false"; then
 			# for each subjob, add the output to our array
@@ -72,9 +103,9 @@ main() {
     		dx-jobutil-add-output vcf_hdr_out --array "$SUBJOB:vcf_hdr_out" --class=jobref
 		    dx-jobutil-add-output vcfidx_hdr_out --array "$SUBJOB:vcfidx_hdr_out" --class=jobref
 	   	fi
-		
+
 	done < $JOINT_LIST
-	
+
 }
 
 
@@ -98,16 +129,18 @@ run_anno() {
 
     dx download "$vcf_fn" -o raw.vcf.gz
     dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
-    
+
 	# get the resources we need in /usr/share/GATK
-	sudo mkdir -p /usr/share/GATK/resources
-	sudo chmod -R a+rwX /usr/share/GATK
-	
-		
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
+	#sudo mkdir -p /usr/share/GATK/resources
+	#sudo chmod -R a+rwX /usr/share/GATK
+
+  download_resources
+
+
+	#dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
+	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 
 
     TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
@@ -115,11 +148,11 @@ run_anno() {
     TOT_MEM=$((TOT_MEM * 9 / 10))
 
 	BASE_VCF=raw.vcf.gz
-		
+
 	OUT_DIR=$(mktemp -d)
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//')
 
-	eval java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar -T VariantAnnotator -nt $(nproc --all) -R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta -V $BASE_VCF "$cmd_params" $SITES_FLAG -o "$OUT_DIR/$PREFIX.annotated.vcf.gz"
+	eval /usr/share/jre1.8.0_101/bin/java  -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar -T VariantAnnotator -nt $(nproc --all) -R /usr/share/GATK/resources/build.fasta -V $BASE_VCF "$cmd_params" $SITES_FLAG -o "$OUT_DIR/$PREFIX.annotated.vcf.gz"
 
 	if test "$hdr_only" = "true"; then
 		if test "$no_geno" = "true"; then
@@ -128,7 +161,7 @@ run_anno() {
 		else
 			pigz -dc $OUT_DIR/$PREFIX.annotated.vcf.gz | cut -f1-8 | bgzip -c > "$OUT_DIR/header.$PREFIX.annotated.vcf.gz"
 			tabix -p vcf "$OUT_DIR/header.$PREFIX.annotated.vcf.gz"
-		fi		
+		fi
 	fi
 
 	if test "$no_geno" = "false"; then
@@ -137,7 +170,7 @@ run_anno() {
 		dx-jobutil-add-output vcf_out "$vcf_out" --class=file
 	    dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
 	fi
-	
+
 	if test "$hdr_only" = "true"; then
 		vcf_hdr_out=$(dx upload "$OUT_DIR/header.$PREFIX.annotated.vcf.gz" --brief)
     	vcfidx_hdr_out=$(dx upload "$OUT_DIR/header.$PREFIX.annotated.vcf.gz.tbi" --brief)

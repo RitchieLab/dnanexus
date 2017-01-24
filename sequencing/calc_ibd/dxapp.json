@@ -107,9 +107,13 @@
     "execDepends": [
       {"name": "libgsl0ldbl"},
       {"name": "pigz"},
+<<<<<<< HEAD
       {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
       {"name": "zlib1g"}
+=======
+      {"name": "tabix"}
+>>>>>>> ec7fa668e5ca27ba32c071ef72ebf90f3d05b2d9
     ],
     "interpreter": "bash",
     "file": "src/calc_ibd.sh"

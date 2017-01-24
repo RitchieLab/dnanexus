@@ -91,36 +91,56 @@
       "label": "Output Filename suffix",
       "class": "string",
       "optional": true
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37_decoy"],
+      "default": "b37_decoy",
+      "optional": true
     }
   ],
   "outputSpec": [
     {
       "name": "vcf_out",
       "label": "Filtered VCF file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
       "name": "vcf_hdr_out",
       "label": "Filtered VCF sites-only file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.vcf.gz"
+      ]
     },
     {
       "name": "vcfidx_hdr_out",
       "label": "Filtered VCF sites-only Index file",
       "class": "array:file",
-      "optional" : true
+      "optional" : true,
+      "patterns": [
+        "*.tbi"
+      ]
     }
   ],
   "runSpec": {
   "execDepends": [
       {"name": "pigz"},
-      {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
       {"name": "vcftools"}
     ],
@@ -134,7 +154,7 @@
     ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

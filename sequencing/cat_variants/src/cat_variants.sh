@@ -16,15 +16,20 @@
 # to modify this file.
 
 # install GNU parallel!
-#sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
-#sudo apt-get update
-#sudo apt-get install --yes parallel
+sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get install --yes parallel
 
 set -x
+export SHELL="/bin/bash"
 
-echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes openjdk-8-jre-headless
+#echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
+#sudo apt-get update
+#sudo apt-get install --yes openjdk-8-jre-headless
+#sudo apt-get install --yes parallel
+
+dx download "$DX_RESOURCES_ID:/GATK/resources/jre-8u101-linux-x64.tar.gz" -o /usr/share/jre-8u101-linux-x64.tar.gz
+tar -zxvf /usr/share/jre-8u101-linux-x64.tar.gz -C /usr/share/
 
 function download_resources() {
 
@@ -135,7 +140,7 @@ main() {
 
 		# Now, merge the gVCFs into a single gVCF
 		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-		java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m  -cp /usr/share/GATK/GenomeAnalysisTK.jar org.broadinstitute.gatk.tools.CatVariants \
+		/usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m  -cp /usr/share/GATK/GenomeAnalysisTK.jar org.broadinstitute.gatk.tools.CatVariants \
 		-R /usr/share/GATK/resources/build.fasta \
 		$(cat $VCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
 		-out $FINAL_DIR/$prefix.vcf.gz

@@ -108,7 +108,7 @@
       "label": "Use Fast Eigenvalue Approx.",
       "class": "boolean",
       "optional": false,
-      "default" : false
+      "default" : true
     },
     {
       "name": "twstats",

@@ -73,15 +73,24 @@
   ],
   "runSpec": {
     "execDepends": [
-      {"name": "pigz"},
-      {"name": "tabix"},
-      {"name": "vcftools"},
       {"name": "libtie-ixhash-perl"},
       {"name": "libdbi-perl"},
       {"name": "libfile-util-perl"},
       {"name": "perl-doc"},
       {"name": "libdbd-sqlite3-perl"},
-      {"name": "libxml-simple-perl"}
+      {"name": "libxml-simple-perl"},
+      {
+        "name": "cpanminus"
+      },
+      {
+        "name": "libcpan-meta-yaml-perl"
+      },
+      {
+        "name": "libcpan-meta-perl"
+      },
+      {
+              "name": "bgzip"
+      }
     ],
     "interpreter": "bash",
     "file": "src/vcf_annotate.sh"

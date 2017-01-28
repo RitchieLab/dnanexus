@@ -25,7 +25,7 @@ apt-get install --yes parallel
 wget https://cloud.r-project.org/src/base/R-3/R-3.3.1.tar.gz
 tar xvzf R-3.3.1.tar.gz
 
-wget http://zlib.net/zlib-1.2.8.tar.gz
+wget http://zlib.net/fossils/zlib-1.2.8.tar.gz
 tar xvzf zlib-1.2.8.tar.gz
 
 wget https://curl.haxx.se/download/curl-7.50.1.tar.gz

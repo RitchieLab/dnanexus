@@ -11,33 +11,29 @@
     {
       "name": "vcf_fn",
       "label": "VCF File",
-      "class": "file",
+      "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf", "*.vcf.gz"]
+      "patterns" : ["*.vcf.gz"]
     },
     {
-      "name": "prefix",
-      "label": "PREFIX for VCF file",
-      "class": "string",
-      "optional": true
-    },
-    {
-      "name": "snpeff",
-      "label": "Run SnpEff (4.1l)",
-      "class": "boolean",
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
+      "class": "array:file",
       "optional": false,
-      "default" : true
+      "patterns": [
+        "*.tbi"
+      ]
     },
     {
-      "name": "sift",
-      "label": "Run SIFT (5.2.2)",
+      "name": "VEP",
+      "label": "Run VEP",
       "class": "boolean",
       "optional": false,
       "default" : true
     },
     {
       "name": "dbnsfp",
-      "label": "Run dbNSFP (2.9)",
+      "label": "Run dbNSFP (3.3a)",
       "class": "boolean",
       "optional": false,
       "default" : true
@@ -50,12 +46,19 @@
       "default" : true
     },
     {
+      "name" : "HGMD",
+      "label" : "Use HGMD",
+      "class" : "boolean",
+      "optional" : false,
+      "default" : true
+    },
+    {
       "group": "Build Options",
       "name": "build_version",
       "label": "NCBI Build Version",
       "class": "string",
       "choices": ["b38","b37_decoy"],
-      "default": "b37_decoy",
+      "default": "b38",
       "optional": true
     }
   ],
@@ -63,24 +66,23 @@
     {
       "name": "vcf_out",
       "label": "Annotated VCF",
-      "class": "file"
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz"]
     },
     {
       "name": "vcfidx_out",
       "label": "Annotated VCF Index",
-      "class": "file"
+      "class": "array:file",
+      "patterns" : ["*.tbi"]
     }
   ],
   "runSpec": {
     "execDepends": [
-      {"name": "libtie-ixhash-perl"},
-      {"name": "libdbi-perl"},
-      {"name": "libfile-util-perl"},
-      {"name": "perl-doc"},
-      {"name": "libdbd-sqlite3-perl"},
-      {"name": "libxml-simple-perl"},
       {
         "name": "cpanminus"
+      },
+      {
+        "name": "libtest-mockmodule-perl"
       },
       {
         "name": "libcpan-meta-yaml-perl"
@@ -89,8 +91,13 @@
         "name": "libcpan-meta-perl"
       },
       {
-              "name": "bgzip"
+              "name": "vcftools"
+      },
+      {"name": "libdbi-perl"},
+      {
+              "name": "tabix"
       }
+
     ],
     "interpreter": "bash",
     "file": "src/vcf_annotate.sh"

@@ -94,7 +94,7 @@
       "label" : "Project onto 1000 Genomes samples",
       "class" : "boolean",
       "optional" : false,
-      "default" : false
+      "default" : true
     },
     {
       "name" : "project_superpop",
@@ -105,7 +105,7 @@
     },
     {
       "name": "fast_pca",
-      "label": "Use Fast Eigenvalue Approx.",
+      "label": "Use Fast Eigenvalue Approx. (Non fast may not work)",
       "class": "boolean",
       "optional": false,
       "default" : true

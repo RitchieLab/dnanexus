@@ -213,8 +213,10 @@ downsample_plink(){
 			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
-				done
+					#dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+          dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+          #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
+        done
 				# extract the markers in preld
 				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
 

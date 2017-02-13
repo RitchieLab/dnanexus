@@ -226,6 +226,10 @@ main() {
       echo "${vcfidx_fn[$i]}" >> "$DXIDX_LIST"
     done
 
+		procCount=$(nproc --all)
+		halfCount=$(($procCount/2))
+
+
     parallel -j $(nproc --all) -u --gnu parallel_download :::: $DXIDX_LIST ::: $WKDIR
 
 		download_resources
@@ -241,7 +245,7 @@ main() {
       echo "${vcf_fn[$i]}" >> $DXVCF_LIST
     done
 
-    parallel -j $(nproc --all) -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
+    parallel -j $halfCount  -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
 
     echo "VCF downloaded"
 

@@ -19,8 +19,6 @@
 # install GNU parallel!
 #sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 
-DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
-
 function install_package() {
 
 	RETRY=1

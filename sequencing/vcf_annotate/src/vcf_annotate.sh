@@ -17,7 +17,6 @@
 export SHELL="/bin/bash"
 set -x
 #set -o pipefail
-
 # install GNU parallel!
 sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 sudo apt-get update
@@ -143,7 +142,7 @@ function parallel_download_and_annotate() {
 		echo $OUT_VCF
 		echo $IN_VCF
 
-		bcftools annotate -a HGMD.vcf.gz -o $OUT_VCF -Oz $IN_VCF -c INFO/CLASS,INFO/MUT,INFO/GENE,INFO/STRAND,INFO,DNA,INFO/PROT,INFO/DB,INFO/PHEN -h HGMD_header.txt
+		bcftools annotate -a HGMD.vcf.gz -o $OUT_VCF -Oz $IN_VCF -c +INFO -h HGMD_header.txt
 
 		rm $IN_VCF
 
@@ -164,7 +163,7 @@ function parallel_download_and_annotate() {
 		echo $OUT_VCF
 		echo $IN_VCF
 
-		bcftools annotate -a dbNSFP.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c INFO/dbNSFP -h dbNSFP_header.txt
+		bcftools annotate -a dbNSFP.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO -h dbNSFP_header.txt
 
 		rm $IN_VCF
 
@@ -183,7 +182,7 @@ function parallel_download_and_annotate() {
 		echo $IN_VCF
 
 
-		bcftools annotate -a variant_summary.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c INFO/ClinVar.TSV.Jan2017 -h ClinVar_header.txt
+		bcftools annotate -a variant_summary.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO -h ClinVar_header.txt
 		tabix -p vcf -f $OUT_VCF
 
 		rm $IN_VCF

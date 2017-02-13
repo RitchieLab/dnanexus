@@ -19,6 +19,8 @@
 # install GNU parallel!
 #sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
 
+DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+
 function install_package() {
 
 	RETRY=1
@@ -254,7 +256,7 @@ function dl_merge_interval() {
 	GVCF_IDX_MAPPING=$(mktemp)
 	# First, match up the GVCF to its index
 	while read dxfn; do
-		# No dx describe here, please!  DX_GVCF_ILES now has 2 columns, the first is 
+		# No dx describe here, please!  DX_GVCF_ILES now has 2 columns, the first is
 		# the name, and the second is the download ID (
 		GVCF_NAME=$(echo "$dxfn" | cut -f1)
 		GVCF_DXID=$(echo "$dxfn" | cut -f2 | jq -r '.["$dnanexus_link"]')
@@ -333,7 +335,7 @@ function merge_intervals(){
 	# download ALL of the indexes (in parallel!)
 	TARF=$(mktemp)
 	dx download "$gvcfidxtar" -f -o $TARF
-	
+
 	tar -xf $TARF -C $INDEX_DIR
 	rm $TARF
 
@@ -357,7 +359,7 @@ function merge_intervals(){
 	if test "$targeted"; then
 		# split the target files into the number of processors available
 		split -a 2 -d -n l/$NPROC $TARGET_FILE "interval_split."
-		
+
 		# STOP: SANITY check.  Make sure the total number of lines is the same
 		if test $(cat interval_split.* | wc -l) -ne $(cat $TARGET_FILE | wc -l); then
 			dx-jobutil-report-error "ERROR: bug in split - need a code change."
@@ -366,7 +368,7 @@ function merge_intervals(){
 		# if we have >1,000 chromosomes, we're in a bad way
 		split -a 3 -d -l 1 $TARGET_FILE "interval_split."
 	fi
-	
+
 
 
 	cd - >/dev/null
@@ -455,13 +457,13 @@ function single_merge_subjob() {
 	MERGE_ARGS=""
 
 	JOB_ARGS="-igatk_version=$gatk_version -ibuild_version=$build_version"
-	
+
 	for i in "${!gvcf[@]}"; do
 		JOB_ARGS="$JOB_ARGS -igvcf='${gvcf[$i]}'"
 	done
 
 	# we're going to download all of the indices here, then create a tarball
-	
+
 	# download ALL of the indexes (in parallel!)
 	INDEX_DIR=$(mktemp -d)
 	GVCFIDX_FN=$(mktemp)
@@ -470,19 +472,19 @@ function single_merge_subjob() {
 	done > $GVCFIDX_FN
 
 	parallel --gnu -j $(nproc --all) parallel_download :::: $GVCFIDX_FN ::: $INDEX_DIR
-	
+
 	cd $INDEX_DIR
 	TAR_DIR=$(mktemp -d)
 	tar -cf $TAR_DIR/gvcfidx.tar *
 	cd -
-	
+
 	TAR_DXF=$(dx upload --brief $TAR_DIR/gvcfidx.tar)
 	JOB_ARGS="$JOB_ARGS -igvcfidxtar:file=$TAR_DXF"
-	
+
 	#for i in "${!gvcfidx[@]}"; do
 	#	JOB_ARGS="$JOB_ARGS -igvcfidx='${gvcfidx[$i]}'"
 	#done
-	
+
 	# start setting up logging here
 	set -x
 

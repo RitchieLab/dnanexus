@@ -115,23 +115,23 @@ function parallel_download_and_annotate() {
 
 		OUT_VCF=${IN_VCF%.vcf.gz}.VEP.u.vcf
 
-		perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF
+		perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF --no_progress --no_stats --force_overwrite --fork 2
 
-		rm $IN_VCF
+		rm $IN_VCF*
 
 		vcf-sort -h
 
 		vcf-sort $OUT_VCF | bgzip > ${OUT_VCF%.u.vcf}.vcf.gz
 
-		rm $OUT_VCF
+		rm $OUT_VCF*
 
 		OUT_VCF=${OUT_VCF%.u.vcf}.vcf.gz
 
 
 	fi
 
-	# add HGMD here
-	if test "$dbnsfp" = "true"; then
+	# add dbnsfp here
+	if test "$HGMD" = "true"; then
 
 		IN_VCF=$OUT_VCF
 		tabix -p vcf -f $IN_VCF
@@ -144,7 +144,7 @@ function parallel_download_and_annotate() {
 
 		bcftools annotate -a HGMD.vcf.gz -o $OUT_VCF -Oz $IN_VCF -c +INFO -h HGMD_header.txt
 
-		rm $IN_VCF
+		rm $IN_VCF*
 
 	fi
 
@@ -165,7 +165,7 @@ function parallel_download_and_annotate() {
 
 		bcftools annotate -a dbNSFP.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO -h dbNSFP_header.txt
 
-		rm $IN_VCF
+		rm $IN_VCF*
 
 	fi
 
@@ -183,9 +183,8 @@ function parallel_download_and_annotate() {
 
 
 		bcftools annotate -a variant_summary.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO -h ClinVar_header.txt
+		rm $IN_VCF*
 		tabix -p vcf -f $OUT_VCF
-
-		rm $IN_VCF
 
 
 	fi
@@ -198,7 +197,7 @@ function parallel_download_and_annotate() {
 
 	TO_RM=$(dx describe "$1" --name)
 
-	rm ${TO_RM%.vcf.gz}.*
+	rm ${TO_RM%.vcf.gz}*
 
 
 }
@@ -226,8 +225,7 @@ main() {
       echo "${vcfidx_fn[$i]}" >> "$DXIDX_LIST"
     done
 
-		procCount=$(nproc --all)
-		halfCount=$(($procCount/2))
+
 
 
     parallel -j $(nproc --all) -u --gnu parallel_download :::: $DXIDX_LIST ::: $WKDIR
@@ -236,7 +234,8 @@ main() {
 
 
 
-
+		procCount=$(nproc --all)
+		halfCount=$(($procCount/16))
 
     echo "IDX downloaded"
 

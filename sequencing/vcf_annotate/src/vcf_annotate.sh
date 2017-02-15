@@ -15,6 +15,9 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 export SHELL="/bin/bash"
+
+procCount=$(nproc --all)
+
 set -x
 #set -o pipefail
 # install GNU parallel!
@@ -109,17 +112,17 @@ function parallel_download_and_annotate() {
 
 	IN_VCF=$(dx describe "$1" --name)
 
+	procCount=$(nproc --all)
+
 	OUT_VCF=$IN_VCF
 
 	if test "$VEP" = "true"; then
 
 		OUT_VCF=${IN_VCF%.vcf.gz}.VEP.u.vcf
 
-		perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF --no_progress --no_stats --force_overwrite --fork 2
+		perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF --no_progress --no_stats --force_overwrite --fork $procCount
 
 		rm $IN_VCF*
-
-		vcf-sort -h
 
 		vcf-sort $OUT_VCF | bgzip > ${OUT_VCF%.u.vcf}.vcf.gz
 
@@ -244,7 +247,7 @@ main() {
       echo "${vcf_fn[$i]}" >> $DXVCF_LIST
     done
 
-    parallel -j $halfCount  -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
+    parallel -j 1 -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
 
     echo "VCF downloaded"
 

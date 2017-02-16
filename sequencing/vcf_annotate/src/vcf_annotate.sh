@@ -50,30 +50,39 @@ function download_resources(){
 
 	if test "$VEP" = "true"; then
 
-		cpanm Archive::Extract
-		cpanm File::Copy::Recursive
-		#
-		cpanm Module::Build
-		cpanm Archive::Zip
-		cpanm Bundle::DBI
+		if "$annotate_header" = "true"; then
 
-		dx download "$DX_RESOURCES_ID:/VEP/ensembl-tools-release-87.zip" -o /usr/share/ensembl-tools-release.zip
-		cd /usr/share/
-		unzip ensembl-tools-release.zip
-		cd ensembl-tools-release-87/scripts/variant_effect_predictor/
-		yes n | perl INSTALL.pl
+			cpanm Archive::Extract
+			cpanm File::Copy::Recursive
+			#
+			cpanm Module::Build
+			cpanm Archive::Zip
+			cpanm Bundle::DBI
 
-		dx download "$DX_RESOURCES_ID:/VEP/vep_b38.tar.gz" -o $HOME/vep_b38.tar.gz
-		cd $HOME
+			dx download "$DX_RESOURCES_ID:/VEP/ensembl-tools-release-87.zip" -o /usr/share/ensembl-tools-release.zip
+			cd /usr/share/
+			unzip ensembl-tools-release.zip
+			cd ensembl-tools-release-87/scripts/variant_effect_predictor/
+			yes n | perl INSTALL.pl
 
-		tar -xzvf vep_b38.tar.gz
+			dx download "$DX_RESOURCES_ID:/VEP/vep_b38.tar.gz" -o $HOME/vep_b38.tar.gz
+			cd $HOME
 
-		sudo mkdir -p /usr/share/GATK/resources
-		sudo chmod -R a+rwX /usr/share/GATK
+			tar -xzvf vep_b38.tar.gz
 
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+			sudo mkdir -p /usr/share/GATK/resources
+			sudo chmod -R a+rwX /usr/share/GATK
+
+			dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
+			dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+			dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+
+		else
+			dx download "$DX_RESOURCES_ID:/VEP/combined.padded.header.vcf.gz" -o VEP.vcf.gz
+			dx download "$DX_RESOURCES_ID:/VEP/combined.padded.header.vcf.gz.tbi" -o VEP.vcf.gz.tbi
+			dx download "$DX_RESOURCES_ID:/VEP/VEP_header.txt" -o VEP_header.txt
+		fi
+
 
 	fi
 
@@ -117,19 +126,35 @@ function parallel_download_and_annotate() {
 	OUT_VCF=$IN_VCF
 
 	if test "$VEP" = "true"; then
+		if "$annotate_header" = "true"; then
 
-		OUT_VCF=${IN_VCF%.vcf.gz}.VEP.u.vcf
 
-		perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF --no_progress --no_stats --force_overwrite --fork $procCount
+			OUT_VCF=${IN_VCF%.vcf.gz}.VEP.u.vcf
 
-		rm $IN_VCF*
+			perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/variant_effect_predictor.pl -i $IN_VCF --everything --cache --offline --vcf --fasta /usr/share/GATK/resources/build.fasta --merged -o $OUT_VCF --no_progress --no_stats --force_overwrite
 
-		vcf-sort $OUT_VCF | bgzip > ${OUT_VCF%.u.vcf}.vcf.gz
+			rm $IN_VCF*
 
-		rm $OUT_VCF*
+			vcf-sort $OUT_VCF | bgzip > ${OUT_VCF%.u.vcf}.vcf.gz
 
-		OUT_VCF=${OUT_VCF%.u.vcf}.vcf.gz
+			rm $OUT_VCF*
 
+			OUT_VCF=${OUT_VCF%.u.vcf}.vcf.gz
+		else
+
+			OUT_VCF=${IN_VCF%.vcf.gz}.VEP.vcf.gz
+
+			tabix -p vcf -f $IN_VCF
+
+			echo "VEP"
+			echo $OUT_VCF
+			echo $IN_VCF
+
+			bcftools annotate -a VEP.vcf.gz -o $OUT_VCF -Oz $IN_VCF -c +INFO/CSQ -h VEP_header.txt
+
+			rm $IN_VCF*
+
+		fi
 
 	fi
 
@@ -150,9 +175,6 @@ function parallel_download_and_annotate() {
 		rm $IN_VCF*
 
 	fi
-
-
-
 
 	# Add dbNSFP here (3.3a)
 	if test "$dbnsfp" = "true"; then
@@ -209,6 +231,7 @@ export -f parallel_download_and_annotate
 
 
 
+
 main() {
 
 	export SHELL="/bin/bash"
@@ -238,7 +261,7 @@ main() {
 
 
 		procCount=$(nproc --all)
-		halfCount=$(($procCount/16))
+		halfCount=$(($procCount/2))
 
     echo "IDX downloaded"
 
@@ -247,16 +270,11 @@ main() {
       echo "${vcf_fn[$i]}" >> $DXVCF_LIST
     done
 
-    parallel -j 1 -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
+    parallel -j $halfCount -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $WKDIR
 
     echo "VCF downloaded"
 
 
-    #vcf_out=$(dx upload $OUT_VCF --brief)
-    #vcfidx_out=$(dx upload $OUT_VCF.tbi --brief)
-
-    #dx-jobutil-add-output vcf_out "$vcf_out" --class=file
-    #dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
 
 
 }

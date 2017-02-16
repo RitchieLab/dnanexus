@@ -60,6 +60,13 @@
       "choices": ["b38","b37_decoy"],
       "default": "b38",
       "optional": true
+    },
+    {
+      "group": "True: Annotate Header with VEP, False: Annotate VCF from VEP Annotated Header Files",
+      "name": "annotate_header",
+      "label": "Annotations",
+      "class" : "boolean",
+      "optional" : true
     }
   ],
   "outputSpec": [

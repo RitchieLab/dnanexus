@@ -15,13 +15,45 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
-
 set -x
 
 export SHELL="/bin/bash"
 
-pip install multiprocessing
 pip install argparse
+
+WKDIR=$(mktemp -d)
+DXVCF_LIST=$(mktemp)
+
+
+
+function parallel_download_and_process() {
+	set -x
+
+	cd $2
+
+	dx download "$1"
+
+  IN_VCF=$(dx describe "$1" --name)
+
+  python ./filter_annoation | bgzip -c > ${IN_VCF%.vcf.gz}.filtered.vcf.gz
+
+
+
+  tabix -p vcf -f ${IN_VCF%.vcf.gz}.filtered.vcf.gz
+
+  VCF_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.vcf.gz)
+  IDX_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.vcf.gz.tbi)
+
+
+
+
+  dx-jobutil-add-output outFiles "$VCF_UP" --class=array:file
+  dx-jobutil-add-output outFiles "$IDX_UP" --class=array:file
+
+  rm ${IN_VCF%.*}*
+
+}
+export -f parallel_download_and_process
 
 main() {
 
@@ -32,10 +64,14 @@ main() {
     # recover the original filenames, you can use the output of "dx describe
     # "$variable" --name".
 
-    for i in ${!vcf[@]}
-    do
-        dx download "${vcf[$i]}" -o vcf-$i
-    done
+    cd $HOME
+
+    for i in "${!vcf[@]}"; do
+  		echo "${vcf[$i]}" >> $DXVCF_LIST
+  	done
+    parallel -j $(nproc --all) -u --gnu parallel_download_and_process :::: $DXVCF_LIST ::: $HOME
+
+    #cd $WKDIR
 
     # Fill in your application code here.
     #
@@ -56,5 +92,5 @@ main() {
     # class.  Run "dx-jobutil-add-output -h" for more information on what it
     # does.
 
-    dx-jobutil-add-output filtered_vcf "$filtered_vcf" --class=array:file
+    #dx-jobutil-add-output filtered_vcf "$filtered_vcf" --class=array:file
 }

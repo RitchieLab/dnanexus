@@ -22,15 +22,15 @@ def parseArguments():
                         help='Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High',
                         type=int)
 
-	parser.add_argument('--Cannonical', action='store', default=True,
+	parser.add_argument('--Cannonical', action='store_true', default=False,
                         dest='Cannonical',
-                        help='Do NOT restrict VEP IMPACT Filtering to Cannonical transcripts instead select highest overal IMPACT.')
+                        help='Do restrict VEP IMPACT Filtering to Cannonical transcripts. Defualt is select highest overal IMPACT.')
 
-	parser.add_argument('--Ensembl', action='store', default=False,
+	parser.add_argument('--Ensembl', action='store_true', default=False,
                         dest='Ensembl',
                         help='Use Transcripts from Ensembl for VEP filtration.  Default is to select Transcripts from RefSeq.')
 
-	parser.add_argument('--RefSeq', action='store', default=True,
+	parser.add_argument('--RefSeq', action='store_true', default=False,
                         dest='RefSeq',
                         help='Use Transcripts from RefSeq for VEP filtration.  Default is to select Transcripts from RefSeq.')
 
@@ -39,7 +39,8 @@ def parseArguments():
                         type=int)
 
 	parser.add_argument('-p', action='store', dest='ClinicalSignificance',
-                        help='Highest ClinVar Significance to filter too: 8="Pathogenic", 7="Likely Pathogenic", 6="Drug Response", 5="Protective", 4="Risk Factor" or "association" or "Affects", 3="Uncertain Significance" or "not provided" 2="Likely benign" 1="Benign"',
+                        help='Highest ClinVar Significance to filter too: 8="Pathogenic", 7="Likely pathogenic", 6="Drug Response", 5="Protective",' \
+						'4="Risk Factor" or "association" or "Affects", 3="Uncertain Significance" or "not provided" 2="Likely benign" 1="Benign"',
                         type=int)
 
 	parser.add_argument('--HGMD', action='store', type=int,
@@ -151,9 +152,9 @@ def parse_INFO(line):
 def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 
 	info_field = line.split('\t')[7].split(";")
-	geneList=[False]
-	frequency=[False]
-	annotations=[False]
+	geneList=[]
+	frequency=[]
+	annotations=[]
 	for field in info_field:
 		if field.startswith("AF"):
 			AFs = field.replace("AF=","").split(",")
@@ -167,16 +168,18 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						frequency.append(True)
 				else:
 					return False
-			if not any(frequency):
-				return False
+			if len(frequency)>0:
+				if not any(frequency):
+					return False
 		elif field.startswith("CSQ"):
 			if cli_arguments.VEP_Impact is not None:
-				CSQs =[x.strip() for x in line.replace("CSQ=","").strip().split(",")]
+				CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
 					for f_field in VEP_Fields["MAF"]:
+						Cs[f_field]=Cs[f_field].strip("&").strip(":").replace("&&","&").replace("&&&","&").replace("&&","&")
 						if Cs[f_field]=="":
-							frequency.append(False)
+							continue
 						else:
 							if "&" in Cs[f_field] or ":" in Cs[f_field]:
 								pubMAFs=dict()
@@ -197,8 +200,9 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 									frequency.append(False)
 								else:
 									frequency.append(True)
-					if not any(frequency):
-						return False
+					if len(frequency)>0:
+						if not any(frequency):
+							return False
 					if cli_arguments.Ensembl:
 						if not Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
@@ -210,7 +214,6 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 							if cli_arguments.gene_list is not None:
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-							break
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
@@ -219,38 +222,34 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 							if cli_arguments.gene_list is not None:
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-							break
 					if cli_arguments.RefSeq:
 						if Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
 						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
-
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-							break
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
-
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-							break
 					if cli_arguments.gene_list is not None:
 						if not any(geneList):
 							return False
 		elif field.startswith("ClinVar.TSV.Jan2017="):
 			if cli_arguments.clinVarStar is not None:
 				clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
-				if getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
+				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
+					annotations.append(False)
+				elif getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
 					if getClinVar_level(clinvar[ClinVar_fields["ClinicalSignificance"]])>=cli_arguments.ClinicalSignificance:
 						annotations.append(True)
 					else:
@@ -307,6 +306,7 @@ def main():
 					IDs[i]=f
 		elif filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 			print line.strip()
+			pass
 	vcf_file.close()
 	return
 

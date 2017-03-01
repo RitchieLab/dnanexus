@@ -14,7 +14,69 @@
         "*.vcf.gz"
       ],
       "help": ""
-    }
+    },
+    {
+      "name" : "max_maf",
+      "label" : "Maximum MAF",
+      "class" : "float",
+      "optional" : true,
+      "group" : "MAF Options"
+	    },
+      {
+        "name" : "bi_snps_only",
+        "label" : "Output BiAllelic SNPs only",
+        "class" : "boolean",
+        "optional" : true,
+        "default" : false
+      },
+    {
+      "name" : "VEP Transcript",
+      "label" : "VEP_Transcript",
+      "class" : "array:string",
+      "optional" : true,
+      "choices" : [ "Ensembl","RefSeq"],
+      "group" : "VEP Options"
+    },
+    {
+      "name" : "VEP_Level",
+      "label" : "VEP IMPACT Level",
+      "class" : "int",
+      "optional" : true,
+      "group" : "VEP Options",
+      "help": "Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High"
+    },
+    {
+      "name" : "cannonical",
+      "label" : "Use cannonical transcritpts for VEP filtering",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false,
+      "group" : "VEP Options"
+      },
+      {
+        "name" : "HGMD_Level",
+        "label" : "HGMD Category",
+        "class" : "int",
+        "optional" : true,
+        "group" : "HGMD Options",
+        "help": "HIGHEST Include variants from HGMD. 6=DM, 5=DM?, 4=DP, 3=DFP, 2=FTV, 1=FP"
+      },
+      {
+        "name" : "ClinVar_Star",
+        "label" : "ClinVar Star Level",
+        "class" : "int",
+        "optional" : true,
+        "group" : "ClinVar Options",
+        "help": "ClinVar Star Level to Filter to.  Must be set to select ClinVar variants.  Set to 0 to retrive all"
+      },
+      {
+        "name" : "ClinVarSignificance_Level",
+        "label" : "ClinVar Significance Level",
+        "class" : "int",
+        "optional" : true,
+        "group" : "ClinVar Options",
+        "help": "Highest ClinVar Significance to filter too: 8='Pathogenic', 7='Likely pathogenic', 6='Drug Response', 5='Protective',4='Risk Factor' or 'association' or 'Affects', 3='Uncertain Significance' or 'not provided' 2='Likely benign' 1='Benign'"
+      }
   ],
   "outputSpec": [
     {

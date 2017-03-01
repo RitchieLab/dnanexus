@@ -16,9 +16,20 @@
       "help": ""
     },
     {
+      "name": "gene_list",
+      "label": "List of Genes to Restrict to",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "One Gene per line. VEP Options must be set"
+    },
+    {
       "name" : "max_maf",
       "label" : "Maximum MAF",
       "class" : "float",
+      "default" : 1.0,
       "optional" : true,
       "group" : "MAF Options"
 	    },
@@ -30,20 +41,29 @@
         "default" : false
       },
     {
-      "name" : "VEP Transcript",
-      "label" : "VEP_Transcript",
-      "class" : "array:string",
+      "name" : "Ensembl",
+      "label" : "Use Ensembl transcritpts for VEP filtering",
+      "class" : "boolean",
       "optional" : true,
-      "choices" : [ "Ensembl","RefSeq"],
+      "default" : false,
       "group" : "VEP Options"
-    },
+      },
+      {
+        "name" : "RefSeq",
+        "label" : "Use RefSeq transcritpts for VEP filtering",
+        "class" : "boolean",
+        "optional" : true,
+        "default" : false,
+        "group" : "VEP Options"
+        },
     {
       "name" : "VEP_Level",
       "label" : "VEP IMPACT Level",
       "class" : "int",
       "optional" : true,
       "group" : "VEP Options",
-      "help": "Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High"
+      "default" : 0,
+      "help": "Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High. Transcript must be set to use option. "
     },
     {
       "name" : "cannonical",
@@ -51,7 +71,8 @@
       "class" : "boolean",
       "optional" : true,
       "default" : false,
-      "group" : "VEP Options"
+      "group" : "VEP Options",
+      "help": "Transcript must be set to use option. "
       },
       {
         "name" : "HGMD_Level",
@@ -101,9 +122,6 @@
   "runSpec": {
     "execDepends": [
         {
-          "name": "python-pip"
-        },
-        {
           "name": "tabix"
         },
         {
@@ -128,6 +146,6 @@
     ]
   },
   "openSource" : true,
-  "developers" : ["user-tnperson", "user-manu148"],
+  "developers" : ["user-tnperson", "user-manu148","user-auv13", "user-atf3"],
   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
 }

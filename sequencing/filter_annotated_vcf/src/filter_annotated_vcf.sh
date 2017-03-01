@@ -19,8 +19,6 @@ set -x
 
 export SHELL="/bin/bash"
 
-pip install argparse
-
 WKDIR=$(mktemp -d)
 DXVCF_LIST=$(mktemp)
 
@@ -28,27 +26,55 @@ DXVCF_LIST=$(mktemp)
 
 function parallel_download_and_process() {
 	set -x
+  export SHELL="/bin/bash"
 
 	cd $2
-
 	dx download "$1"
 
   IN_VCF=$(dx describe "$1" --name)
 
-  python ./filter_annoation | bgzip -c > ${IN_VCF%.vcf.gz}.filtered.vcf.gz
+  pythonOptions="--vcf_file $IN_VCF -F $max_maf"
 
+  if test "$bi_snps_only" = "true"; then
+    pythonOptions="$pythonOptions --b_snp"
+  fi
 
+  if test "$Ensembl" = "true" || test "$RefSeq" = "true"; then
+    if test "$Ensembl" = "true"; then
+            pythonOptions="$pythonOptions --Ensembl"
+    fi
+    if test "$RefSeq" = "true"; then
+        pythonOptions="$pythonOptions --RefSeq"
+    fi
+    if test "$cannonical" = "true"; then
+      pythonOptions="$pythonOptions --Cannonical"
+    fi
+    pythonOptions="$pythonOptions -i $VEP_Level"
+    if test "$gene_list"; then
+  		pythonOptions="$pythonOptions --gene_list gene_list"
+  	fi
+  fi
+  if test "$HGMD_Level"; then
+    pythonOptions="$pythonOptions --HGMD $HGMD_Level"
+  fi
+  if test "$ClinVar_Star"; then
+    pythonOptions="$pythonOptions -c $ClinVar_Star"
+    if test "$ClinVarSignificance_Level"; then
+      pythonOptions="$pythonOptions -p $ClinVarSignificance_Level"
+    fi
+  fi
+
+  echo $pythonOptions
+
+  python ./filter_annotation.py $pythonOptions | bgzip -c > ${IN_VCF%.vcf.gz}.filtered.vcf.gz
 
   tabix -p vcf -f ${IN_VCF%.vcf.gz}.filtered.vcf.gz
 
   VCF_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.vcf.gz)
   IDX_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.vcf.gz.tbi)
 
-
-
-
-  dx-jobutil-add-output outFiles "$VCF_UP" --class=array:file
-  dx-jobutil-add-output outFiles "$IDX_UP" --class=array:file
+  dx-jobutil-add-output filtered_vcf "$VCF_UP" --class=array:file
+  dx-jobutil-add-output filtered_vcf_idx "$IDX_UP" --class=array:file
 
   rm ${IN_VCF%.*}*
 
@@ -57,7 +83,11 @@ export -f parallel_download_and_process
 
 main() {
 
-    echo "Value of vcf: '${vcf[@]}'"
+    cd $HOME
+
+    if test "$gene_list"; then
+  		dx download "$gene_list" -o gene_list
+  	fi
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse, gzip
+import argparse, gzip, re
 
 def is_number(S):
     try:
@@ -15,12 +15,16 @@ def parseArguments():
 
 	parser.add_argument('-F', action='store',
                         dest='frequency',
-                        type=float, default=1.0,
+                        type=float,
 						help='Filter Variants to those with a frequency less than input.  VEP must be set to filter by public database frequencies.' )
 
 	parser.add_argument('-i', action='store', dest='VEP_Impact',
                         help='Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High',
                         type=int)
+
+	parser.add_argument('--b_snp', action='store_true', default=False,
+                        dest='b_snp',
+                        help='Restrict to BiAllelic SNPs')
 
 	parser.add_argument('--Cannonical', action='store_true', default=False,
                         dest='Cannonical',
@@ -150,8 +154,18 @@ def parse_INFO(line):
 		return ClinVar_fields
 
 def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
-
-	info_field = line.split('\t')[7].split(";")
+	info_field=[]
+	if cli_arguments.b_snp:
+		fields = line.split('\t')
+		pattern = re.compile("^[AGCT]$")
+		if "," in fields[4]:
+			return False
+		elif  pattern.match(fields[4]) and pattern.match(fields[3]):
+			info_field = fields[7].split(";")
+		else:
+			return False
+	else:
+		info_field = line.split('\t')[7].split(";")
 	geneList=[]
 	frequency=[]
 	annotations=[]

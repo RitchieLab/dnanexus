@@ -174,9 +174,9 @@ set of 18,992 markers used in calculating IBD.  Note that all pairwise
 individuals are provided in the genome report; it is up to the user to specify 
 an appropriate relatedness threshold for his/her analysis.
 
-The PCA analysis results are provided as an eigenstrat (6.0) eigenvector file
+The PCA analysis results are provided as an eigenstrat (6.1.4) eigenvector file
 using fast eigenvector approximation projected onto the 1000 genomes data 
-(5/8/2013 release).  For PCA, we used only SNPs with a MAF >1%
+(lifted over b37).  For PCA, we used only SNPs with a MAF >1%
 and a Hardy-Weinberg equilibrium p-value less than 0.000001.  We then performed 
 LD pruning exactly as above for IBD.  This yielded a final set of 32,618 markers 
 used in calculating the principal components.  We did not perform any outlier 
@@ -189,81 +189,27 @@ markers (GHS_only subfolder).
 VCF Annotation and LOF Rollup
 =============================
 
-The masked sites-only VCF was annotated in order to determine if each variant
+The masked VCFs were annotated in order to determine if each variant
 is potentially detrimental and should receive increased scrutiny from researchers.
-We have designed the loss of function rollups to be comparable to the LOF rollups
-provided alongside the pVCF files released by Regeneron.  From the RGN readme 
-files, there are 5 levels of LOF rollups:
+The LOF roll ups are based off of what types of requests were made on the 50k release 
+by the Return of Results project and request by other researchers. As Regeneron proved 5
+levels of rollups we have as well.
 
-- M1: LOF variants only
-- M2: LOF and NS variants (MAF<1%)
-- M3: LOF and predicted deleterious NS variants (5 algorithms; no MAF cutoff)
-- M4: LOF and predicted deleterious NS variants (1 algorithm; MAF<1%)
-- M5: LOF variants only (MAF<1%)
+
+- M1: VEP: Moderate Impact (Highest annotation from Ensembl or RefSeq), MAF<5%, present in CLINVAR, PRESENT in HGMD
+- M2: VEP: HIGH, (Highest annotation from Ensembl or RefSeq) MAF<1%, CLINVAR 1*+ Not Begnin, HGMD (DFP, DP, DM? or DM)
+- M3: VEP: HIGH, (Cannonical RefSeq transcripts) MAF<1%, CLINVAR 2*+ (Pathogenic, Likely Pathogenic), HGMD (DM: Disease Causing)
+- M4: All Varaints MAF<1%
+- M5: All Varaints MAF<.1%
 
 Within the annotated VCF, we provide the following variant-level annotations
 that are then used to determine if a particular variant is loss of function, 
 nonsynonymous, or deleterious.  The annotations provided are:
- - SNPEff 4.1l using GRCh 37 and Ensembl 75 databases.
- - dbNSFP 2.9
- - SIFT 5.2.2
- - CLINVAR, 10/2015 release
-
-For each annotation, each variant is annotated in a style similar to the SNPEff
-"ANN" field, see http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf for
-details.  Specifically, each alternate allele is annotated and those annotations
-are combined for each line.  The annotated VCF file will match all of the other
-VCF files line for line.
-
-We used the following definitions of the terms used in the RGN readme above:
-- Loss Of Function Variant
-  A variant that has one of the following SNPEff roles:
-    - chromosome_number_variation
-    - exon_loss_variant
-    - frameshift_variant
-    - stop_gained
-    - stop_lost
-    - start_lost
-    - splice_acceptor_variant
-    - splice_donor_variant
-    - rare_amino_acid_variant
-    - transcript_ablation
-    - disruptive_inframe_insertion
-    - disruptive_inframe_deletion
-  Note that this should consist of all SNPEff roles with a HIGH impact modifier,
-  plus the addition of the disruptive insertion/deletion.
-- Nonsynonymous Variant
-  A variant that is identified as a Loss of Function variant above, or has one 
-  of the following SNPEff roles:
-    - missense_variant
-    - inframe_insertion
-    - inframe_deletion
-    - 5_prime_UTR_truncation
-    - 3_prime_UTR_truncation
-    - splice_region_variant
-    - splice_branch_variant
-    - coding_sequence_variant
-    - regulatory_region_ablation
-    - TFBS_ablation
-    - 5_prime_UTR_premature_start_codon_gain_variant
-    - non_canonical_start_codon
-- Predicted Deleterious
-  A variant is predicted deleterious if a consensus of M (user-specified) 
-  algorithms determine that a variant is deleterious.  The algorithms used to
-  determine deleteriousness are provided by dbNSFP; this means that predicted
-  deleteriousness is limited to SNPs only.  The algorithms available for 
-  prediction of effect are as follows (an asterisk indicates that this algorithm
-  is used in generating the M1-M5 VCF files released):
-    * SIFT
-    * PolyPhen2 (HDIV training set)
-    * PolyPhen2 (HVAR training set)
-    * LRT
-    * MutationTaster
-    - MutationAssessor
-    - FATHMM
-    - MetaSVM
-    - MetaLR
-    - PROVEAN
+ - VEP annotation using Ensembl Tools Release-87, for GRCh 38, anntoated with 
+	Ensembl and Refseq annotations, utilizing the merged data set and the everything flag
+ - dbNSFP v3.3
+ - CLINVAR, Jan 2017 release
+ - HGMD 2016.4 b38 release
 
 If multiple annotations exist for a given variant (as would be in the case of 
 multiallelic variants or variant annotations specific to a transcript), a variant
@@ -273,23 +219,5 @@ annotated in SNPEff as "C|exon_loss_variant,G|synonymous_variant", this variant
 would be considered to meet the definition of loss of function, even though only
 one possible allele confers lost function.
 
-Given the above definition, a variant is in each of the following classes if the
-following conditions are met:
+Note that above, M5 is a subset of M4, and M2 is a subset of M1 and M4, M3 is subset of M2.
 
-M1: Loss of Function Variant
-M2: Loss of Function Variant OR Nonsynonymous Variant with MAF < 1%
-M3: Loss of Function Variant OR Predicted Deleterious with all 5 algorithms
-M4: Loss of Function Variant OR Predicted Deleterious with 1 algorithm and MAF <1%
-M5: Loss of Function Variant with MAF<1%
-
-Note that above, M5 is a subset of M1, and M1 is a subset of M2, M3, and M4.  
-M2, M3, and M4 are neither subsets nor supersets of each other.
-
-The LOF rollups are provided only as sites-only VCFs.  If a user wishes to 
-generate a more specific loss of function set that is not provided, the app 
-"Generate LOF Rollup" will take the annotated sites-only VCF and filter the 
-results according to the SNPEff, dbNSFP, or CLINVAR annotations.  In order to 
-obtain the full VCF corresponding to the appropriate LOF mask, a user can use
-the "bcftools isec" command, or the GATK SelectVariants tool.  If using the 
-latter, the app "Subset VCF" (named "select_variants") provides a mechanism
-to generate the full VCF entirely in DNANexus.

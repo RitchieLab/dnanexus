@@ -3,81 +3,81 @@
 import argparse, gzip, re
 
 def is_number(S):
-    try:
-        float(S)
-        return True
-    except ValueError:
-        return False
+	try:
+		float(S)
+		return True
+	except ValueError:
+		return False
 
 def parseArguments():
 
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('-F', action='store',
-                        dest='frequency',
-                        type=float,
+						dest='frequency',
+						type=float,
 						help='Filter Variants to those with a frequency less than input.  VEP must be set to filter by public database frequencies.' )
 
 	parser.add_argument('-i', action='store', dest='VEP_Impact',
-                        help='Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High',
-                        type=int)
+						help='Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High',
+						type=int)
 
 	parser.add_argument('--b_snp', action='store_true', default=False,
-                        dest='b_snp',
-                        help='Restrict to BiAllelic SNPs')
+						dest='b_snp',
+						help='Restrict to BiAllelic SNPs')
 
 	parser.add_argument('--Cannonical', action='store_true', default=False,
-                        dest='Cannonical',
-                        help='Do restrict VEP IMPACT Filtering to Cannonical transcripts. Defualt is select highest overal IMPACT.')
+						dest='Cannonical',
+						help='Do restrict VEP IMPACT Filtering to Cannonical transcripts. Defualt is select highest overal IMPACT.')
 
 	parser.add_argument('--Ensembl', action='store_true', default=False,
-                        dest='Ensembl',
-                        help='Use Transcripts from Ensembl for VEP filtration.  Default is to select Transcripts from RefSeq.')
+						dest='Ensembl',
+						help='Use Transcripts from Ensembl for VEP filtration.  Default is to select Transcripts from RefSeq.')
 
 	parser.add_argument('--RefSeq', action='store_true', default=False,
-                        dest='RefSeq',
-                        help='Use Transcripts from RefSeq for VEP filtration.  Default is to select Transcripts from RefSeq.')
+						dest='RefSeq',
+						help='Use Transcripts from RefSeq for VEP filtration.  Default is to select Transcripts from RefSeq.')
 
 	parser.add_argument('-c', action='store', dest='clinVarStar',
-                        help='ClinVar Star Level to Filter to.  Must be set to select ClinVar variants.  Set to 0 to retrive all',
-                        type=int)
+						help='ClinVar Star Level to Filter to.  Must be set to select ClinVar variants.  Set to 0 to retrive all',
+						type=int)
 
 	parser.add_argument('-p', action='store', dest='ClinicalSignificance',
-                        help='Highest ClinVar Significance to filter too: 8="Pathogenic", 7="Likely pathogenic", 6="Drug Response", 5="Protective",' \
+						help='Highest ClinVar Significance to filter too: 8="Pathogenic", 7="Likely pathogenic", 6="Drug Response", 5="Protective",' \
 						'4="Risk Factor" or "association" or "Affects", 3="Uncertain Significance" or "not provided" 2="Likely benign" 1="Benign"',
-                        type=int)
+						type=int)
 
 	parser.add_argument('--HGMD', action='store', type=int,
-                        dest='HGMD',
-                        help='HIGHEST Include variants from HGMD. 6=DM, 5=DM?, 4=DP, 3=DFP, 2=FTV, 1=FP')
+						dest='HGMD',
+						help='HIGHEST Include variants from HGMD. 6=DM, 5=DM?, 4=DP, 3=DFP, 2=FTV, 1=FP')
 
 	parser.add_argument('--vcf_file', action='store', type=str,
-                        dest='vcf_file',
-                        help='VCF.gz File to Filter')
+						dest='vcf_file',
+						help='VCF.gz File to Filter')
 
 	parser.add_argument('--gene_list', action='store', type=str,
-                        dest='gene_list',
-                        help='File List of Genes to Filter To. One gene per line. Note: VEP_Impact must be set.')
+						dest='gene_list',
+						help='File List of Genes to Filter To. One gene per line. Note: VEP_Impact must be set.')
 
 	return parser.parse_args()
 
 def getStar(ReviewStatus):
-    ReviewStatus=ReviewStatus.strip().lower()
-    if ReviewStatus == 'classified_by_single_submitter':
-        return 1
-    if ReviewStatus == 'criteria_provided,_single_submitter':
-        return 1
-    if ReviewStatus == 'classified_by_multiple_submitters':
-        return 2
-    if ReviewStatus == 'criteria_provided,_multiple_submitters,_no_conflicts':
-        return 2
-    if ReviewStatus == 'reviewed_by_expert_panel':
-        return 3
-    if ReviewStatus == 'reviewed_by_professional_society':
-        return 4
-    if ReviewStatus == 'practice_guideline':
-        return 4
-    return 0
+	ReviewStatus=ReviewStatus.strip().lower()
+	if ReviewStatus == 'classified_by_single_submitter':
+		return 1
+	if ReviewStatus == 'criteria_provided,_single_submitter':
+		return 1
+	if ReviewStatus == 'classified_by_multiple_submitters':
+		return 2
+	if ReviewStatus == 'criteria_provided,_multiple_submitters,_no_conflicts':
+		return 2
+	if ReviewStatus == 'reviewed_by_expert_panel':
+		return 3
+	if ReviewStatus == 'reviewed_by_professional_society':
+		return 4
+	if ReviewStatus == 'practice_guideline':
+		return 4
+	return 0
 
 def getimpact_level(IMPACT):
 	IMPACT=IMPACT.strip().upper()
@@ -276,10 +276,15 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 					annotations.append(True)
 				else:
 					annotations.append(False)
+
 	if not any(annotations):
-		return False
-	elif cli_arguments.gene_list is not None:
-		if not any(geneList):
+		if (cli_arguments.VEP_Impact is not None or cli_arguments.HGMD is not None or cli_arguments.clinVarStar is not None):
+			return False
+		elif cli_arguments.gene_list is not None:
+			if not any(geneList):
+				return False
+	if len(frequency)>0:
+		if not any(frequency):
 			return False
 	return True
 

@@ -3,7 +3,7 @@
   "title": "filter_annotated_vcf",
   "summary": "filter_annotated_vcf",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "inputSpec": [
     {
       "name": "vcf",
@@ -32,7 +32,7 @@
       "default" : 1.0,
       "optional" : true,
       "group" : "MAF Options"
-	    },
+      },
       {
         "name" : "bi_snps_only",
         "label" : "Output BiAllelic SNPs only",
@@ -62,7 +62,6 @@
       "class" : "int",
       "optional" : true,
       "group" : "VEP Options",
-      "default" : 0,
       "help": "Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High. Transcript must be set to use option. "
     },
     {

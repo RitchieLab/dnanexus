@@ -1,4 +1,4 @@
-Last revised: 03/02/2017
+Last revised: 03/06/2017
 
 Please note: Due to a problem that arose during merging of gvcf files, 1 GHS samples (out of 61,019 in the F60K) did not get joint called with the rest of the samples and thus are not present in the F50K jVCF files as well as downstream files (e.g. plink files, PCA etc). The 6 missing samples are listed below and will be included in joint calling during the next data freeze.
 GHS_PT984567_182976186
@@ -11,20 +11,20 @@ Any folder not listed in this directory structure will contain either temporary
 data or old data from a failed step in the process and can be safely ignored.
 
 +-bqsr
-|   Contains the tables needed for Base Quality Score Recalibration.
-|   Not intended for use in analysis.
+| Contains the tables needed for Base Quality Score Recalibration.
+| Not intended for use in analysis.
 +-gvcf
-|   Contains the individual genomic VCF files as output by GATK's HaplotypeCaller
-|   Also contains the merged gvcf files (both tiers)
-|   Not intended for use in analysis.
+| Contains the individual genomic VCF files as output by GATK's HaplotypeCaller
+| Also contains the merged gvcf files (both tiers)
+| Not intended for use in analysis.
 +-IBD
-|   Contains the relatedness estimate obtained from PLINK.  See the "IBD and PCA"
-|   section of this document for details on how this estimate was obtained.
+| Contains the relatedness estimate obtained from PLINK.  See the "IBD and PCA"
+| section of this document for details on how this estimate was obtained.
 +-LOF
-|   Contains the VCF LOF rollups at various levels.  The LOF rollups are
-|   a subset of variants that meet a given criteria.  See the "VCF Annotation and
-|   LOF Rollup" section for details on how these files are created and how to use
-|   them effectively.
+|  Contains the VCF LOF rollups at various levels.  The LOF rollups are
+|  a subset of variants that meet a given criteria.  See the "VCF Annotation and
+|  LOF Rollup" section for details on how these files are created and how to use
+| them effectively.
 +-PCA
 | | Contains the principal component eigenvectors and eigenvalues as returned 
 | | by eigenstrat, as well as the results of genetically informed ancestry determination.
@@ -32,7 +32,7 @@ data or old data from a failed step in the process and can be safely ignored.
 | | generated, as well as "Genetically informed ancestry determination" section for more 
 | | details on how the ancestry file was generated.
 | +-GHS_only/onTarget/masked/projected
-| |   Same as above but pr
+| | Same as above but pr
 +-PLINK
 | | Contains PLINK files obtained from VCF to PLINK conversion as output by 
 | | PLINK 1.9's "--make-bed" argument.  For all PLINK files, the single ID
@@ -42,17 +42,17 @@ data or old data from a failed step in the process and can be safely ignored.
 | | The PLINK arguments in common to all of the following subfolders is:
 | | --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter -allow-no-sex
 | +-all
-| |   Contains all (passed) variants in the PLINK file.  Each variant site
-| |   includes the referent allele and the most common allele, with less frequent
-| |   alleles at multiallelic sites set to missing.
+| | Contains all (passed) variants in the PLINK file.  Each variant site
+| | includes the referent allele and the most common allele, with less frequent
+| | alleles at multiallelic sites set to missing.
 | +-biallelic
-| |   As above, but only includes variants that are truly biallelic (after 
-| |   applying any genotype level filtration).  The additional argument to  PLINK is:
-| |   --biallelic-only
+| | As above, but only includes variants that are truly biallelic (after 
+| | applying any genotype level filtration).  The additional argument to  PLINK is:
+| | --biallelic-only
 | +-snps
-| |   As above, but only containing variants that are biallelic SNPs (after 
-| |   filtration).  The additional PLINK arguments were:
-| |   --biallelic-only --snps-only
+| | As above, but only containing variants that are biallelic SNPs (after 
+| | filtration).  The additional PLINK arguments were:
+| | --biallelic-only --snps-only
 | +-GHS_only
 | | +-all
 | | +-biallelic
@@ -67,50 +67,76 @@ data or old data from a failed step in the process and can be safely ignored.
 | | excluded).  All VCF files within these directories should contain exactly 
 | | the same number of variants; the differences lie in the annotations and 
 | | filtration applied to each variant.
-| +-filtered_vcf
-| |   Contains the VCF after applying both the Variant Quality Score Recalibration
-| |   filter as well as a genotype-level quality filter.  See the "VCF QC" section
-| |   of this document for details on Quality Control of VCF files.  All data from
-| |   the raw VCF is contained; only annotations of substandard quality have been
-| |   added.  This is the VCF recommended for most analyses.  Note that the 
-| |   AC, AF, and AN annotations in the INFO field do not take the genotype-level
-| |   filters into account.  For those annotations calculated correctly, please 
-| |   use the "masked" versions of the VCF files.
-| +-masked_vcf
-| |   Contains the VCF after applying both VQSR and genotype-level quality filters
-| |   as above.  Variant calls failing the genotype-level filters have been
-| |   manually set to no-call to accommodate tools that cannot read the "FT" 
-| |   genotype annotation.  Additionally, the AC, AF, and AN annotations in the
-| |   INFO field are updated to accommodate the genotype-level filters used.
-| |   Variant level filters are not removed from this file, but the annotations
-| |   still exist in the FILTER column of the VCF.
-| +-raw_vcf
-| |   Contains the VCF as output by GATK's GenotypeGVCFs tool.  This is not 
-| |   intended for routine analysis, but is provided as a means for a user to 
-| |   perform his/her own QC of the VCF file if the QC procedures defined here 
-| |   are deemed inadequate.  Note that only chromosomal-level VCFs are provided
-| |   for the raw VCF files.
-| +-vcf_headers
+| +-onTarget
+| | onTarget Variants are the variants that appear withen the region target by
+| | the exon capture.
+| | +-annotated
+| | | Contains the annoated filtered VCF.  See the "VCF Annotation 
+| | | and LOF Rollup" section of this document for details on the annotations 
+| | | available.  NOTE: This IS based off of the masked sites-only VCF
+| | +-filtered_vcf
+| | | Contains the VCF after applying both the Variant Quality Score Recalibration
+| | | filter as well as a genotype-level quality filter.  See the "VCF QC" section
+| | | of this document for details on Quality Control of VCF files.  All data from
+| | | the raw VCF is contained; only annotations of substandard quality have been
+| | | added.  This is the VCF recommended for most analyses.  Note that the 
+| | | AC, AF, and AN annotations in the INFO field do not take the genotype-level
+| | | filters into account.  For those annotations calculated correctly, please 
+| | | use the "masked" versions of the VCF files.
+| | +-masked_vcf
+| | | Contains the VCF after applying both VQSR and genotype-level quality filters
+| | | as above.  Variant calls failing the genotype-level filters have been
+| | | manually set to no-call to accommodate tools that cannot read the "FT" 
+| | | genotype annotation.  Additionally, the AC, AF, and AN annotations in the
+| | | INFO field are updated to accommodate the genotype-level filters used.
+| | | Variant level filters are not removed from this file, but the annotations
+| | | still exist in the FILTER column of the VCF.
+| | +-raw_vcf
+| | | Contains the VCF as output by GATK's GenotypeGVCFs tool.  This is not 
+| | | intended for routine analysis, but is provided as a means for a user to 
+| | | perform his/her own QC of the VCF file if the QC procedures defined here 
+| | | are deemed inadequate.  Note that only chromosomal-level VCFs are provided
+| | | for the raw VCF files.
+| +-padded
+| | +-annotated
+| | | The VCF corresponding to the "annotated" folder above.
+| | +-filtered_vcf
+| | | The VCF corresponding to the "filtered_vcf" folder above.
+| | +-masked_vcf
+| | | The VCF corresponding to the "masked_vcf" folder above.
+| | +-raw_vcf
+| |   The VCF corresponding to the "raw_vcf" folder above.
++-vcf_headers
+| +-onTarget
 | | | Contains sites-only VCF files (first 8 columns) corresponding to the 
 | | | various VCF files mentioned above.  Sites-only files can be useful for 
 | | | obtaining variant-level information about VCF files without needing to
 | | | download the large VCF files that contain all genetic information.
 | | +-annotated
-| | |   Contains the masked sites-only VCF file with added annotations used 
-| | |   in determining LOF rollups.  See the "VCF Annotation and LOF Rollup" 
-| | |   section of this document for details on the annotations available and
-| | |   how they are used to generate an LOF rollup file.
+| | | Contains the annoated filtered sites-only VCF.  See the "VCF Annotation 
+| | | and LOF Rollup" section of this document for details on the annotations 
+| | | available.  NOTE: This is the not based off of the masked sites-only VCF
 | | +-filtered
-| | |   The sites-only VCF corresponding to the "filtered_vcf" folder above.
+| | | The sites-only VCF corresponding to the "filtered_vcf" folder above.
 | | +-masked
-| | |   The sites-only VCF corresponding to the "masked_vcf" folder above.
+| | | The sites-only VCF corresponding to the "masked_vcf" folder above.
 | | +-raw
-| |     The sites-only VCF corresponding to the "raw_vcf" folder above.
+| |   The sites-only VCF corresponding to the "raw_vcf" folder above.
+| +-padded
+| | +-annotated
+| | | The sites-only VCF corresponding to the "annotated" folder above under
+| | | onTargert\annoated.
+| | +-filtered
+| | | The sites-only VCF corresponding to the "filtered_vcf" folder above.
+| | +-masked
+| | | The sites-only VCF corresponding to the "masked_vcf" folder above.
+| | +-raw
+| |   The sites-only VCF corresponding to the "raw_vcf" folder above.
 +-vqsr
-   Contains the supporting files necessary to run Variant Quality Score
-   Recalibration, both SNP and INDEL.  Not intended for general analysis
-   use, but can be informative in assessing the effectiveness of the 
-   VQSR filtration step.
+ Contains the supporting files necessary to run Variant Quality Score
+ Recalibration, both SNP and INDEL.  Not intended for general analysis
+ use, but can be informative in assessing the effectiveness of the 
+ VQSR filtration step.
      
 VCF QC
 ======

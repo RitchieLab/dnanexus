@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse, gzip, re
+import argparse, gzip, re, json,copy
 from collections import OrderedDict
 
 def is_number(S):
@@ -63,6 +63,10 @@ def parseArguments():
 	parser.add_argument('--sample_list', action='store', type=str,
 						dest='sample_list',
 						help='File List of Samples to Filter To. One gene per line. Must be in format GHS_PT###_####')
+
+	parser.add_argument('--out_file', action='store', type=str,
+						dest='out_file',
+						help='Prefix of output files')
 
 	return parser.parse_args()
 
@@ -132,59 +136,78 @@ def getClinVar_level(ClinicalSignificance):
 		return 1
 	return 0
 
+def fill_dict(data_list, ordered_data_dict):
+	copyDict=copy.deepcopy(ordered_data_dict)
+	for i, d in enumerate(ordered_data_dict.keys()):
+		if i>=len(data_list):
+			continue
+		if data_list[i] is None:
+			continue
+		elif data_list[i].strip()=="":
+			continue
+		else:
+			copyDict[d]=data_list[i]
+	return copyDict
+
 def parse_INFO(line):
 	fields = line.split(':')[-1].replace('"',"").replace("'","").replace("'","").replace(">","").strip().split("|")
 	if line.startswith("##INFO=<ID=CSQ"):
 		VEP_Fields=OrderedDict()
 		VEP_Fields["MAF"]=set()
 		for i,f in enumerate(fields):
-			if f=="IMPACT":
-				VEP_Fields["IMPACT"]=i
-			elif f=="SYMBOL":
-				VEP_Fields["SYMBOL"]=i
-			elif f=="Feature":
-				VEP_Fields["Feature"]=i
-			elif f=="CANONICAL":
-				VEP_Fields["CANONICAL"]=i
-			elif f.endswith("MAF"):
+			VEP_Fields[f]=i
+		for i,f in enumerate(fields):
+			if f.endswith("MAF"):
 				VEP_Fields["MAF"].add(i)
 		return VEP_Fields
 	elif line.startswith("##INFO=<ID=ClinVar"):
 		ClinVar_fields=OrderedDict()
 		for i,f in enumerate(fields):
-			if f=="ClinicalSignificance":
-				ClinVar_fields["ClinicalSignificance"]=i
-			elif f=="ReviewStatus":
-				ClinVar_fields["ReviewStatus"]=i
+			ClinVar_fields[f]=i
 		return ClinVar_fields
 
-def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
-	returnDict = dict()
-	info_field=[]
 
-	all_fields = line.split('\t')
+def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
+	info_field=[]
 	alleles=[all_fields[3]]
+	returnDict=dict()
+
+	returnDict["CHROM"]=all_fields[0].strip()
+	returnDict["POS"]=all_fields[1].strip()
+	returnDict["ID"]=all_fields[2].strip()
+	returnDict["REF"]=all_fields[3].strip()
+	returnDict["ALT"]=all_fields[4].strip()
+	returnDict["UNIQ_IDs"]=set()
+
 	if cli_arguments.b_snp:
-		all_fields = line.split('\t')
 		pattern = re.compile("^[AGCT]$")
 		if "," in fields[4]:
 			return None
 		elif  pattern.match(all_fields[4]) and pattern.match(all_fields[3]):
 			info_field = all_fields[7].split(";")
-			altAllele=all_fields[4].strip()
-			returnDict["ALT"]=altAllele
+			alleles.extend(all_fields[4].strip())
+			returnDict["BI_ALLELIC"]=True
 		else:
 			return None
 	else:
 
 		info_field = all_fields[7].strip().split(";")
 		if "," in all_fields[4]:
-			altAllele.extend([all_fields[4].strip().split(";")])
+			alleles.extend(all_fields[4].strip().split(","))
+
+			returnDict["BI_ALLELIC"]=False
+
+
 		else:
-			altAllele.extend([all_fields[4].strip()])
+			alleles.extend([all_fields[4].strip()])
+			returnDict["BI_ALLELIC"]=True
+	returnDict["ALL_ALLELES"]=alleles
+	returnDict["PASS_ALLELES"]=set()
+
 	geneList=[]
 	frequency=[]
 	annotations=[]
+
 	for field in info_field:
 		if field.startswith("AF"):
 			AFs = field.replace("AF=","").split(",")
@@ -197,17 +220,28 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						frequency.append(False)
 					else:
 						frequency.append(True)
+						alleleDict=dict()
+						alleleDict["ALLELE_IDs"]=set()
+						alleleDict["FRQ"]=[float(f)]
+						returnDict[alleles[frq_index]]=alleleDict
 				else:
 					return None
 			if len(frequency)>0:
 				if not any(frequency):
 					return None
 		elif field.startswith("CSQ"):
+			CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 			if cli_arguments.VEP_Impact is not None:
-				CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
+					if Cs[0] not in returnDict:
+						continue
+					alleleDict=returnDict[Cs[0]]
+					if "VEP" in alleleDict:
+						continue
 					for f_field in VEP_Fields["MAF"]:
+						#print VEP_Fields["MAF"]
+						#print f_field
 						Cs[f_field]=Cs[f_field].strip("&").strip(":").replace("&&","&").replace("&&&","&").replace("&&","&")
 						if Cs[f_field]=="":
 							continue
@@ -220,17 +254,21 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 									pubMAFs={Cs[f_field].split(":")[0]:Cs[f_field].split(":")[1]}
 								for a in pubMAFs.keys():
 									if a==Cs[0]:
-										if pubMAFs[a]=="0":
+										if float(pubMAFs[a])==0:
 											frequency.append(False)
 										elif float(pubMAFs[a])>cli_arguments.frequency:
 											frequency.append(False)
 										else:
 											frequency.append(True)
+											alleleDict["FRQ"].append(float(pubMAFs[a]))
 							elif is_number(Cs[f_field]):
-								if float(Cs[f_field])>cli_arguments.frequency:
+								if float(Cs[f_field])==0:
+									frequency.append(False)
+								elif float(Cs[f_field])>cli_arguments.frequency:
 									frequency.append(False)
 								else:
 									frequency.append(True)
+									alleleDict["FRQ"].append(float(Cs[f_field]))
 					if len(frequency)>0:
 						if not any(frequency):
 							return None
@@ -240,6 +278,7 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
+								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -248,6 +287,7 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
+								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -259,6 +299,7 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
+								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -267,6 +308,7 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
+								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -275,24 +317,65 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 					if cli_arguments.gene_list is not None:
 						if not any(geneList):
 							return None
+					alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+					returnDict[Cs[0]]=alleleDict
+			else:
+				for i,CSQ in enumerate(CSQs):
+					Cs=CSQ.split("|")
+					if Cs[0] not in returnDict:
+						continue
+					alleleDict=returnDict[Cs[0]]
+					if "VEP" in alleleDict:
+						continue
+					if Cs[VEP_Fields["Feature"]].startswith("E"):
+						continue
+					if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
+						if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
+							annotations.append(True)
+							returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+						else:
+							annotations.append(False)
+						if cli_arguments.gene_list is not None:
+							if Cs[VEP_Fields["SYMBOL"]] in geneSet:
+								geneList.append(True)
+				alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+				returnDict[Cs[0]]=alleleDict
 		elif field.startswith("ClinVar.TSV.Jan2017="):
+			clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
 			if cli_arguments.clinVarStar is not None:
-				clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
 				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
 					annotations.append(False)
-				elif getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
+				if clinvar[0] not in returnDict:
+					continue
+				alleleDict=returnDict[clinvar[0]]
+				if getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
 					if getClinVar_level(clinvar[ClinVar_fields["ClinicalSignificance"]])>=cli_arguments.ClinicalSignificance:
 						annotations.append(True)
+						returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 					else:
 						annotations.append(False)
 				else:
 					annotations.append(False)
+			alleleDict["ClinVar"]=fill_dict(clinvar, ClinVar_fields)
+			returnDict[clinvar[0]]=alleleDict
 		elif field.startswith("CLASS="):
 			if cli_arguments.HGMD is not None:
 				if getHGMD_level(field.replace("CLASS=",""))>=cli_arguments.HGMD:
 					annotations.append(True)
+					returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
 				else:
 					annotations.append(False)
+			returnDict["HGMD_CLASS"]=field.replace("CLASS=","")
+		elif field.startswith("GENE="):
+			returnDict["HGMD_GENE"]=field.replace("GENE=","")
+		elif field.startswith("STRAND="):
+			returnDict["HGMD_STRAND"]=field.replace("STRAND=","")
+		elif field.startswith("PROT="):
+			returnDict["HGMD_PROT"]=field.replace("PROT=","")
+		elif field.startswith("DB="):
+			returnDict["HGMD_DB"]=field.replace("DB=","")
+		elif field.startswith("PHEN="):
+			returnDict["HGMD_PHEN"]=field.replace("PHEN=","")
 
 	if not any(annotations):
 		if (cli_arguments.VEP_Impact is not None or cli_arguments.HGMD is not None or cli_arguments.clinVarStar is not None):
@@ -303,6 +386,36 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 	if len(frequency)>0:
 		if not any(frequency):
 			return None
+	formatFields=all_fields[8].split(":")
+	GT=-1
+	for i, f in enumerate(formatFields):
+		if f=="GT":
+			GT=i
+			break
+	if len(list(returnDict["PASS_ALLELES"]))==0:
+		return None
+	for i, s in enumerate(all_fields):
+		if i>8:
+			if i in IDs:
+				GT_fields=s.split(":")[GT].split("/")
+				if GT_fields[0]=="." or GT_fields[1]==".":
+					continue
+				if GT_fields[0]!="0" and GT_fields[0] in returnDict["PASS_ALLELES"]:
+					returnDict[alleles[GT_fields[0]]]["ALLELE_IDs"].add(IDs[i])
+					returnDict["UNIQ_IDs"].add(IDs[i])
+				if GT_fields[1]!="0" and GT_fields[1] in returnDict["PASS_ALLELES"]:
+					returnDict[alleles[GT_fields[1]]]["ALLELE_IDs"].add(IDs[i])
+					returnDict["UNIQ_IDs"].add(IDs[i])
+	returnDict["PASS_ALLELES"]=list(returnDict["PASS_ALLELES"])
+	if len(list(returnDict["UNIQ_IDs"]))==0:
+		return None
+	returnDict["UNIQ_IDs"]=list(returnDict["UNIQ_IDs"])
+	for a in alleles:
+		if a in returnDict:
+			if len(list(returnDict[a]["ALLELE_IDs"]))==0:
+				returnDict.pop(a,None)
+			else:
+				returnDict[a]["ALLELE_IDs"]=list(returnDict[a]["ALLELE_IDs"])
 	return returnDict
 
 
@@ -310,12 +423,17 @@ def main():
 
 	cli_arguments =  parseArguments()
 
+	outDict = dict()
+	outDict["UNIQ_IDs"]=set()
+
+	outDict["CLI_ARGUMENTS"]=str(cli_arguments)
+
 	if not cli_arguments.vcf_file.endswith("vcf.gz"):
 		print "Not a bgziped vcf file"
 		return
 	geneSet=set()
 	if cli_arguments.gene_list is not None:
-		print cli_arguments.gene_list
+		#print cli_arguments.gene_list
 		geneList = open(cli_arguments.gene_list,'r')
 		for line in geneList:
 			line=line.strip().upper()
@@ -323,9 +441,10 @@ def main():
 				continue
 			else:
 				geneSet.add(line)
+	outDict["INPUT_GENE_LIST"]=list(geneSet)
 	sampleSet=set()
 	if cli_arguments.sample_list is not None:
-		print cli_arguments.sample_list
+		#lsprint cli_arguments.sample_list
 		sampleList = open(cli_arguments.sample_list,'r')
 		for line in sampleList:
 			line=line.strip().upper()
@@ -341,24 +460,40 @@ def main():
 
 	for line in vcf_file:
 		if line.startswith("#"):
-			print line.strip()
+			#print line.strip()
 			if line.startswith("##INFO=<ID=CSQ"):
 				VEP_Fields=parse_INFO(line.strip())
+				outDict["VEP_FIELDS"]=list(VEP_Fields.keys())
 			elif line.startswith("##INFO=<ID=ClinVar"):
 				ClinVar_fields=parse_INFO(line.strip())
+				outDict["CLINVAR_FIELDS"]=list(ClinVar_fields.keys())
 			elif line.startswith("#CHROM"):
 				fields = [x.strip() for x in line.strip().split("\t")]
 				for i,f in enumerate(fields):
 					if f in sampleSet:
 						IDs[i]=f
 				if not IDs:
-					print "No Samples found"
+					#print "No Samples found"
 					return
-
-		elif filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
-			print line.strip()
-			pass
+				else:
+					outDict["INPUT_SAMPLES"]=list(sampleSet)
+					outDict["VCF_SAMPLES"]=list(IDs.values())
+					outDict["HGMD_CLASS"]="Mutation Category, https://portal.biobase-international.com/hgmd/pro/global.php#cats"
+					outDict["HGMD_GENE"]="Gene symbol"
+					outDict["HGMD_STRAND"]="Gene strand"
+					outDict["HGMD_PROT"]="Protein annotation"
+					outDict["HGMD_DB"]="dbSNP identifier, build 137"
+					outDict["HGMD_PHEN"]="HGMD primary phenotype"
+		else:
+			all_fields=line.strip().split("\t")
+			lineDict=filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs)
+			if lineDict is not None:
+				outDict["UNIQ_IDs"].update(lineDict["UNIQ_IDs"])
+				outDict[all_fields[0]+":"+all_fields[1]+":"+all_fields[3]+":"+all_fields[4]]=lineDict
 	vcf_file.close()
+	outDict["UNIQ_IDs"]=list(outDict["UNIQ_IDs"])
+	out_file_json = gzip.open(cli_arguments.vcf_file.replace(".vcf.",".filtered.json."),'w')
+	out_file_json.write(json.dumps(outDict, sort_keys=True,indent=4, separators=(',', ': ')))
 	return
 
 if __name__ == '__main__':

@@ -98,6 +98,8 @@ data or old data from a failed step in the process and can be safely ignored.
 | | | are deemed inadequate.  Note that only chromosomal-level VCFs are provided
 | | | for the raw VCF files.
 | +-padded
+| | padded include all onTarget variants, plus +/- 20bp on either side of the target
+| | regions.  
 | | +-annotated
 | | | The VCF corresponding to the "annotated" folder above.
 | | +-filtered_vcf
@@ -108,10 +110,10 @@ data or old data from a failed step in the process and can be safely ignored.
 | |   The VCF corresponding to the "raw_vcf" folder above.
 +-vcf_headers
 | +-onTarget
-| | | Contains sites-only VCF files (first 8 columns) corresponding to the 
-| | | various VCF files mentioned above.  Sites-only files can be useful for 
-| | | obtaining variant-level information about VCF files without needing to
-| | | download the large VCF files that contain all genetic information.
+| | Contains sites-only VCF files (first 8 columns) corresponding to the 
+| | various VCF files mentioned above.  Sites-only files can be useful for 
+| | obtaining variant-level information about VCF files without needing to
+| | download the large VCF files that contain all genetic information.
 | | +-annotated
 | | | Contains the annoated filtered sites-only VCF.  See the "VCF Annotation 
 | | | and LOF Rollup" section of this document for details on the annotations 
@@ -123,6 +125,10 @@ data or old data from a failed step in the process and can be safely ignored.
 | | +-raw
 | |   The sites-only VCF corresponding to the "raw_vcf" folder above.
 | +-padded
+| | Contains sites-only VCF files (first 8 columns) corresponding to the 
+| | various VCF files mentioned above.  Sites-only files can be useful for 
+| | obtaining variant-level information about VCF files without needing to
+| | download the large VCF files that contain all genetic information.  
 | | +-annotated
 | | | The sites-only VCF corresponding to the "annotated" folder above under
 | | | onTargert\annoated.
@@ -204,13 +210,10 @@ The PCA analysis results are provided as an eigenstrat (6.1.4) eigenvector file
 using fast eigenvector approximation projected onto the 1000 genomes data 
 (lifted over b37).  For PCA, we used only SNPs with a MAF >1%
 and a Hardy-Weinberg equilibrium p-value less than 0.000001.  We then performed 
-LD pruning exactly as above for IBD.  This yielded a final set of 32,618 markers 
-used in calculating the principal components.  We did not perform any outlier 
+LD pruning exactly as above for IBD. We did not perform any outlier 
 removal using eigenstrat, so PCs are given for all samples.  For a more thorough
 PCA calculation, a user may wish to recalculate the principal components based 
-only on the samples included in a given analysis. We also performed PCA excluding
-the 8 positive control samples. The same analysis yielded a final set of 32,613
-markers (GHS_only subfolder).
+only on the samples included in a given analysis. 
 
 VCF Annotation and LOF Rollup
 =============================

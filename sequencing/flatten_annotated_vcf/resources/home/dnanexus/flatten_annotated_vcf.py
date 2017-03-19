@@ -2,6 +2,7 @@
 
 import argparse, gzip, re, json,copy
 from collections import OrderedDict
+import pprint
 
 def is_number(S):
 	try:
@@ -138,7 +139,10 @@ def getClinVar_level(ClinicalSignificance):
 
 def fill_dict(data_list, ordered_data_dict):
 	copyDict=copy.deepcopy(ordered_data_dict)
-	for i, d in enumerate(ordered_data_dict.keys()):
+	copyDict.pop('MAF', None)
+	newDict=dict()
+
+	for i, d in enumerate(copyDict.keys()):
 		if i>=len(data_list):
 			continue
 		if data_list[i] is None:
@@ -146,8 +150,11 @@ def fill_dict(data_list, ordered_data_dict):
 		elif data_list[i].strip()=="":
 			continue
 		else:
-			copyDict[d]=data_list[i]
-	return copyDict
+			newDict[d]=data_list[i]
+	#print ordered_data_dict
+	#print copyDict
+	#print data_list
+	return newDict
 
 def parse_INFO(line):
 	fields = line.split(':')[-1].replace('"',"").replace("'","").replace("'","").replace(">","").strip().split("|")
@@ -168,13 +175,16 @@ def parse_INFO(line):
 
 
 def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
+	pp = pprint.PrettyPrinter(indent=4)
+
 	info_field=[]
 	alleles=[all_fields[3]]
 	returnDict=dict()
 
 	returnDict["CHROM"]=all_fields[0].strip()
 	returnDict["POS"]=all_fields[1].strip()
-	returnDict["ID"]=all_fields[2].strip()
+	if all_fields[2].strip()!=".":
+		returnDict["ID"]=all_fields[2].strip()
 	returnDict["REF"]=all_fields[3].strip()
 	returnDict["ALT"]=all_fields[4].strip()
 	returnDict["UNIQ_IDs"]=set()
@@ -210,11 +220,13 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 
 	for field in info_field:
 		if field.startswith("AF"):
+
+
 			AFs = field.replace("AF=","").split(",")
-			AFs.insert(0,0)
+			AFs.insert(0,'0')
 			for frq_index, f in enumerate(AFs):
 				if is_number(f):
-					if f=="0":
+					if f.strip()=="0" or frq_index==0 or float(f)==0:
 						frequency.append(False)
 					elif float(f)>cli_arguments.frequency:
 						frequency.append(False)
@@ -222,6 +234,8 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 						frequency.append(True)
 						alleleDict=dict()
 						alleleDict["ALLELE_IDs"]=set()
+						alleleDict["HOM_SAMPLES"]=set()
+						alleleDict["HET_SAMPLES"]=set()
 						alleleDict["FRQ"]=[float(f)]
 						returnDict[alleles[frq_index]]=alleleDict
 				else:
@@ -234,14 +248,12 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			if cli_arguments.VEP_Impact is not None:
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
-					if Cs[0] not in returnDict:
+					if not Cs[0] in returnDict:
 						continue
 					alleleDict=returnDict[Cs[0]]
 					if "VEP" in alleleDict:
 						continue
 					for f_field in VEP_Fields["MAF"]:
-						#print VEP_Fields["MAF"]
-						#print f_field
 						Cs[f_field]=Cs[f_field].strip("&").strip(":").replace("&&","&").replace("&&&","&").replace("&&","&")
 						if Cs[f_field]=="":
 							continue
@@ -275,19 +287,26 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 					if cli_arguments.Ensembl:
 						if not Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
-						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
-								annotations.append(True)
-								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-							else:
-								annotations.append(False)
-							if cli_arguments.gene_list is not None:
-								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
-									geneList.append(True)
+						if cli_arguments.Cannonical:
+							if Cs[VEP_Fields["CANONICAL"]]=="YES":
+								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
+									annotations.append(True)
+									returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+									alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+									returnDict[Cs[0]]=alleleDict
+
+								else:
+									annotations.append(False)
+								if cli_arguments.gene_list is not None:
+									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
+										geneList.append(True)
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+								returnDict[Cs[0]]=alleleDict
+
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -296,19 +315,25 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 					elif cli_arguments.RefSeq:
 						if Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
-						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
-								annotations.append(True)
-								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-							else:
-								annotations.append(False)
-							if cli_arguments.gene_list is not None:
-								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
-									geneList.append(True)
+						if cli_arguments.Cannonical:
+							if Cs[VEP_Fields["CANONICAL"]]=="YES":
+								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
+									annotations.append(True)
+									returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+									alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+									returnDict[Cs[0]]=alleleDict
+									#print Cs
+								else:
+									annotations.append(False)
+								if cli_arguments.gene_list is not None:
+									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
+										geneList.append(True)
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+								returnDict[Cs[0]]=alleleDict
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
@@ -317,32 +342,9 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 					if cli_arguments.gene_list is not None:
 						if not any(geneList):
 							return None
-					alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-					returnDict[Cs[0]]=alleleDict
-			else:
-				for i,CSQ in enumerate(CSQs):
-					Cs=CSQ.split("|")
-					if Cs[0] not in returnDict:
-						continue
-					alleleDict=returnDict[Cs[0]]
-					if "VEP" in alleleDict:
-						continue
-					if Cs[VEP_Fields["Feature"]].startswith("E"):
-						continue
-					if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-						if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
-							annotations.append(True)
-							returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-						else:
-							annotations.append(False)
-						if cli_arguments.gene_list is not None:
-							if Cs[VEP_Fields["SYMBOL"]] in geneSet:
-								geneList.append(True)
-				alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-				returnDict[Cs[0]]=alleleDict
 		elif field.startswith("ClinVar.TSV.Jan2017="):
 			clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
-			if cli_arguments.clinVarStar is not None:
+			if not cli_arguments.clinVarStar is None:
 				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
 					annotations.append(False)
 				if clinvar[0] not in returnDict:
@@ -356,8 +358,12 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 						annotations.append(False)
 				else:
 					annotations.append(False)
-			alleleDict["ClinVar"]=fill_dict(clinvar, ClinVar_fields)
-			returnDict[clinvar[0]]=alleleDict
+				alleleDict["ClinVar"]=fill_dict(clinvar, ClinVar_fields)
+				returnDict[clinvar[0]]=alleleDict
+			elif clinvar[0] in returnDict:
+				alleleDict=returnDict[clinvar[0]]
+				alleleDict["ClinVar"]=fill_dict(clinvar, ClinVar_fields)
+				returnDict[clinvar[0]]=alleleDict
 		elif field.startswith("CLASS="):
 			if cli_arguments.HGMD is not None:
 				if getHGMD_level(field.replace("CLASS=",""))>=cli_arguments.HGMD:
@@ -376,7 +382,6 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			returnDict["HGMD_DB"]=field.replace("DB=","")
 		elif field.startswith("PHEN="):
 			returnDict["HGMD_PHEN"]=field.replace("PHEN=","")
-
 	if not any(annotations):
 		if (cli_arguments.VEP_Impact is not None or cli_arguments.HGMD is not None or cli_arguments.clinVarStar is not None):
 			return None
@@ -400,22 +405,42 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 				GT_fields=s.split(":")[GT].split("/")
 				if GT_fields[0]=="." or GT_fields[1]==".":
 					continue
-				if GT_fields[0]!="0" and GT_fields[0] in returnDict["PASS_ALLELES"]:
-					returnDict[alleles[GT_fields[0]]]["ALLELE_IDs"].add(IDs[i])
-					returnDict["UNIQ_IDs"].add(IDs[i])
-				if GT_fields[1]!="0" and GT_fields[1] in returnDict["PASS_ALLELES"]:
-					returnDict[alleles[GT_fields[1]]]["ALLELE_IDs"].add(IDs[i])
-					returnDict["UNIQ_IDs"].add(IDs[i])
-	returnDict["PASS_ALLELES"]=list(returnDict["PASS_ALLELES"])
+				if GT_fields[0]=="0" and GT_fields[1]=="0":
+					continue
+				if GT_fields[0]==GT_fields[1] and int(GT_fields[0]) in returnDict["PASS_ALLELES"]:
+						returnDict["UNIQ_IDs"].add(IDs[i])
+						returnDict[alleles[int(GT_fields[0])]]["ALLELE_IDs"].add(IDs[i])
+						returnDict[alleles[int(GT_fields[0])]]["HOM_SAMPLES"].add(IDs[i])
+				else:
+					if GT_fields[0]!="0" and int(GT_fields[0]) in returnDict["PASS_ALLELES"]:
+						returnDict[alleles[int(GT_fields[0])]]["ALLELE_IDs"].add(IDs[i])
+						returnDict["UNIQ_IDs"].add(IDs[i])
+						returnDict[alleles[int(GT_fields[0])]]["HET_SAMPLES"].add(IDs[i])
+					if GT_fields[1]!="0" and int(GT_fields[1]) in returnDict["PASS_ALLELES"]:
+						returnDict[alleles[int(GT_fields[1])]]["ALLELE_IDs"].add(IDs[i])
+						returnDict["UNIQ_IDs"].add(IDs[i])
+						returnDict[alleles[int(GT_fields[1])]]["HET_SAMPLES"].add(IDs[i])
 	if len(list(returnDict["UNIQ_IDs"]))==0:
 		return None
 	returnDict["UNIQ_IDs"]=list(returnDict["UNIQ_IDs"])
+	returnDict["PASS_ALLELES"]=list(returnDict["PASS_ALLELES"])
 	for a in alleles:
 		if a in returnDict:
 			if len(list(returnDict[a]["ALLELE_IDs"]))==0:
 				returnDict.pop(a,None)
 			else:
 				returnDict[a]["ALLELE_IDs"]=list(returnDict[a]["ALLELE_IDs"])
+				if "HET_SAMPLES" in returnDict[a]:
+					if len(returnDict[a]["HET_SAMPLES"])>0:
+						returnDict[a]["HET_SAMPLES"]=list(returnDict[a]["HET_SAMPLES"])
+					else:
+						returnDict[a].pop("HET_SAMPLES",None)
+				if "HOM_SAMPLES" in returnDict[a]:
+					if len(returnDict[a]["HOM_SAMPLES"])>0:
+						returnDict[a]["HOM_SAMPLES"]=list(returnDict[a]["HOM_SAMPLES"])
+					else:
+						returnDict[a].pop("HOM_SAMPLES",None)
+
 	return returnDict
 
 
@@ -473,7 +498,6 @@ def main():
 					if f in sampleSet:
 						IDs[i]=f
 				if not IDs:
-					#print "No Samples found"
 					return
 				else:
 					outDict["INPUT_SAMPLES"]=list(sampleSet)
@@ -494,7 +518,99 @@ def main():
 	outDict["UNIQ_IDs"]=list(outDict["UNIQ_IDs"])
 	out_file_json = gzip.open(cli_arguments.vcf_file.replace(".vcf.",".filtered.json."),'w')
 	out_file_json.write(json.dumps(outDict, sort_keys=True,indent=4, separators=(',', ': ')))
+	#out_file_json.write(str(outDict))
+	out_file_json.close()
+	print "json printed"
+	out_tsv(cli_arguments,outDict)
+	print "tsv printed"
 	return
+
+def out_tsv(cli_arguments,outDict):
+	out_file_tsv = gzip.open(cli_arguments.vcf_file.replace(".vcf.",".filtered.tsv."),'w')
+	out_file_tsv.write("SAMPLE_COUNT\tHOM_COUNT\tHET_Count\tBI_ALLELIC\tCHROM\tPOS\tREF\tALT\tMAF\t")
+	outDict["VEP_FIELDS"].remove('MAF')
+	out_file_tsv.write("VEP:"+"\tVEP:".join(outDict["VEP_FIELDS"])+"\t")
+	out_file_tsv.write("CLINVAR:"+"\tCLINVAR:".join(outDict["CLINVAR_FIELDS"])+"\t")
+	out_file_tsv.write("ID\tHGMD_CLASS\tHGMD_DB\tHGMD_GENE\tHGMD_PHEN\tHGMD_PROT\tHGMD_STRAND\tALL_SAMPLES\tHOM_SAMPLES\tHET_SAMPLES\n")
+
+	for key in outDict.keys():
+		if ":" in key:
+			lineDict=outDict[key]
+			for a in lineDict["PASS_ALLELES"]:
+				if not lineDict["ALL_ALLELES"][a] in lineDict:
+					print lineDict
+					alleleDict=lineDict[lineDict["ALL_ALLELES"][a]]
+					exit()
+				alleleDict=lineDict[lineDict["ALL_ALLELES"][a]]
+				out_file_tsv.write(str(len(alleleDict["ALLELE_IDs"]))+"\t")
+				if "HOM_SAMPLES" in alleleDict:
+					out_file_tsv.write(str(len(alleleDict["HOM_SAMPLES"]))+"\t")
+				else:
+					out_file_tsv.write("0\t")
+				if "HET_SAMPLES" in alleleDict:
+					out_file_tsv.write(str(len(alleleDict["HET_SAMPLES"]))+"\t")
+				else:
+					out_file_tsv.write("0\t")
+				out_file_tsv.write(str(lineDict["BI_ALLELIC"])+"\t"+lineDict["CHROM"]+"\t"+lineDict["POS"]+"\t"+lineDict["REF"]+"\t"+lineDict["ALL_ALLELES"][a]+"\t"+str(alleleDict["FRQ"][0])+"\t")
+				for v in outDict["VEP_FIELDS"]:
+					if "VEP" in alleleDict:
+						if v in alleleDict["VEP"]:
+							out_file_tsv.write(alleleDict["VEP"][v]+"\t")
+						else:
+							out_file_tsv.write(".\t")
+					else:
+						out_file_tsv.write(".\t")
+
+				for c in outDict["CLINVAR_FIELDS"]:
+					if "ClinVar" in alleleDict:
+						if c in alleleDict["ClinVar"]:
+							out_file_tsv.write(alleleDict["ClinVar"][c]+"\t")
+						else:
+							out_file_tsv.write(".\t")
+					else:
+						out_file_tsv.write(".\t")
+				if "ID" in lineDict:
+					out_file_tsv.write(lineDict["ID"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_CLASS" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_CLASS"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_DB" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_DB"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_GENE" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_GENE"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_PHEN" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_PHEN"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_PROT" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_PROT"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HGMD_STRAND" in lineDict:
+					out_file_tsv.write(lineDict["HGMD_STRAND"]+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				out_file_tsv.write(",".join(alleleDict["ALLELE_IDs"])+"\t")
+				if "HOM_SAMPLES" in alleleDict:
+					out_file_tsv.write(",".join(alleleDict["HOM_SAMPLES"])+"\t")
+				else:
+					out_file_tsv.write(".\t")
+				if "HET_SAMPLES" in alleleDict:
+					out_file_tsv.write(",".join(alleleDict["HET_SAMPLES"])+"\n")
+				else:
+					out_file_tsv.write(".\n")
+
+	out_file_tsv.write("UniqueSamples:\t"+str(len(outDict["UNIQ_IDs"]))+"\n")
+	out_file_tsv.close()
+	return
+
 
 if __name__ == '__main__':
 	main()

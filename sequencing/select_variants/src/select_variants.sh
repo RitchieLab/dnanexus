@@ -18,6 +18,9 @@
 set -x
 export SHELL="/bin/bash"
 
+echo $build_version
+echo $remove_annotations
+
 
 
 dx download "$DX_RESOURCES_ID:/GATK/resources/jre-8u101-linux-x64.tar.gz" -o /usr/share/jre-8u101-linux-x64.tar.gz
@@ -30,13 +33,12 @@ function download_resources() {
 	sudo chmod -R a+rwX /usr/share/GATK
 
 		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.7.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
-
-	if [ "$build_version" == "b37_decoy" ]
+		echo $build_version
+	if ["$build_version" == "b37_decoy"] ;
 	then
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
-
 	else
 
 			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
@@ -50,6 +52,9 @@ function download_resources() {
 
 main() {
 	set -x
+
+	echo $build_version
+
 
 	SUBJOB_ARGS="-ief:boolean=$ef -ienv:boolean=$env"
 	if test "$region_file"; then
@@ -78,6 +83,8 @@ main() {
 	fi
 
 	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$headers"
+	SUBJOB_ARGS="$SUBJOB_ARGS -iremove_annotations:boolean=$remove_annotations"
+	SUBJOB_ARGS="$SUBJOB_ARGS -ibuild_version:string='$build_version'"
 
 	WKDIR=$(mktemp -d)
 	cd $WKDIR
@@ -247,6 +254,13 @@ run_sv() {
 		dx cat "$concord_vcf" | $CAT_CMD | vcf-sort | bgzip -c > concord_all.vcf.gz
 		tabix -p vcf concord_all.vcf.gz
 
+		if test "$remove_annotations" = "true"; then
+				bcftools annotate -x FMT/PL,FMT/AO,FMT/QA,FMT/AD concord_all.vcf.gz | bgzip -c > concord_all.rm.vcf.gz
+				mv concord_all.rm.vcf.gz concord_all.vcf.gz
+				tabix -p vcf -f concord_all.vcf.gz
+		fi
+
+
 		# Restrict the concord_all.$EXT to the chromosome of interest only!
 		/usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
 		-T SelectVariants \
@@ -272,6 +286,13 @@ run_sv() {
 	if test "$out_suffix"; then
 		SUFFIX="${out_suffix}."
 	fi
+	echo $remove_annotations
+	if test "$remove_annotations" = "true"; then
+			bcftools annotate -x FMT/PL,FMT/AO,FMT/QA,FMT/AD raw.vcf.gz | bgzip -c > raw.rm.vcf.gz
+			mv raw.rm.vcf.gz raw.vcf.gz
+			tabix -p vcf -f raw.vcf.gz
+	fi
+
 
 	eval /usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
 		-T SelectVariants \

@@ -3,7 +3,7 @@
   "title": "Subset VCF",
   "summary": "Apply Sample / Variant level subsetting to VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "categories": [
     "Variation Calling"
   ],
@@ -93,13 +93,22 @@
       "optional": true
     },
     {
-      "group": "Build Options",
+      "group":"NCBI Build Version",
       "name": "build_version",
       "label": "NCBI Build Version",
       "class": "string",
       "choices": ["b38","b37_decoy"],
       "default": "b37_decoy",
-      "optional": true
+      "optional": false
+    },
+    {
+      "group":"Remove Annotations",
+      "name": "remove_annotations",
+      "label": "Remove Annotations",
+      "class": "boolean",
+      "default": false,
+      "optional": false,
+      "help": "Old versions of GATK would output some incomplete annotations that can cause issues when extracting samples.  Use this if GATK crashes with errors."
     }
   ],
   "outputSpec": [
@@ -138,6 +147,14 @@
       ]
     }
   ],
+  "restartableEntryPoints": "all",
+  "executionPolicy": {
+    "restartOn": {
+      "UnresponsiveWorker": 2,
+      "JMInternalError": 2,
+      "ExecutionError": 2
+    }
+  },
   "runSpec": {
   "execDepends": [
       {"name": "pigz"},

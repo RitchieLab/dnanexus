@@ -298,7 +298,7 @@ def main():
 		return
 	geneSet=set()
 	if cli_arguments.gene_list is not None:
-		print cli_arguments.gene_list
+		#print cli_arguments.gene_list
 		geneList = open(cli_arguments.gene_list,'r')
 		for line in geneList:
 			line=line.strip().upper()

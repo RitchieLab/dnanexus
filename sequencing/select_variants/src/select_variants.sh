@@ -34,7 +34,7 @@ function download_resources() {
 
 		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.7.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
 		echo $build_version
-	if ["$build_version" == "b37_decoy"] ;
+	if ["$build_version" == "b37_decoy"]
 	then
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai

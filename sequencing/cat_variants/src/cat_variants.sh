@@ -38,12 +38,12 @@ function download_resources() {
 	sudo chmod -R a+rwX /usr/share/GATK
 
 	#dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46-custom.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar
-	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.6.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+	dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.7.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
 	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
 	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
 	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 
-	if [ "$build_version" == "b37_decoy" ]
+	if [ "$build_version" = "b37_decoy" ];
 	then
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
 		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai

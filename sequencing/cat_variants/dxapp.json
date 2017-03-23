@@ -45,8 +45,8 @@
       "label": "NCBI Build Version",
       "class": "string",
       "choices": ["b38","b37_decoy"],
-      "default": "b38",
-      "optional": true
+      "default": "b37_decoy",
+      "optional": false
     }
   ],
   "outputSpec": [

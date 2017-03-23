@@ -28,6 +28,7 @@ while test $RERUN -ne 0; do
 done
 
 main() {
+		dx download -r -f "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/Libraries/Boost/*" -o /usr/lib/
 
     echo "Value of sleep_time: '$sleep_time'"
 
@@ -44,6 +45,7 @@ main() {
     # exit code will prematurely exit the script; if no error was
     # reported in the job_error.json file, then the failure reason
     # will be AppInternalError with a generic error message.
+
 
 	sleep $sleep_time
 

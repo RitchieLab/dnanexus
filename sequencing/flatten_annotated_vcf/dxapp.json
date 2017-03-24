@@ -1,7 +1,7 @@
 {
-  "name": "filter_annotated_vcf",
-  "title": "filter_annotated_vcf",
-  "summary": "filter_annotated_vcf",
+  "name": "flatten_annotated_vcf",
+  "title": "flatten_annotated_vcf",
+  "summary": "flatten_annotated_vcf",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "inputSpec": [
@@ -63,9 +63,10 @@
       "name" : "VEP_Level",
       "label" : "VEP IMPACT Level",
       "class" : "int",
-      "optional" : true,
+      "optional" : false,
       "group" : "VEP Options",
-      "help": "Highest VEP Impact to filter too: 1=Modifier, 2=Low, 3=Moderate,4=High. Transcript must be set to use option. "
+      "default": 4,
+      "help": "Highest VEP Impact to filter too: 0=Everything,1=Modifier, 2=Low, 3=Moderate,4=High."
     },
     {
       "name" : "cannonical",
@@ -82,7 +83,7 @@
         "class" : "int",
         "optional" : true,
         "group" : "HGMD Options",
-        "help": "HIGHEST Include variants from HGMD. 6=DM, 5=DM?, 4=DP, 3=DFP, 2=FTV, 1=FP"
+        "help": "HIGHEST Include variants from HGMD. 6=DM, 5=DM?, 4=DP, 3=DFP, 2=FTV, 1=FP. No filtering for HGMD on allele level in multiallelic variants"
       },
       {
         "name" : "ClinVar_Star",
@@ -103,11 +104,20 @@
   ],
   "outputSpec": [
     {
-      "name": "filtered_vcf",
-      "label": "filtered_vcf",
+      "name": "filtered_tsv",
+      "label": "filtered_tsv",
       "class": "array:file",
       "patterns": [
         "*.tsv.gz"
+      ],
+      "help": ""
+    },
+    {
+      "name": "filtered_json",
+      "label": "filtered_json",
+      "class": "array:file",
+      "patterns": [
+        "*.json.gz"
       ],
       "help": ""
     }

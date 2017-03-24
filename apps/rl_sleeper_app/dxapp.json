@@ -25,9 +25,9 @@
       {"name": "tabix"},
       {"name": "openjdk-7-jre-headless"},
       {"name": "pigz"},
-	  {"name": "vcftools"},
-	  {"name": "subversion"},
-	  {"name": "libtool"}
+	    {"name": "vcftools"},
+	    {"name": "subversion"},
+	    {"name": "libtool"}
     ],
     "file": "src/code.sh",
     "interpreter": "bash"
@@ -39,6 +39,6 @@
     ],
     "allProjects": "CONTRIBUTE"
   },
-  "developers": ["user-johnwallace123", "user-auv13", "user-atf3", "user-sud23"],
-  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger"]
+  "developers": ["user-auv13", "user-atf3", "user-sud23"],
+  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_ritchie"]
 }

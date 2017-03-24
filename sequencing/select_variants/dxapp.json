@@ -3,7 +3,7 @@
   "title": "Subset VCF",
   "summary": "Apply Sample / Variant level subsetting to VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "categories": [
     "Variation Calling"
   ],
@@ -76,6 +76,13 @@
     {
       "name" : "headers",
       "label" : "Also output sites-only?",
+      "class" : "boolean",
+      "optional" : true,
+      "default" : false
+    },
+    {
+      "name" : "trimAlternates",
+      "label" : "Remove alternate alleles not present in any genotypes",
       "class" : "boolean",
       "optional" : true,
       "default" : false

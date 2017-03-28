@@ -33,7 +33,7 @@ function parallel_download_and_process() {
 
   IN_VCF=$(dx describe "$1" --name)
 
-  pythonOptions="--vcf_file $IN_VCF -F $max_maf --gene_list $gene_list  --sample_list $sample_list"
+  pythonOptions="--vcf_file $IN_VCF -F $max_maf --gene_list gene_list  --sample_list sample_list"
 
   if test "$bi_snps_only" = "true"; then
     pythonOptions="$pythonOptions --b_snp"
@@ -60,7 +60,7 @@ function parallel_download_and_process() {
 
   echo $pythonOptions
 
-  python ./flatten_annotated_vcf.py $pythonOptions | bgzip -c > ${IN_VCF%.vcf.gz}.filtered.tsv.gz
+  python ./flatten_annotated_vcf.py $pythonOptions
 
   tsv_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.tsv.gz)
 
@@ -68,7 +68,7 @@ function parallel_download_and_process() {
 
 	json_UP=$(dx upload --brief ${IN_VCF%.vcf.gz}.filtered.json.gz)
 
-  dx-jobutil-add-output filtered_tsv "$json_UP" --class=array:file
+  dx-jobutil-add-output filtered_json "$json_UP" --class=array:file
 
 
   rm ${IN_VCF%.*}*

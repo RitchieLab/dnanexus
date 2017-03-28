@@ -85,7 +85,10 @@ main() {
 	SUBJOB_ARGS="$SUBJOB_ARGS -iheader:boolean=$headers"
 	SUBJOB_ARGS="$SUBJOB_ARGS -iremove_annotations:boolean=$remove_annotations"
 	SUBJOB_ARGS="$SUBJOB_ARGS -ibuild_version:string='$build_version'"
-	SUBJOB_ARGS="$SUBJOB_ARGS -itrimAlternates:string='$trimAlternates'"
+	if test "$trimAlternates"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -itrimAlternates:string='$trimAlternates'"
+	fi
+
 
 	WKDIR=$(mktemp -d)
 	cd $WKDIR
@@ -216,7 +219,7 @@ run_sv() {
 		SV_ARGS="$SV_ARGS -xl_sf samp_excl"
 	fi
 
-	if test "$trimAlternates"; then
+	if test "$trimAlternates" = "true"; then
 		SV_ARGS="$SV_ARGS -trimAlternates"
 	fi
 

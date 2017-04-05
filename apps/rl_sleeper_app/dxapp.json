@@ -28,7 +28,7 @@
 	    {"name": "vcftools"},
 	    {"name": "subversion"},
 	    {"name": "libtool"}
-    ],
+  ],
     "file": "src/code.sh",
     "interpreter": "bash"
   },

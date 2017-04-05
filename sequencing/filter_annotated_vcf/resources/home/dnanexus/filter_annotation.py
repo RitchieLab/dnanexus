@@ -153,28 +153,35 @@ def parse_INFO(line):
 				ClinVar_fields["ReviewStatus"]=i
 		return ClinVar_fields
 
-def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
+def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 	info_field=[]
+	alleles=[all_fields[3].strip()]
+
+	STRIPPED_ALLELS=dict()
+
 	if cli_arguments.b_snp:
-		fields = line.split('\t')
 		pattern = re.compile("^[AGCT]$")
 		if "," in fields[4]:
 			return False
-		elif  pattern.match(fields[4]) and pattern.match(fields[3]):
-			info_field = fields[7].split(";")
+		elif  pattern.match(all_fields[4]) and pattern.match(all_fields[3]):
+			info_field = all_fields[7].split(";")
+			alleles.extend(all_fields[4].strip())
 		else:
 			return False
 	else:
-		info_field = line.split('\t')[7].split(";")
+		info_field = all_fields[7].strip().split(";")
+
 	geneList=[]
 	frequency=[]
 	annotations=[]
+
 	for field in info_field:
 		if field.startswith("AF"):
 			AFs = field.replace("AF=","").split(",")
-			for f in AFs:
+			AFs.insert(0,'0')
+			for frq_index, f in enumerate(AFs):
 				if is_number(f):
-					if f=="0":
+					if f.strip()=="0" or frq_index==0 or float(f)==0:
 						frequency.append(False)
 					elif float(f)>cli_arguments.frequency:
 						frequency.append(False)
@@ -186,8 +193,8 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 				if not any(frequency):
 					return False
 		elif field.startswith("CSQ"):
+			CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 			if cli_arguments.VEP_Impact is not None:
-				CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
 					for f_field in VEP_Fields["MAF"]:
@@ -203,14 +210,16 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 									pubMAFs={Cs[f_field].split(":")[0]:Cs[f_field].split(":")[1]}
 								for a in pubMAFs.keys():
 									if a==Cs[0]:
-										if pubMAFs[a]=="0":
+										if float(pubMAFs[a])==0:
 											frequency.append(False)
 										elif float(pubMAFs[a])>cli_arguments.frequency:
 											frequency.append(False)
 										else:
 											frequency.append(True)
 							elif is_number(Cs[f_field]):
-								if float(Cs[f_field])>cli_arguments.frequency:
+								if float(Cs[f_field])==0:
+									frequency.append(False)
+								elif float(Cs[f_field])>cli_arguments.frequency:
 									frequency.append(False)
 								else:
 									frequency.append(True)
@@ -220,14 +229,15 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 					if cli_arguments.Ensembl:
 						if not Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
-						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
-								annotations.append(True)
-							else:
-								annotations.append(False)
-							if cli_arguments.gene_list is not None:
-								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
-									geneList.append(True)
+						if cli_arguments.Cannonical:
+							if Cs[VEP_Fields["CANONICAL"]]=="YES":
+								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
+									annotations.append(True)
+								else:
+									annotations.append(False)
+								if cli_arguments.gene_list is not None:
+									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
+										geneList.append(True)
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
@@ -239,14 +249,15 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 					if cli_arguments.RefSeq:
 						if Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
-						if cli_arguments.Cannonical and Cs[VEP_Fields["CANONICAL"]]=="YES":
-							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
-								annotations.append(True)
-							else:
-								annotations.append(False)
-							if cli_arguments.gene_list is not None:
-								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
-									geneList.append(True)
+						if cli_arguments.Cannonical:
+							if Cs[VEP_Fields["CANONICAL"]]=="YES":
+								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
+									annotations.append(True)
+								else:
+									annotations.append(False)
+								if cli_arguments.gene_list is not None:
+									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
+										geneList.append(True)
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
@@ -255,15 +266,15 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 							if cli_arguments.gene_list is not None:
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-					if cli_arguments.gene_list is not None:
-						if not any(geneList):
-							return False
+			if cli_arguments.gene_list is not None:
+				if not any(geneList):
+					return False
 		elif field.startswith("ClinVar.TSV.Jan2017="):
-			if cli_arguments.clinVarStar is not None:
-				clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
+			clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
+			if not cli_arguments.clinVarStar is None:
 				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
 					annotations.append(False)
-				elif getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
+				if getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
 					if getClinVar_level(clinvar[ClinVar_fields["ClinicalSignificance"]])>=cli_arguments.ClinicalSignificance:
 						annotations.append(True)
 					else:
@@ -276,7 +287,6 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 					annotations.append(True)
 				else:
 					annotations.append(False)
-
 	if not any(annotations):
 		if (cli_arguments.VEP_Impact is not None or cli_arguments.HGMD is not None or cli_arguments.clinVarStar is not None):
 			return False
@@ -286,6 +296,7 @@ def filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 	if len(frequency)>0:
 		if not any(frequency):
 			return False
+
 	return True
 
 
@@ -323,9 +334,10 @@ def main():
 				fields = [x.strip() for x in line.strip().split("\t")]
 				for i,f in enumerate(fields):
 					IDs[i]=f
-		elif filterLine(line,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
-			print line.strip()
-			pass
+		else:
+			all_fields=line.strip().split("\t")
+			if filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
+				print line.strip()
 	vcf_file.close()
 	return
 

@@ -261,7 +261,6 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 		else:
 			return None
 	else:
-
 		info_field = all_fields[7].strip().split(";")
 		if "," in all_fields[4]:
 			alleles.extend(all_fields[4].strip().split(","))
@@ -277,8 +276,6 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			returnDict["STRIPPED_ALLELS"][stripAllelesLIST([all_fields[0].strip(),all_fields[1].strip(),all_fields[3].strip(),all_fields[4].strip()])[-1]]=1
 	returnDict["ALL_ALLELES"]=alleles
 	returnDict["PASS_ALLELES"]=set()
-
-	#print returnDict["STRIPPED_ALLELS"]
 
 	geneList=[]
 	frequency=[]
@@ -313,12 +310,10 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
 					if not Cs[0] in returnDict:
-						#print Cs[0]
 						if Cs[0] == "-":
 							Cs[0] ="."
 						if Cs[0] in returnDict["STRIPPED_ALLELS"]:
 							Cs[0]=alleles[returnDict["STRIPPED_ALLELS"][Cs[0]]]
-						#print Cs[0]
 						if not Cs[0] in returnDict:
 							continue
 					alleleDict=returnDict[Cs[0]]

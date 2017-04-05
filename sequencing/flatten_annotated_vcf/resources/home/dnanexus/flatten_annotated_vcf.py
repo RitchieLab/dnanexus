@@ -11,6 +11,66 @@ def is_number(S):
 	except ValueError:
 		return False
 
+def stripAllelesLIST(id_list):
+	pos = int(id_list[1])
+	ref = id_list[2]
+	alt = id_list[3]
+
+	if ref=="-":
+		ref="."
+	if alt=="-":
+		alt="."
+	if ref=="." or alt == ".":
+		pass
+	if len(ref)==1 and len(ref)==len(alt):
+		pass
+	elif len(ref)>=len(alt):
+		numMatchChar = 0
+		for idx, char in enumerate(alt):
+			if alt[idx]==ref[idx]:
+				numMatchChar+=1
+			else:
+				break
+
+		if numMatchChar>0:
+			ref=ref[numMatchChar:]
+			pos+=numMatchChar
+			if numMatchChar<len(alt):
+				alt=alt[numMatchChar:]
+			else:
+				alt="."
+
+	elif len(ref)<=len(alt):
+		numMatchChar = 0
+		for idx, char in enumerate(ref):
+			if alt[idx]==ref[idx]:
+				numMatchChar+=1
+			else:
+				break
+
+		if numMatchChar>0:
+			alt=alt[numMatchChar:]
+			pos+=numMatchChar
+			if numMatchChar<len(ref):
+				ref=ref[numMatchChar:]
+			else:
+				ref="."
+
+	if len(ref) == len(alt) and ref != "." and alt != "."  and len(ref)>1 and ref[-1]==alt[-1]:
+		en_ref = ref
+		for idx, char in reversed(list(enumerate(en_ref))):
+			if char == alt[idx] and len(alt)>1:
+				ref=ref[:-1]
+				alt=alt[:-1]
+			else:
+				break
+
+	id_list[1]=str(pos)
+	id_list[2]=ref
+	id_list[3]=alt
+
+	return id_list
+
 def parseArguments():
 
 	parser = argparse.ArgumentParser()
@@ -162,7 +222,7 @@ def parse_INFO(line):
 		VEP_Fields=OrderedDict()
 		VEP_Fields["MAF"]=set()
 		for i,f in enumerate(fields):
-			VEP_Fields[f]=i
+			VEP_Fields[f.strip()]=i
 		for i,f in enumerate(fields):
 			if f.endswith("MAF"):
 				VEP_Fields["MAF"].add(i)
@@ -170,15 +230,14 @@ def parse_INFO(line):
 	elif line.startswith("##INFO=<ID=ClinVar"):
 		ClinVar_fields=OrderedDict()
 		for i,f in enumerate(fields):
-			ClinVar_fields[f]=i
+			ClinVar_fields[f.strip()]=i
 		return ClinVar_fields
-
 
 def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 	pp = pprint.PrettyPrinter(indent=4)
 
 	info_field=[]
-	alleles=[all_fields[3]]
+	alleles=[all_fields[3].strip()]
 	returnDict=dict()
 
 	returnDict["CHROM"]=all_fields[0].strip()
@@ -188,6 +247,7 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 	returnDict["REF"]=all_fields[3].strip()
 	returnDict["ALT"]=all_fields[4].strip()
 	returnDict["UNIQ_IDs"]=set()
+	returnDict["STRIPPED_ALLELS"]=dict()
 
 	if cli_arguments.b_snp:
 		pattern = re.compile("^[AGCT]$")
@@ -197,6 +257,7 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			info_field = all_fields[7].split(";")
 			alleles.extend(all_fields[4].strip())
 			returnDict["BI_ALLELIC"]=True
+			returnDict["STRIPPED_ALLELS"][stripAllelesLIST([all_fields[0].strip(),all_fields[1].strip(),all_fields[3].strip(),all_fields[4].strip()])[-1]]=1
 		else:
 			return None
 	else:
@@ -204,15 +265,20 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 		info_field = all_fields[7].strip().split(";")
 		if "," in all_fields[4]:
 			alleles.extend(all_fields[4].strip().split(","))
-
 			returnDict["BI_ALLELIC"]=False
-
-
+			for i,a in enumerate(all_fields[4].strip().split(",")):
+				if a == "*":
+					continue
+				else:
+					returnDict["STRIPPED_ALLELS"][stripAllelesLIST([all_fields[0].strip(),all_fields[1].strip(),all_fields[3].strip(),a])[-1]]=(i+1)
 		else:
 			alleles.extend([all_fields[4].strip()])
 			returnDict["BI_ALLELIC"]=True
+			returnDict["STRIPPED_ALLELS"][stripAllelesLIST([all_fields[0].strip(),all_fields[1].strip(),all_fields[3].strip(),all_fields[4].strip()])[-1]]=1
 	returnDict["ALL_ALLELES"]=alleles
 	returnDict["PASS_ALLELES"]=set()
+
+	#print returnDict["STRIPPED_ALLELS"]
 
 	geneList=[]
 	frequency=[]
@@ -220,8 +286,6 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 
 	for field in info_field:
 		if field.startswith("AF"):
-
-
 			AFs = field.replace("AF=","").split(",")
 			AFs.insert(0,'0')
 			for frq_index, f in enumerate(AFs):
@@ -249,7 +313,14 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 				for i,CSQ in enumerate(CSQs):
 					Cs=CSQ.split("|")
 					if not Cs[0] in returnDict:
-						continue
+						#print Cs[0]
+						if Cs[0] == "-":
+							Cs[0] ="."
+						if Cs[0] in returnDict["STRIPPED_ALLELS"]:
+							Cs[0]=alleles[returnDict["STRIPPED_ALLELS"][Cs[0]]]
+						#print Cs[0]
+						if not Cs[0] in returnDict:
+							continue
 					alleleDict=returnDict[Cs[0]]
 					if "VEP" in alleleDict:
 						continue
@@ -292,26 +363,24 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 									annotations.append(True)
 									returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-									alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-									returnDict[Cs[0]]=alleleDict
-
 								else:
 									annotations.append(False)
 								if cli_arguments.gene_list is not None:
 									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 										geneList.append(True)
+								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+								returnDict[Cs[0]]=alleleDict
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-								returnDict[Cs[0]]=alleleDict
-
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
+							alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+							returnDict[Cs[0]]=alleleDict
 					elif cli_arguments.RefSeq:
 						if Cs[VEP_Fields["Feature"]].startswith("E"):
 							continue
@@ -320,35 +389,41 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 								if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 									annotations.append(True)
 									returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-									alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-									returnDict[Cs[0]]=alleleDict
-									#print Cs
 								else:
 									annotations.append(False)
 								if cli_arguments.gene_list is not None:
 									if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 										geneList.append(True)
+								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+								returnDict[Cs[0]]=alleleDict
+
 						else:
 							if getimpact_level(Cs[VEP_Fields["IMPACT"]])>=cli_arguments.VEP_Impact:
 								annotations.append(True)
 								returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
-								alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
-								returnDict[Cs[0]]=alleleDict
 							else:
 								annotations.append(False)
 							if cli_arguments.gene_list is not None:
 								if Cs[VEP_Fields["SYMBOL"]] in geneSet:
 									geneList.append(True)
-					if cli_arguments.gene_list is not None:
-						if not any(geneList):
-							return None
+							alleleDict["VEP"]=fill_dict(Cs, VEP_Fields)
+							returnDict[Cs[0]]=alleleDict
+			if cli_arguments.gene_list is not None:
+				if not any(geneList):
+					print "reutn None!"
+					return None
 		elif field.startswith("ClinVar.TSV.Jan2017="):
 			clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")
 			if not cli_arguments.clinVarStar is None:
 				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
 					annotations.append(False)
 				if clinvar[0] not in returnDict:
-					continue
+					if clinvar[0] == "-":
+						clinvar[0] ="."
+					if clinvar[0] in returnDict["STRIPPED_ALLELS"]:
+						clinvar[0]=alleles[returnDict["STRIPPED_ALLELS"][Cs[0]]]
+					if not clinvar[0] in returnDict:
+						continue
 				alleleDict=returnDict[clinvar[0]]
 				if getStar(clinvar[ClinVar_fields["ReviewStatus"]])>=cli_arguments.clinVarStar:
 					if getClinVar_level(clinvar[ClinVar_fields["ClinicalSignificance"]])>=cli_arguments.ClinicalSignificance:

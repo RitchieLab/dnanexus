@@ -32,7 +32,7 @@ function download_resources() {
 	sudo mkdir -p /usr/share/GATK/resources
 	sudo chmod -R a+rwX /usr/share/GATK
 
-		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.7.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+		dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.6.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
 		echo $build_version
 	if [ "$build_version" = "b37_decoy" ];
 	then

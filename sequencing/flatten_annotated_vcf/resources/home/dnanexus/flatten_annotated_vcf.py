@@ -405,7 +405,6 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 							returnDict[Cs[0]]=alleleDict
 			if cli_arguments.gene_list is not None:
 				if not any(geneList):
-					print "reutn None!"
 					return None
 		elif field.startswith("ClinVar.TSV.Jan2017="):
 			clinvar = field.replace("ClinVar.TSV.Jan2017=","").split("|")

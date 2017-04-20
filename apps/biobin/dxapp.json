@@ -3,7 +3,7 @@
   "title": "BioBin - Latest",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "categories": [],
   "access": {
     "network": [ "*" ],
@@ -66,6 +66,7 @@
       "optional": true,
       "patterns": ["*.gen*"]
     },
+    
     {
       "name": "biobin_binary_exec",
       "label": "BioBin Binary Executable",
@@ -88,18 +89,16 @@
         {"name": "Summary Script Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/BioBin/versions/biobin-summary.py"}
       ]
     },
-
     {
       "name": "loki_db",
       "label": "LOKI Knowledge Database",
-      "class": "string",
-      "choices": [
-        "LOKI-20130501-noSNPs.db",
-        "LOKI-20150427-noSNPs.db",
-        "LOKI-20160428-noSNPs.db"
-      ],
-      "optional": false,
-      "default": "LOKI-20160428-noSNPs.db"
+      "help": "If omitted, the latest available database will be used.",
+      "class": "file",
+      "optional": true,
+      "patterns": ["LOKI*"],
+      "suggestions": [
+        {"name": "LOKI Database Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/LOKI"}
+      ]
     },
     {
       "name": "regression_type",

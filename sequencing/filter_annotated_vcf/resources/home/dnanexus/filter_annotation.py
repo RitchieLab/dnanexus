@@ -161,7 +161,7 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet):
 
 	if cli_arguments.b_snp:
 		pattern = re.compile("^[AGCT]$")
-		if "," in fields[4]:
+		if "," in all_fields[4]:
 			return False
 		elif  pattern.match(all_fields[4]) and pattern.match(all_fields[3]):
 			info_field = all_fields[7].split(";")

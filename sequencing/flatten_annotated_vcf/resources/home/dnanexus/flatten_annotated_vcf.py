@@ -251,7 +251,7 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 
 	if cli_arguments.b_snp:
 		pattern = re.compile("^[AGCT]$")
-		if "," in fields[4]:
+		if "," in all_fields[4]:
 			return None
 		elif  pattern.match(all_fields[4]) and pattern.match(all_fields[3]):
 			info_field = all_fields[7].split(";")
@@ -415,7 +415,7 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 					if clinvar[0] == "-":
 						clinvar[0] ="."
 					if clinvar[0] in returnDict["STRIPPED_ALLELS"]:
-						clinvar[0]=alleles[returnDict["STRIPPED_ALLELS"][Cs[0]]]
+						clinvar[0]=alleles[returnDict["STRIPPED_ALLELS"][clinvar[0]]]
 					if not clinvar[0] in returnDict:
 						continue
 				alleleDict=returnDict[clinvar[0]]

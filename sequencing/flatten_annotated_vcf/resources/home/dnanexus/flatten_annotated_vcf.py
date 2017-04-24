@@ -566,6 +566,8 @@ def main():
 				for i,f in enumerate(fields):
 					if f in sampleSet:
 						IDs[i]=f
+					elif sampleSet is None:
+						IDs[i]=f
 				if not IDs:
 					return
 				else:

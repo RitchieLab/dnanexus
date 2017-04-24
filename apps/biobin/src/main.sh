@@ -65,32 +65,42 @@ main() {
 #	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"	
 	
 	if [[ -z "$biobin_binary_exec" ]]; then
+		dx_pathname="Ritchie Lab Software:/BioBin/versions/biobin"
+		dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
 		biobin_binary_exec="$(dx find data \
-			--path "Ritchie Lab Software:/BioBin" \
-			--name "biobin" \
+			--path "$dx_pathname" \
+			--name "$dx_filename" \
 			--brief \
 		)"
+		echo "Latest binary: $dx_pathname/$dx_filename"
 	fi
 	dx download "$biobin_binary_exec" -o bin/biobin
 	chmod +x bin/biobin
 	
 	if [[ -z "$biobin_summary_script" ]]; then
+		dx_pathname="Ritchie Lab Software:/BioBin/versions/biobin-summary.py"
+		dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
 		biobin_summary_script="$(dx find data \
-			--path "Ritchie Lab Software:/BioBin" \
-			--name "biobin-summary.py" \
-			--brief
+			--path "$dx_pathname" \
+			--name "$dx_filename" \
+			--brief \
 		)"
+		echo "Latest summary script: $dx_pathname/$dx_filename"
 	fi
 	dx download "$biobin_summary_script" -o bin/biobin-summary.py
 	chmod +x bin/biobin-summary.py
 	
-	dx download \
-		"$(dx find data \
-			--path "Ritchie Lab Software:/LOKI" \
-			--name "$loki_db" \
+	if [[ -z "$loki_db" ]]; then
+		dx_pathname="Ritchie Lab Software:/LOKI"
+		dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
+		loki_db="$(dx find data \
+			--path "$dx_pathname" \
+			--name "$dx_filename" \
 			--brief \
-		)" \
-		--output shared/loki.db
+		)"
+		echo "Latest LOKI: $dx_pathname/$dx_filename"
+	fi
+	dx download "$loki_db" -o shared/loki.db
 	
 	
 	# run biobin

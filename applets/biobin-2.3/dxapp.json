@@ -1,0 +1,132 @@
+THIS FILE INTENTIONALLY MADE INVALID:
+The LOKI database is too large for GitHub; before building this applet, you
+must add a "LOKI-(date).db" under resources/opt/biobin and delete these lines.
+{
+  "name": "biobin-2.3",
+  "title": "BioBin 2.3",
+  "summary": "BioBin, a rare variant binning tool",
+  "dxapi": "1.0.0",
+  "categories": [],
+  "inputSpec": [
+    {
+      "name": "vcf_file",
+      "label": "VCF File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.vcf","*.vcf.gz"]
+    },
+    {
+      "name": "vcf_tbi_file",
+      "label": "VCF TBI Index File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.vcf.tbi","*.vcf.gz.tbi"]
+    },
+    {
+      "name": "role_file",
+      "label": "Role File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.rol*"]
+    },
+    {
+      "name": "phenotype_file",
+      "label": "Phenotype File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.phe*"]
+    },
+    {
+      "name": "covariate_file",
+      "label": "Covariate File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.cov*"]
+    },
+    {
+      "name": "weight_file",
+      "label": "Weight File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.weight*","*.wgt*"]
+    },
+    {
+      "name": "region_file",
+      "label": "Custom Regions File",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.region*","*.rgn*"]
+    },
+    {
+      "name": "include_region_file",
+      "label": "Region Names List",
+      "class": "file",
+      "optional": true,
+      "patterns": ["*.gen*"]
+    },
+    {
+      "name": "regression_type",
+      "label": "Regression Type",
+      "class": "array:string",
+      "choices": ["linear","logistic","wilcoxon","SKAT-linear","SKAT-logistic"],
+      "optional": true
+    },
+    {
+      "name": "output_prefix",
+      "label": "Output File Prefix",
+      "class": "string",
+      "default": "biobin"
+    },
+    {
+      "name": "biobin_args",
+      "label": "BioBin Arguments",
+      "class": "string",
+      "optional": true,
+      "default": "--weight-loci Y  --bin-pathways N  --bin-regions Y  --bin-minimum-size 1"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "log_file",
+      "label": "Log File",
+      "class": "file"
+    },
+    {
+      "name": "bins_files",
+      "label": "Bins Files",
+      "class": "array:file"
+    },
+    {
+      "name": "summary_file",
+      "label": "Bins Summary File",
+      "class": "file"
+    },
+    {
+      "name": "locus_file",
+      "label": "Locus File",
+      "class": "file"
+    },
+    {
+      "name": "unlifted_files",
+      "label": "Unlifted Variants Files",
+      "class": "array:file",
+      "optional": true
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/main.sh",
+    "execDepends": [
+      { "name": "libgsl0ldbl" },
+      { "name": "tabix" }
+    ]
+  },
+  "authorizedUsers": [
+    "org-geisinger",
+    "org-geisinger_affiliate"
+  ],
+  "developers": [
+    "user-auv13",
+    "user-atf3"
+  ]
+}

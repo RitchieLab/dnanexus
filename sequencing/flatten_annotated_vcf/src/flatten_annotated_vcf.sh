@@ -33,7 +33,7 @@ function parallel_download_and_process() {
 
   IN_VCF=$(dx describe "$1" --name)
 
-  pythonOptions="--vcf_file $IN_VCF -F $max_maf --gene_list gene_list  --sample_list sample_list"
+  pythonOptions="--vcf_file $IN_VCF -F $max_maf  "
 
   if test "$bi_snps_only" = "true"; then
     pythonOptions="$pythonOptions --b_snp"
@@ -57,6 +57,15 @@ function parallel_download_and_process() {
       pythonOptions="$pythonOptions -p $ClinVarSignificance_Level"
     fi
   fi
+	if test "$gene_list"; then
+		dx download "$gene_list" -o gene_list
+		pythonOptions="$pythonOptions  --gene_list gene_list"
+	fi
+
+	if test "$sample_list"; then
+		dx download "$sample_list" -o sample_list
+		pythonOptions="$pythonOptions --sample_list sample_list"
+	fi
 
   echo $pythonOptions
 
@@ -81,8 +90,7 @@ main() {
     cd $HOME
 
 
-  	dx download "$gene_list" -o gene_list
-		dx download "$sample_list" -o sample_list
+
 
 
     # The following line(s) use the dx command-line tool to download your file

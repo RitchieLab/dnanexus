@@ -3,7 +3,7 @@
   "title": "flatten_annotated_vcf",
   "summary": "flatten_annotated_vcf",
   "dxapi": "1.0.0",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "inputSpec": [
     {
       "name": "vcf",

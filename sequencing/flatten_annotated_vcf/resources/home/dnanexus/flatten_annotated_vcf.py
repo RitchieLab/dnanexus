@@ -566,9 +566,10 @@ def main():
 				for i,f in enumerate(fields):
 					if f in sampleSet:
 						IDs[i]=f
-					elif sampleSet is None:
+					elif not sampleSet:
 						IDs[i]=f
 				if not IDs:
+					print "NO IDS!"
 					return
 				else:
 					outDict["INPUT_SAMPLES"]=list(sampleSet)

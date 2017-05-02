@@ -1,0 +1,97 @@
+{
+  "name": "filter_vep",
+  "title": "filter_vep",
+  "summary": "filter_vep",
+  "dxapi": "1.0.0",
+  "version": "0.0.6",
+  "inputSpec": [
+    {
+      "name": "in_vcf",
+      "label": "in_vcf",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": ""
+    },
+    {
+      "name": "filter_options",
+      "label": "filter_options",
+      "class": "string",
+      "optional": false,
+      "help": "http://www.ensembl.org/info/docs/tools/vep/script/vep_filter.html  NOTE: Only set additonal filter options.  Anything else will break app. only_matched can be deleted.  ",
+      "default": "--only_matched"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "out_vcf",
+      "label": "out_vcf",
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz"],
+      "help": ""
+    },
+    {
+      "name": "out_vcf_idx",
+      "label": "out_vcf_idx",
+      "class": "array:file",
+      "patterns" : ["*.tbi"],
+      "help": ""
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "cpanminus"
+      },
+      {
+        "name": "libtest-mockmodule-perl"
+      },
+      {
+        "name": "libcpan-meta-yaml-perl"
+      },
+      {
+        "name": "libcpan-meta-perl"
+      },
+      {
+              "name": "vcftools"
+      },
+      {"name": "libdbi-perl"},
+      {
+              "name": "tabix"
+      },
+      {
+              "name": "liblzma-dev"
+      },
+      {
+              "name": "lzma-dev"
+      },
+      {
+              "name": "liblzma5"
+      }
+
+    ],
+    "interpreter": "bash",
+    "file": "src/filter_vep.sh",
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem1_ssd2_x4"
+      }
+    },
+    "distribution": "Ubuntu"
+
+  },
+  "access": {
+    "project": "CONTRIBUTE",
+    "network": [
+      "*"
+    ]
+  }
+  ,
+  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource" : true,
+  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+
+}

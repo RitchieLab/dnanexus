@@ -1,9 +1,9 @@
 {
   "name": "flatten_annotated_vcf",
-  "title": "flatten_annotated_vcf",
-  "summary": "flatten_annotated_vcf",
+  "title": "Generate VCF Report",
+  "summary": "Generate VCF Report",
   "dxapi": "1.0.0",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "inputSpec": [
     {
       "name": "vcf",
@@ -19,7 +19,7 @@
       "name": "gene_list",
       "label": "List of Genes to Restrict to",
       "class": "file",
-      "optional": false,
+      "optional": true,
       "patterns": [
         "*.txt"
       ],
@@ -29,11 +29,11 @@
       "name": "sample_list",
       "label": "List of Sample to Restrict result to",
       "class": "file",
-      "optional": false,
+      "optional": true,
       "patterns": [
         "*.txt"
       ],
-      "help": "One Sample per line. Must be in format GHS_PT###_####."
+      "help": "One Sample per line. Must be in format GHS_PT###_####.  Will run on all samples if not set"
     },
     {
       "name" : "max_maf",

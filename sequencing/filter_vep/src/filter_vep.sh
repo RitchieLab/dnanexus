@@ -20,6 +20,9 @@ export SHELL="/bin/bash"
 procCount=$(nproc --all)
 
 set -x
+
+echo "Value of filter_options: '$filter_options'"
+#export $filter_options
 #set -o pipefail
 # install GNU parallel!
 sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
@@ -50,10 +53,12 @@ function parallel_download_filter() {
 	set -x
 	cd $2
 	dx download "$1"
-
+  echo $filter_options
   IN_VCF=$(dx describe "$1" --name)
   OUT_VCF=${IN_VCF%.vcf.gz}.filtered.vcf.gz
-  perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/filter_vep.pl -i $IN_VCF --gz --format vcf $filter_options | bgzip -c > $OUT_VCF
+
+  python ./runFilter_vep.py $IN_VCF | bgzip -c > $OUT_VCF
+  #perl /usr/share/ensembl-tools-release-87/scripts/variant_effect_predictor/filter_vep.pl --gz --format vcf -i $IN_VCF $filter_options | bgzip -c > $OUT_VCF
 
   tabix -p vcf $OUT_VCF
 
@@ -80,6 +85,10 @@ main() {
     for i in "${!in_vcf[@]}"; do
       echo "${in_vcf[$i]}" >> "$DXVCF_LIST"
     done
+
+    cd $WKDIR
+
+    cp $HOME/runFilter_vep.py .
 
     parallel -j $(nproc --all) -u --gnu parallel_download_filter :::: $DXVCF_LIST ::: $WKDIR
 

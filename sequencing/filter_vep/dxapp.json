@@ -3,7 +3,7 @@
   "title": "filter_vep",
   "summary": "filter_vep",
   "dxapi": "1.0.0",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "inputSpec": [
     {
       "name": "in_vcf",

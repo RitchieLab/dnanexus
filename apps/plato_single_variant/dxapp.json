@@ -1,7 +1,6 @@
 {
   "name": "plato_single_variant",
   "title": "PLATO - Single Variant Analysis",
-  "summary": "Apps allows you to run single variant association testing against single phenotype (GWAS) or multiple phenotype (PheWAS)",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [
@@ -26,7 +25,7 @@
       "label": "Regression",
       "class": "string",
       "choices": ["regress-auto","linear","logistic","firth"],
-      "default": "regress-auto", 
+      "default": "regress-auto",
       "optional": true
     },
     {
@@ -69,15 +68,16 @@
     {
       "group": "Regression Options",
       "name": "mem",
-      "label": "Lowmem (Reduces memory footprints)",
+      "label": "Lowmem",
       "class": "boolean",
       "default": true,
+      "help": "Reduces memory footprints",
       "optional": true
     },
     {
-      "group": "PLATO Commad-Line Options",
+      "group": "Advanced Options",
       "name": "plato_analysis_string",
-      "label": "PLATO command-line analysis string (If used, leave above options EMPTY)",
+      "label": "PLATO command-line options (If used, leave above Regression Options EMPTY)",
       "class": "string",
       "optional": true
     },
@@ -90,26 +90,30 @@
     },
     {
       "name": "input_continuous_covariate",
-      "label": "Input covariate file with continuous values",
+      "label": "Continuous Covariate",
+      "help": "Here values of the covariate should be numeric and quantitative.",
       "class": "file",
       "optional": true
     },
     {
       "name": "input_categorical_covariate",
-      "label": "Input covariate file with categorical values",
+      "label": "Categorical Covariates",
       "class": "file",
+      "help": "Here entry of non-numeric classes are allowed and will automatically generate a dummy encoding.",
       "optional": true
     },
     {
       "name": "input_samples",
-      "label": "Sample list file",
+      "label": "Sample file",
       "class": "file",
+      "help": "User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
     {
       "name": "input_markers",
-      "label": "SNP list file (RSID format or Range format: chr bp1 bp2 label))",
+      "label": "SNP file",
       "class": "file",
+      "help": "User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label)",
       "optional": true
     },
     {
@@ -126,7 +130,7 @@
       "class": "int",
       "optional": true
     },
-    
+
     {
       "group": "Regression Options",
       "name": "correction",
@@ -159,6 +163,6 @@
     "interpreter": "bash",
     "file": "src/plato_single_variant.sh"
   },
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
+  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
 }

@@ -138,5 +138,6 @@
   "access": {
     "project": "CONTRIBUTE"
   },
-   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger"]
+   "developers" : ["user-auv13", "user-atf3"],
+   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
 }

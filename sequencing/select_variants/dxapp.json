@@ -3,7 +3,7 @@
   "title": "Subset VCF",
   "summary": "Apply Sample / Variant level subsetting to VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "categories": [
     "Variation Calling"
   ],

@@ -211,12 +211,12 @@ run_sv() {
 
 	if test "$samp_incl"; then
 		dx download "$samp_incl" -o samp_incl
-		SV_ARGS="$SV_ARGS -sf samp_incl"
+		SV_ARGS="$SV_ARGS -sf samp_incl --keepOriginalAC"
 	fi
 
 	if test "$samp_excl"; then
 		dx download "$samp_excl" -o samp_excl
-		SV_ARGS="$SV_ARGS -xl_sf samp_excl"
+		SV_ARGS="$SV_ARGS -xl_sf samp_excl --keepOriginalAC"
 	fi
 
 	if test "$trimAlternates" = "true"; then

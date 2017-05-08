@@ -281,9 +281,13 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 	frequency=[]
 	annotations=[]
 
+
 	for field in info_field:
-		if field.startswith("AF"):
+		if field.startswith("AF="):
 			AFs = field.replace("AF=","").split(",")
+			for o_f in info_field:
+				if o_f.startswith("AF_Orig="):
+					AFs = o_f.replace("AF_Orig=","").split(",")
 			AFs.insert(0,'0')
 			for frq_index, f in enumerate(AFs):
 				if is_number(f):
@@ -298,13 +302,30 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 						alleleDict["HOM_SAMPLES"]=set()
 						alleleDict["HET_SAMPLES"]=set()
 						alleleDict["FRQ"]=[float(f)]
+						for a_c in info_field:
+							if field.startswith("AC="):
+								ACs =  field.replace("AC=","").split(",")
+							for o_c in info_field:
+								if o_c.startswith("AC_Orig="):
+									ACs =  o_c.replace("AC_Orig=","").split(",")
+							ACs.insert(0,'0')
+							for ac_index, ac in enumerate(ACs):
+								if ac_index==0:
+									continue
+								alleleDict["AC"]=int(ac)
 						returnDict[alleles[frq_index]]=alleleDict
 				else:
 					return None
 			if len(frequency)>0:
 				if not any(frequency):
 					return None
-		elif field.startswith("CSQ"):
+		elif field.startswith("AN="):
+			AN = int(field.replace("AN=",""))
+			for o_n in info_field:
+				if o_n.startswith("AN_Orig="):
+					AN = int(o_n.replace("AN_Orig=",""))
+			returnDict["AN"]=AN
+		elif field.startswith("CSQ="):
 			CSQs =[x.strip() for x in field.replace("CSQ=","").strip().split(",")]
 			if cli_arguments.VEP_Impact is not None:
 				for i,CSQ in enumerate(CSQs):
@@ -599,7 +620,7 @@ def main():
 
 def out_tsv(cli_arguments,outDict):
 	out_file_tsv = gzip.open(cli_arguments.vcf_file.replace(".vcf.",".filtered.tsv."),'w')
-	out_file_tsv.write("SAMPLE_COUNT\tHOM_COUNT\tHET_Count\tBI_ALLELIC\tCHROM\tPOS\tREF\tALT\tMAF\t")
+	out_file_tsv.write("SAMPLE_COUNT\tHOM_COUNT\tHET_Count\tBI_ALLELIC\tCHROM\tPOS\tREF\tALT\tMAF\tAN\tAC\t")
 	outDict["VEP_FIELDS"].remove('MAF')
 	out_file_tsv.write("VEP:"+"\tVEP:".join(outDict["VEP_FIELDS"])+"\t")
 	out_file_tsv.write("CLINVAR:"+"\tCLINVAR:".join(outDict["CLINVAR_FIELDS"])+"\t")
@@ -624,6 +645,7 @@ def out_tsv(cli_arguments,outDict):
 				else:
 					out_file_tsv.write("0\t")
 				out_file_tsv.write(str(lineDict["BI_ALLELIC"])+"\t"+lineDict["CHROM"]+"\t"+lineDict["POS"]+"\t"+lineDict["REF"]+"\t"+lineDict["ALL_ALLELES"][a]+"\t"+str(alleleDict["FRQ"][0])+"\t")
+				out_file_tsv.write(str(lineDict["AN"])+"\t"+str(alleleDict["AC"])+"\t")
 				for v in outDict["VEP_FIELDS"]:
 					if "VEP" in alleleDict:
 						if v in alleleDict["VEP"]:

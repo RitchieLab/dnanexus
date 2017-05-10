@@ -3,7 +3,7 @@
   "title": "Generate Phenotype Matrix",
   "summary": "generate_phenotype_matrix",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "categories": [],
   "inputSpec": [
     {
@@ -11,14 +11,14 @@
       "label": "SQLite file",
       "class": "file",
       "optional": false,
-      "default": {"$dnanexus_link": "file-Bvjyf400pB0kK3G3f88kYX7g"
+      "default": {"$dnanexus_link": "file-F4991V80pB0V7f2G1yV45J3k"
       }
     },
     {
       "name": "freeze",
       "label": "Freeze",
       "class": "string",
-      "choices": [ "40K", "50K" ],
+      "choices": [ "40K", "50K", "60K" ],
       "optional": false
     },
     {

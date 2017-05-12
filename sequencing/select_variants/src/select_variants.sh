@@ -36,14 +36,20 @@ function download_resources() {
 		echo $build_version
 	if [ "$build_version" = "b37_decoy" ];
 	then
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
-		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+		#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
+		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
 	else
 
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+			#dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
+			#dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+			#dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/h38flat.fasta-index.fasta
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/h38flat.fasta-index.fasta.fai
+			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/h38flat.fasta-index.dict
 
 		fi
 
@@ -86,7 +92,11 @@ main() {
 	SUBJOB_ARGS="$SUBJOB_ARGS -iremove_annotations:boolean=$remove_annotations"
 	SUBJOB_ARGS="$SUBJOB_ARGS -ibuild_version:string='$build_version'"
 	if test "$trimAlternates"; then
-		SUBJOB_ARGS="$SUBJOB_ARGS -itrimAlternates:string='$trimAlternates'"
+		SUBJOB_ARGS="$SUBJOB_ARGS -itrimAlternates:boolean='$trimAlternates'"
+	fi
+
+	if test "$maxNOCALLfraction"; then
+		SUBJOB_ARGS="$SUBJOB_ARGS -imaxNOCALLfraction:float='$maxNOCALLfraction'"
 	fi
 
 
@@ -227,6 +237,10 @@ run_sv() {
 		SV_ARGS="$SV_ARGS $EXTRA_CMD"
 	fi
 
+	if test "$maxNOCALLfraction"; then
+		SV_ARGS="$SV_ARGS --maxNOCALLfraction $maxNOCALLfraction"
+	fi
+
 	if test -z "$SV_ARGS" -a -z "$concord_vcf"; then
 		dx-jobutil-report-error "ERROR: Nothing to do!"
 	fi
@@ -268,13 +282,22 @@ run_sv() {
 				tabix -p vcf -f concord_all.vcf.gz
 		fi
 
+		if [ "$build_version" = "b37_decoy" ];
+		then
+			# Restrict the concord_all.$EXT to the chromosome of interest only!
+			/usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
+			-T SelectVariants \
+			-nt $(nproc --all) \
+			-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
+			-V concord_all.vcf.gz -L $CHR -o concord_chr.vcf.gz
+		else
+			/usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
+			-T SelectVariants \
+			-nt $(nproc --all) \
+			-R /usr/share/GATK/resources/h38flat.fasta-index.fasta \
+			-V concord_all.vcf.gz -L $CHR -o concord_chr.vcf.gz
+		fi
 
-		# Restrict the concord_all.$EXT to the chromosome of interest only!
-		/usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
-		-T SelectVariants \
-		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/build.fasta \
-		-V concord_all.vcf.gz -L $CHR -o concord_chr.vcf.gz
 
 		SV_ARGS="$SV_ARGS -conc concord_chr.vcf.gz"
 	fi
@@ -301,13 +324,23 @@ run_sv() {
 			tabix -p vcf -f raw.vcf.gz
 	fi
 
-
+	if [ "$build_version" = "b37_decoy" ];
+	then
 	eval /usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
 		-T SelectVariants \
 		-nt $(nproc --all) \
-		-R /usr/share/GATK/resources/build.fasta \
+		-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 		-V raw.vcf.gz "$SV_ARGS" \
 		-o $OUT_DIR/$PREFIX."$SUFFIX"vcf.gz
+	else
+		eval /usr/share/jre1.8.0_101/bin/java -d64 -Xms512m -Xmx${TOT_MEM}m -jar /usr/share/GATK/GenomeAnalysisTK.jar \
+			-T SelectVariants \
+			-nt $(nproc --all) \
+			-R /usr/share/GATK/resources/h38flat.fasta-index.fasta \
+			-V raw.vcf.gz "$SV_ARGS" \
+			-o $OUT_DIR/$PREFIX."$SUFFIX"vcf.gz
+
+	fi
 
 	vcf_out=$(dx upload $OUT_DIR/$PREFIX.${SUFFIX}vcf.gz --brief)
 	vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.${SUFFIX}vcf.gz.tbi --brief)

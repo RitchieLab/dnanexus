@@ -3,7 +3,7 @@
   "title": "Subset VCF",
   "summary": "Apply Sample / Variant level subsetting to VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "categories": [
     "Variation Calling"
   ],
@@ -86,6 +86,13 @@
       "class" : "boolean",
       "optional" : true,
       "default" : false
+    },
+    {
+      "name" : "maxNOCALLfraction",
+      "label" : "Maximum fraction of samples with no-call genotypes",
+      "class" : "float",
+      "optional" : true,
+      "default" : 1
     },
     {
       "name": "EXTRA_CMD",

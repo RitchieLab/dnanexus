@@ -302,18 +302,22 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 						alleleDict["HOM_SAMPLES"]=set()
 						alleleDict["HET_SAMPLES"]=set()
 						alleleDict["FRQ"]=[float(f)]
+						alleleDict["AC"]=-1
 						for a_c in info_field:
-							if field.startswith("AC="):
-								ACs =  field.replace("AC=","").split(",")
-							for o_c in info_field:
-								if o_c.startswith("AC_Orig="):
-									ACs =  o_c.replace("AC_Orig=","").split(",")
-							ACs.insert(0,'0')
-							for ac_index, ac in enumerate(ACs):
-								if ac_index==0:
-									continue
-								alleleDict["AC"]=int(ac)
+							if a_c.startswith("AC="):
+								ACs =  a_c.replace("AC=","").split(",")
+								for o_c in info_field:
+									if o_c.startswith("AC_Orig="):
+										ACs =  o_c.replace("AC_Orig=","").split(",")
+								ACs.insert(0,'0')
+								for ac_index, ac in enumerate(ACs):
+									if ac_index==0:
+										continue
+									alleleDict["AC"]=int(ac)
 						returnDict[alleles[frq_index]]=alleleDict
+						returnDict["AN"]=-1
+
+
 				else:
 					return None
 			if len(frequency)>0:

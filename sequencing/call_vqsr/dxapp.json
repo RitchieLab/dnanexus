@@ -3,7 +3,7 @@
   "title": "call_vqsr",
   "summary": "call_vqsr",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "categories": [
     "Variation Calling"
   ],
@@ -56,9 +56,9 @@
       "name": "build_version",
       "label": "NCBI Build Version",
       "class": "string",
-      "choices": ["b38","b37_decoy"],
-      "default": "b38",
-      "optional": true
+      "choices": ["rgc_b38","gatk_b38","b37_decoy"],
+      "default": "rgc_b38",
+      "optional": false
     }
   ],
   "outputSpec": [

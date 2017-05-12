@@ -32,7 +32,7 @@ function download_resources() {
 	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
 	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
 	dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-	
+
 }
 
 function parallel_download() {
@@ -60,7 +60,7 @@ main() {
     echo "Value of vcfs: '${vcfs[@]}'"
     echo "Value of vcfidxs: '${vcfidxs[@]}'"
     echo "Value of prefix: '$prefix'"
-    
+
     if test -z "$prefix"; then
     	prefix="combined"
     else
@@ -86,44 +86,44 @@ main() {
 	# the prefix to use for the single resultant gvcf
 
 	download_resources
-	
+
 	# download my gvcfidx_list
 	DX_VCFIDX_LIST=$(mktemp)
 	WKDIR=$(mktemp -d)
 
-	for i in "${!vcfidxs[@]}"; do	
+	for i in "${!vcfidxs[@]}"; do
 		echo "${vcfidxs[$i]}" >> $DX_VCFIDX_LIST
 	done
-	
+
 	cd $WKDIR
-	
+
 	parallel -u --gnu -j $(nproc --all) parallel_download :::: $DX_VCFIDX_LIST ::: $WKDIR
-	
+
 	# OK, now all of the gvcf indexes are in $WKDIR, time to download
 	# all of the GVCFs in parallel
 	DX_VCF_LIST=$(mktemp)
-	for i in "${!vcfs[@]}"; do	
+	for i in "${!vcfs[@]}"; do
 		echo "${vcfs[$i]}" >> $DX_VCF_LIST
 	done
-	
+
 	# download (and index if necessary) all of the gVCFs
-	VCF_LIST=$(mktemp)	
+	VCF_LIST=$(mktemp)
 	parallel -u --gnu -j $(nproc --all) dl_index :::: $DX_VCF_LIST ::: $WKDIR ::: $VCF_LIST
-	
+
 	# Now, merge the gVCFs into a single gVCF
 	FINAL_DIR=$(mktemp -d)
 	TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 	java -d64 -Xms512m -Xmx$((TOT_MEM * 9 / 10))m -jar /usr/share/GATK/GenomeAnalysisTK-3.4-46-custom.jar \
-	-T CombineVariants -nt $(nproc --all) --assumeIdenticalSamples \
+	-T CombineVariants -nt $(nproc --all) \
 	$(cat $VCF_LIST | sed 's/^/-V /' | tr '\n' ' ') \
 	-R /usr/share/GATK/resources/human_g1k_v37_decoy.fasta \
 	-genotypeMergeOptions UNSORTED \
 	-o $FINAL_DIR/$prefix.vcf.gz
-	
+
 	# and upload it and we're done!
 	DX_VCF_UPLOAD=$(dx upload "$FINAL_DIR/$prefix.vcf.gz" --brief)
 	DX_VCFIDX_UPLOAD=$(dx upload "$FINAL_DIR/$prefix.vcf.gz.tbi" --brief)
-	
+
 	dx-jobutil-add-output vcf_out $DX_VCF_UPLOAD --class=file
 	dx-jobutil-add-output vcfidx_out $DX_VCFIDX_UPLOAD --class=file
 

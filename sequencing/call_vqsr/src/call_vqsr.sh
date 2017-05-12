@@ -73,6 +73,15 @@ main() {
 
     dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz" -o /usr/share/GATK/resources/dbsnp.vcf.gz
 		dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp.vcf.gz.tbi
+  elif [ "$build_version" == "rgc_b38" ]
+  then
+
+  dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta" -o /usr/share/GATK/resources/build.fasta
+  dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+  dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.dict" -o /usr/share/GATK/resources/build.dict
+
+  dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/dbsnp.vcf.gz
+  dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp.vcf.gz.tbi
 
 	else
 
@@ -86,19 +95,7 @@ main() {
 
 	fi
 
-
-
-	#dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.4-46.jar" -o /usr/share/GATK/GenomeAnalysisTK-3.4-46.jar
-
-  #dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta
-	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/human_g1k_v37_decoy.fasta.fai
-	#dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/human_g1k_v37_decoy.dict
-
-	#dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz" -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz
-	#dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_137.b37.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz.tbi
-
     INCL_DP=""
-    # if exome == "false", then we're whole genome and we want a depth included in VQSR
     if test "$exome" = "false"; then
     	INCL_DP="-an DP"
     fi
@@ -140,49 +137,31 @@ main() {
   	fi
 
 
-
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.b37.vcf.gz" -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/hapmap_3.3.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz.tbi
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.b37.vcf.gz" -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_omni2.5.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz.tbi
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz.tbi
-
-		#ANNO_STR="-mode $mode -an QD -an FS -an SOR -an MQ -an MQRankSum -an ReadPosRankSum -an InbreedingCoeff $INCL_DP"
-		#RESOURCE_STR="$RESOURCE_STR -resource:hapmap,known=false,training=true,truth=true,prior=15.0 /usr/share/GATK/resources/hapmap_3.3.b37.vcf.gz"
-		#RESOURCE_STR="$RESOURCE_STR -resource:omni,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/1000G_omni2.5.b37.vcf.gz"
-		#RESOURCE_STR="$RESOURCE_STR -resource:1000G,known=false,training=true,truth=false,prior=10.0 /usr/share/GATK/resources/1000G_phase1.snps.high_confidence.b37.vcf.gz"
-		#RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz"
 	else
 	# running in INDEL mode
 
-  if [ "$build_version" == "b37_decoy" ]
-  then
-    dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz
-		dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz.tbi
+    if [ "$build_version" == "b37_decoy" ]
+    then
+      dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz
+  		dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz.tbi
 
-		ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
-		RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz"
-		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp.vcf.gz"
-  else
+  		ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
+  		RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz"
+  		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp.vcf.gz"
+    else
 
-    dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz
-    dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.hg38.chr.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz.tbi
+      dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz
+      dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.hg38.chr.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz.tbi
 
-    #dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi
+      #dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz
+  		#dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi
 
-		ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
-		RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz"
-		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp.vcf.gz"
-  fi
+  		ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
+  		RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.vcf.gz"
+  		RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp.vcf.gz"
+    fi
 
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-		#dx download "$DX_RESOURCES_ID:/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi" -o /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz.tbi
 
-		#ANNO_STR="-mode $mode --maxGaussians 4 -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff $INCL_DP"
-		#RESOURCE_STR="$RESOURCE_STR -resource:mills,known=false,training=true,truth=true,prior=12.0 /usr/share/GATK/resources/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"
-		#RESOURCE_STR="$RESOURCE_STR -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /usr/share/GATK/resources/dbsnp_137.b37.vcf.gz"
 	fi
 
 	echo "My RESOURCE_STR: $RESOURCE_STR"

@@ -3,7 +3,7 @@
   "title": "combine_variants",
   "summary": "combine_variants",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "categories": [
     "Variation Calling"
   ],
@@ -33,12 +33,14 @@
     {
       "name": "vcf_out",
       "label": "Combined VCF",
-      "class": "file"
+      "class": "file",
+      "patterns" : [ "*.vcf.gz"]
     },
     {
       "name": "vcfidx_out",
       "label": "Combined VCF Index File",
-      "class": "file"
+      "class": "file",
+      "patterns" : ["*.tbi"]
     }
   ],
   "runSpec": {
@@ -72,7 +74,7 @@
      "allProjects": "VIEW",
      "project": "CONTRIBUTE"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

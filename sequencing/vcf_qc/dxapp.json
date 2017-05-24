@@ -108,7 +108,7 @@
       "name": "build_version",
       "label": "NCBI Build Version",
       "class": "string",
-      "choices": ["rgc_b38","gatk_b38","b37_decoy"],
+      "choices": ["rgc_b38","gatk_b38","b37_decoy","hg38chr.fa"],
       "default": "rgc_b38",
       "optional": false
     }

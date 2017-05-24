@@ -83,11 +83,21 @@ main() {
   dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/dbsnp.vcf.gz
   dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp.vcf.gz.tbi
 
+elif [ "$build_version" == "gatk_b38" ]
+then
+
+dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta" -o /usr/share/GATK/resources/build.fasta
+dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
+dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.dict" -o /usr/share/GATK/resources/build.dict
+
+dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/dbsnp.vcf.gz
+dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp.vcf.gz.tbi
+
 	else
 
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
-			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+			dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa" -o /usr/share/GATK/resources/build.fasta
+			dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+			dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.dict" -o /usr/share/GATK/resources/build.dict
 
       dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz" -o /usr/share/GATK/resources/dbsnp.vcf.gz
 			dx download "$DX_RESOURCES_ID:/GATK/resources/dbsnp_144.hg38.chr.vcf.gz.tbi"  -o /usr/share/GATK/resources/dbsnp.vcf.gz.tbi

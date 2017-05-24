@@ -201,11 +201,18 @@ run_qc() {
       dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
       dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.dict" -o /usr/share/GATK/resources/build.dict
 
+    elif [ "$build_version" == "gatk_b38" ]
+    then
+
+      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
+      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+
   	else
 
-  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
-  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
-  			dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
+      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa" -o /usr/share/GATK/resources/build.fasta
+      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
+      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.dict" -o /usr/share/GATK/resources/build.dict
 
 
   	fi

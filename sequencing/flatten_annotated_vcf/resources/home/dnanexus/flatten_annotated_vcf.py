@@ -436,7 +436,10 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			if not cli_arguments.clinVarStar is None:
 				if len(clinvar)<ClinVar_fields["ReviewStatus"]:
 					annotations.append(False)
+<<<<<<< HEAD
 					continue 
+=======
+>>>>>>> parent of f80d591... asdf
 				if clinvar[0] not in returnDict:
 					if clinvar[0] == "-":
 						clinvar[0] ="."

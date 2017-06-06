@@ -463,7 +463,8 @@ def filterLine(all_fields,cli_arguments,VEP_Fields,ClinVar_fields,geneSet,IDs):
 			if cli_arguments.HGMD is not None:
 				if getHGMD_level(field.replace("CLASS=",""))>=cli_arguments.HGMD:
 					annotations.append(True)
-					returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+					#returnDict["PASS_ALLELES"].add(alleles.index(Cs[0]))
+					returnDict["PASS_ALLELES"].update(alleles)
 				else:
 					annotations.append(False)
 			returnDict["HGMD_CLASS"]=field.replace("CLASS=","")

@@ -3,7 +3,7 @@
   "title": "Generate VCF Report",
   "summary": "Generate VCF Report",
   "dxapi": "1.0.0",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "inputSpec": [
     {
       "name": "vcf",

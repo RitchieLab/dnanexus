@@ -3,7 +3,7 @@
   "title": "Haplotype Caller",
   "summary": "call_hc",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "categories": [
     "Variation Calling"
   ],
@@ -47,7 +47,7 @@
     {
       "name": "padding",
       "class": "int",
-      "optional": true,
+      "optional": false,
       "default" : 20
     },
     {
@@ -103,7 +103,7 @@
     ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

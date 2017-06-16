@@ -60,6 +60,9 @@ function parallel_download_and_process() {
 	if test "$gene_list"; then
 		dx download "$gene_list" -o gene_list
 		pythonOptions="$pythonOptions  --gene_list gene_list"
+	else
+		echo "No Gene List"
+
 	fi
 
 	if test "$sample_list"; then

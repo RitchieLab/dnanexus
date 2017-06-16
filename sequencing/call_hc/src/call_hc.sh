@@ -14,6 +14,7 @@
 #
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
+DX_RESOURCES_ID='project-BYpFk1Q0pB0xzQY8ZxgJFv1V'
 
 set -x
 

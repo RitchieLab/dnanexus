@@ -3,7 +3,7 @@
   "title": "Base Quality Score Recalibration",
   "summary": "Call GATK BQSR and return the tables for use in HaplotypeCaller",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "categories": [
     "Variation Calling"
   ],
@@ -84,14 +84,13 @@
     "release": "14.04",
     "file": "src/call_bqsr.sh"
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "access": {
     "network": [
       "*"
     ],
      "allProjects": "VIEW"
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
+  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
   "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

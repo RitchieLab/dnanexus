@@ -211,7 +211,6 @@ delete from assoc_result where rowid = 1;
 		then
 			# Import ICD-9 code description table to the database
 			dx download "$DX_RESOURCES_ID:ICD9/icd9_codes_description.txt" -o icd9_code_desc.txt
-			#dx download file-Bvx13VQ0pB0QpzYZ2v9QvK2Y -o icd9_code_desc.txt
 
 sqlite3 anno.db <<!
 create table icd9_code_desc (icd9_code varchar(8), desc text);

@@ -134,10 +134,14 @@
     "interpreter": "bash",
     "file": "src/association_result_annotation.sh"
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+    }
+  },
   "access": {
     "project": "CONTRIBUTE"
   },
    "developers" : ["user-auv13", "user-atf3"],
-   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
+   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"]
 }

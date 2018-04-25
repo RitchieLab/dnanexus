@@ -1,4 +1,4 @@
-# dnanexus
+# DNAnexus
 Dnanexus Apps and Scripts
 
 ## applets 

@@ -1,0 +1,110 @@
+{
+  "name": "rvtests_vcf",
+  "title": "Rvtests VCF",
+  "summary": "Run Rvtests analysis on VCF files",
+  "dxapi": "1.0.0",
+  "version": "0.1.0",
+  "inputSpec": [
+    {
+      "name": "vcf_files",
+      "label": "VCF files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": ""
+    },
+   {
+      "name": "pheno_files",
+      "label": "Phenotype files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*"
+      ],
+      "help": ""
+    },
+    {
+      "name": "kinship_file",
+      "label": "VCF kinship file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*"
+      ],
+      "help": ""
+    },
+    {
+      "name": "gen_score",
+      "label": "Generate meta score output file",
+      "class": "boolean",
+      "optional": false,
+      "help": "When true, the app produces a .MetaScore.assoc.gz file."
+    },
+    {
+      "name": "gen_cov",
+      "label": "Generate meta cov output file",
+      "class": "boolean",
+      "optional": false,
+      "help": "When true, the app produces a .MetaCov.assoc.gz file."
+    },
+   {
+      "name": "prefix",
+      "label": "Output prefix",
+      "class": "string",
+      "optional": true,
+      "help": "If included, the output files will begin with <prefix>_<vcf basename>. If not, the output files will begin with just <vcf basename>."},
+    {
+      "name": "split_instance",
+      "label": "Instance for splitting VCF input",
+      "class": "string",
+      "optional": true,
+      "default": "mem1_ssd2_x2",
+      "help": "Sets the instance type for the VCF splitting step."
+    },
+    {
+      "name": "rvtest_instance",
+      "label": "Instance for each Rvtest parallel job analysis",
+      "class": "string",
+      "optional": true,
+      "default": "mem3_ssd1_x4",
+      "help": "Sets the instance type for the rvtest analysis step."
+    },
+    {
+      "name": "merge_instance",
+      "label": "Instance for merging Rvtest output",
+      "class": "string",
+      "optional": true,
+      "default": "mem2_hdd2_x2",
+      "help": "Sets the instance type for the Rvtests output merging step."
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "out",
+      "label": "Out files",
+      "class": "array:file",
+      "patterns": [
+        "*"
+      ],
+      "help": ""
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/rvtests_vcf.sh",
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem1_ssd1_x2"
+      }
+    },
+    "execDepends": [
+    {"name": "tabix"}
+    ],
+    "distribution": "Ubuntu",
+    "release": "12.04"
+  },
+  "developers" : ["user-sud23", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_ritchie"]
+}

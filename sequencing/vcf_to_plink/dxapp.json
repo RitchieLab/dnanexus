@@ -3,7 +3,7 @@
   "title": "Convert VCF file to PLINK file",
   "summary": "vcf_to_plink",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling",
     "Statistics"

@@ -3,7 +3,7 @@
   "title": "VCF QC",
   "summary": "Apply Recalibration and hard filters to VCF file",
   "dxapi": "1.0.0",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],
@@ -132,7 +132,7 @@
     }
   ],
   "runSpec": {
-  "execDepends": [
+   "execDepends": [
       {
         "name": "pigz"
       },
@@ -140,17 +140,20 @@
         "name": "tabix"
       }
     ],
-    "systemRequirements": {
-      "*": {
-        "instanceType": "mem1_ssd2_x8"
-      }
-    },
     "distribution": "Ubuntu",
     "release": "14.04",
     "interpreter": "bash",
-    "file": "src/vcf_qc.sh"
+    "file": "src/vcf_qc.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 120 }
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "regionalOptions": {
+  "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd2_x8"}},
+                    "assetDepends": [{"id": ""}],
+                    "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+                   }
+  },
   "access": {
     "network": [
       "*"
@@ -159,5 +162,12 @@
   },
   "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
-  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"],
+  "details": {
+    "upstreamVersion": "",
+    "upstreamAuthor": "",
+    "upstreamUrl": "",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": ""
+  }
 }

@@ -1,9 +1,9 @@
 {
   "name": "vcf_pca",
   "title": "Calculate PCs from VCF",
-  "summary": "vcf_pca",
+  "summary": "Uses PLINK 1.9 and eigenstrat 6.0 to calculate principal components from VCF or PLINK bed/bim/fam files",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling",
     "Statistics"
@@ -91,28 +91,28 @@
     },
     {
       "name" : "project_1kg",
-      "label" : "Project onto 1000 Genomes samples",
+      "label" : "Project onto 1000 Genomes samples?",
       "class" : "boolean",
       "optional" : false,
       "default" : true
     },
     {
       "name" : "project_superpop",
-      "label" : "Calculate projection using super-populations (EUR, etc.)",
+      "label" : "Calculate projection using super-populations (EUR, etc.)?",
       "class" : "boolean",
       "optional" : true,
       "default" : false
     },
     {
       "name": "fast_pca",
-      "label": "Use Fast Eigenvalue Approx. (Non fast may not work)",
+      "label": "Use Fast Eigenvalue Approx? (Non fast may not work)",
       "class": "boolean",
       "optional": false,
       "default" : true
     },
     {
       "name": "twstats",
-      "label": "Calculate Tracy-Widom Stats",
+      "label": "Calculate Tracy-Widom Stats?",
       "class": "boolean",
       "optional": false,
       "default" : true
@@ -177,10 +177,27 @@
       {"name": "tabix"}
     ],
     "interpreter": "bash",
-    "file": "src/vcf_pca.sh"
+    "file": "src/vcf_pca.sh",
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "timeoutPolicy": {
+      "*": { "hours": 120 }
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "regionalOptions": {
+  "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd1_x16"}},
+                    "assetDepends": [{"id": ""}],
+                    "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+                   }
+  },
   "openSource" : true,
   "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"],
+  "details": {
+    "upstreamVersion": "",
+    "upstreamAuthor": "",
+    "upstreamUrl": "",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": ""
+  }
 }

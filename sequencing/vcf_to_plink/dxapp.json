@@ -96,7 +96,14 @@
       {"name": "tabix"}
     ],
     "interpreter": "bash",
-    "file": "src/vcf_to_plink.sh"
+    "file": "src/vcf_to_plink.sh",
+    "release": "14.04",
+    "distribution": "Ubuntu",
+    "timeoutPolicy": {
+      "main": {
+        "hours": 24
+      }
+    }
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,

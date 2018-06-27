@@ -3,7 +3,7 @@
   "title": "GATK VariantAnnotator",
   "summary": "Annotate a VCF file using GATK VariantAnnotator",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],

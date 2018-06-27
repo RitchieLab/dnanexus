@@ -46,9 +46,9 @@ App requires a tab separated file.
 
 ### Example Screenshots
 **Step 1**
-![alt text](https://github.com/GeisingerBTI/dnanexus/blob/master/blob/master/association_result_annotation/step1.png)
+![alt text](./blob/master/association_result_annotation/step1.png)
 **Step 2**
-![alt text](https://github.com/GeisingerBTI/dnanexus/blob/master/blob/master/association_result_annotation/step2.png)
+![alt text](./blob/master/association_result_annotation/step2.png)
 
 
 

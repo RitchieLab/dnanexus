@@ -1,0 +1,11 @@
+production:
+ aws:us-east-1:
+  hs37d5_fasta: file-B6ZY7VG2J35Vfvpkj8y0KZ01
+  gatk_jar: 
+  hg001_wes_vcfgz: file-F4J89Jj04g2509pv5Z9b9V9K
+  hg001_wes_vcfgz_tbi: file-F4J89K004g2Jf6Bz5Z6639z2
+  hg002_wes_vcfgz: file-F4J94P80JJ83Kf9ZFKX6vVPb
+  hg002_wes_vcfgz_tbi: file-F4J94PQ0JJ83pVfYFKKX6g96
+  hg005_wes_vcfgz: file-F4J90GQ08z2ykFV90PKfF43B
+  hg005_wes_vcfgz_tbi: file-F4J90Gj08z2z5pP40KvbbXJ6
+  gatk_jar: file-F33BB280q6q5Y5Bx1BQ029pb

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -x
 
 main() {
@@ -87,7 +89,7 @@ convert_vcf() {
     fi
     
     # Now, convert the VCF into a PLINK file
-    eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter --make-bed "$sel_args" $PLINK_ARGS --out $OUTDIR/$PREFIX -allow-no-sex --threads $(nproc --all)
+    eval plink2 --vcf input.vcf.gz --double-id --id-delim "' '" --set-missing-var-ids @:#:\$1 --vcf-filter --make-bed "$sel_args" $PLINK_ARGS --out $OUTDIR/$PREFIX -allow-no-sex --allow-extra-chr --threads $(nproc --all)
     
     # upload all 3 bed/bim/fam files
     for ext in bed bim fam; do
@@ -114,8 +116,9 @@ run_merge() {
     FAM_OVERALL=$(mktemp)
     N_F=0
     MAX_N=0
-       FIRST_PREF=""
-       MERGE_FILE=$(mktemp)
+    FIRST_PREF=""
+    MERGE_FILE=$(mktemp)
+    
     for i in "${!bed[@]}"; do
         dx download "${bed[$i]}" -o f_$i.bed
         dx download "${bim[$i]}" -o f_$i.bim

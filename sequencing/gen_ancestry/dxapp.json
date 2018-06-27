@@ -52,7 +52,14 @@
   ],
   "runSpec": {
     "interpreter": "bash",
-    "file": "src/gen_ancestry.sh"
+    "file": "src/gen_ancestry.sh",
+    "timeoutPolicy": {
+      "main": {
+        "hours": 24
+      }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
   },
   "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource" : true,

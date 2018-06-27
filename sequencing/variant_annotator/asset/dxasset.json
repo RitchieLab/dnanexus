@@ -1,0 +1,10 @@
+{
+  "name": "variant_annotator_asset",
+  "title": "Variant annotator asset",
+  "description": "Variant annotator asset",
+  "version": "0.0.1",
+  "distribution": "Ubuntu",
+  "release": "14.04",
+  "instanceType": "mem1_ssd1_x4",
+  "execDepends": [{"name": "pigz"}, {"name": "tabix"}, {"name": "openjdk-8-jre-headless"}, {"name": "samtools"}]
+}

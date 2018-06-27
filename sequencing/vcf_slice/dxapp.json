@@ -3,34 +3,42 @@
   "title": "Slice VCF File(s)",
   "summary": "vcf_slice",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "categories": [
     "Variation Calling"
   ],
+  "details": {
+    "whatsNew": "",
+    "citation": ""
+  },
   "inputSpec": [
     {
       "name": "vcf_fn",
-      "label": "VCF Files",
+      "label": "VCF files",
+      "help": "Variant files to be sliced, in VCF format.",
       "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf.gz"]
+      "patterns": ["*.vcf.gz"]
     },
     {
       "name": "vcfidx_fn",
-      "label": "VCF Index Files",
+      "label": "VCF index files",
+      "help": "Tabix index files corresponding to VCF files. Each VCF must have a corresponding index with matching base filename.",
       "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf.gz.tbi"]
+      "patterns": ["*.vcf.gz.tbi"]
     },
     {
       "name": "region_fn",
       "label": "File of regions (chr:start-stop)",
+      "help": "Text file of genomic region coordinates. Variants within these ranges will be extracted from the given VCF files.",
       "class": "file",
       "optional": false
     },
     {
       "name": "suffix_fn",
-      "label": "Output File name suffix (Optional)",
+      "label": "Output file name suffix (optional)",
+      "help": "Include this given string in the output VCF filename extension, e.g. '*.sliced.SUFFIX.vcf.gz'",
       "class": "string",
       "optional": true
     }
@@ -38,32 +46,56 @@
   "outputSpec": [
     {
       "name": "vcf_out",
-      "label": "Sliced VCF Files",
+      "label": "Sliced VCF files",
       "class": "array:file"
     },
     {
       "name": "vcfidx_out",
-      "label": "Sliced VCF Index Files",
+      "label": "Sliced VCF index files",
       "class": "array:file"
     }
   ],
   "runSpec": {
-    "execDepends": [
+    "assetDepends": [
       {"name": "pigz"},
       {"name": "openjdk-7-jre-headless"},
       {"name": "tabix"},
       {"name": "vcftools"}
-    ],  
+    ],
     "interpreter": "bash",
-    "file": "src/vcf_slice.sh"
+    "file": "src/vcf_slice.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 8 }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
   },
-  "access": {
-    "network": [
-      "*"
-    ]
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "*": { "instanceType": "mem1_ssd1_x4" }
+      }
+    },
+    "azure:westus": {
+      "systemRequirements": {
+        "*": { "instanceType": "azure:mem2_ssd1_x4" }
+      }
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "openSource": true,
+  "developers": [
+      "user-tnperson",
+      "user-johnwallace123",
+      "user-auv13",
+      "user-atf3"],
+  "authorizedUsers": [
+      "org-geisinger_affiliate",
+      "org-geisinger",
+      "org-support",
+      "user-codushlaine",
+      "user-semanti.mukherjee",
+      "user-alexander.li",
+      "user-shannon.bruse",
+      "user-jan.freudenberg",
+      "user-crisvh"]
 }

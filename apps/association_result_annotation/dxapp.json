@@ -13,8 +13,8 @@
       "optional": false
     },
     {
-      "name": "sql_file",
-      "label": "SQLite file",
+      "name": "sql_db_file",
+      "label": "SQLite databse file",
       "class": "file",
       "hidden": true,
       "default": {
@@ -134,10 +134,19 @@
     "interpreter": "bash",
     "file": "src/association_result_annotation.sh"
   },
-  "regionalOptions": {
+   "regionalOptions": {
     "aws:us-east-1": {
-      "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
-    }
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_x4"
+        }   
+      },  
+      "assetDepends": [
+          {   
+            "id":"record-FGkqfp801VfbYYq126ff8Fz2"
+          }   
+       ]   
+      }   
   },
   "access": {
     "project": "CONTRIBUTE"

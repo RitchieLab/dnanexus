@@ -90,12 +90,12 @@ main() {
 
             if [ "$grasp_pval" != "" ]
 				then
-sqlite3 anno.db <<!
-.separator \t
-create table grasp_subset as select * from grasp where Pvalue < $grasp_pval;
-create index "grasp_subset_chr" on "grasp_subset" ("chr","pos");
-create index "grasp_subset_chr_2" on "grasp_subset" ("chr");
-create index "grasp_subset_pos" on "grasp_subset" ("pos");
+                    sqlite3 anno.db <<!
+                        .separator \t
+                        create table grasp_subset as select * from grasp where Pvalue < $grasp_pval;
+                        create index "grasp_subset_chr" on "grasp_subset" ("chr","pos");
+                        create index "grasp_subset_chr_2" on "grasp_subset" ("chr");
+                        create index "grasp_subset_pos" on "grasp_subset" ("pos"); 
 !
             fi
 
@@ -148,21 +148,22 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
         fi
 
 
-        if $up_gene;
-        then
+        if $up_gene; then
+            
             if [ "${gene_query}" != "" ]
             then
                 up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream_Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream_Distance'"
-					out_suffix="${out_suffix}_up-gene"
-				else
-					gene_query="left join biofilter_anno b on a.'$chr_col'=b.chr_37 and a."$pos_col"=b.pos_37"
-					up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream_Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream_Distance'"
-					out_suffix="${out_suffix}_up-gene"
-				fi
+			    out_suffix="${out_suffix}_up-gene"
+			else
+				gene_query="left join biofilter_anno b on a.'$chr_col'=b.chr_37 and a."$pos_col"=b.pos_37"
+				up_gene_col=",IFNULL(group_concat(distinct b.upstream), 'NA') as 'Upstream_Gene', IFNULL(group_concat(distinct b.up_distance), 'NA') as 'Upstream_Distance'"
+				out_suffix="${out_suffix}_up-gene"
 			fi
+		
+        fi
 
-        if $down_gene;
-        then
+        if $down_gene; then
+            
             if [ "${gene_query}" != "" ]
             then
                 down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream_Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream_Distance'"
@@ -172,14 +173,15 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
                 down_gene_col=",IFNULL(group_concat(distinct b.downstream), 'NA') as 'Downstream_Gene', IFNULL(group_concat(distinct b.down_distance), 'NA') as 'Downstream_Distance'"
                 out_suffix="${out_suffix}_down-gene"
             fi
+        
         fi
 
         sqlite3 anno.db "create table biofilter_anno ($biofilter_anno_col)"
 
         sqlite3 anno.db <<!
-.separator \t
-.import biofilter_snp_anno biofilter_anno
-delete from biofilter_anno where rowid = 1;
+            .separator \t
+            .import biofilter_snp_anno biofilter_anno
+            delete from biofilter_anno where rowid = 1;
 !
     else
         echo "Skipping Gene and GWAS Annotations!!!"
@@ -199,10 +201,10 @@ delete from biofilter_anno where rowid = 1;
 
     # Insert input results to the table.
 
-sqlite3 anno.db <<!
-.separator \t
-.import input_file assoc_result
-delete from assoc_result where rowid = 1;
+    sqlite3 anno.db <<!
+        .separator \t
+        .import input_file assoc_result
+        delete from assoc_result where rowid = 1;
 !
     #################################################################################
 
@@ -219,12 +221,12 @@ delete from assoc_result where rowid = 1;
         # Import ICD-9 code description table to the database
         dx download "$DX_RESOURCES_ID:ICD9/icd9_codes_description.txt" -o icd9_code_desc.txt
 
-sqlite3 anno.db <<!
-create table icd9_code_desc (icd9_code varchar(8), desc text);
-.header on
-.separator "\t"
-.import icd9_code_desc.txt icd9_code_desc
-delete from icd9_code_desc where rowid = 1;
+        sqlite3 anno.db <<!
+            create table icd9_code_desc (icd9_code varchar(8), desc text);
+            .header on
+            .separator "\t"
+            .import icd9_code_desc.txt icd9_code_desc
+            delete from icd9_code_desc where rowid = 1;
 !
 
         #Build the query
@@ -277,12 +279,12 @@ select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up
 !
 "
 
-sqlite3 anno.db <<!
-.load /usr/local/lib/libsqlitefunctions.so
-.headers on
-.mode tabs
-.output ${input_filename}${out_suffix}
-select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join} group by a.rowid;
+    sqlite3 anno.db <<!
+        .load /usr/local/lib/libsqlitefunctions.so
+        .headers on
+        .mode tabs
+        .output ${input_filename}${out_suffix}
+        select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join} group by a.rowid;
 !
 
     #################################################################################

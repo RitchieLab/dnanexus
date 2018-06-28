@@ -1,7 +1,7 @@
 {
   "name": "association_result_annotation",
   "title": "Annotate GWAS, PheWAS Associations",
-  "summary": "association_result_annotation",
+  "summary": "This app increases the number of annotations in an input GWAS tsv file.",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "categories": [],
@@ -10,13 +10,17 @@
       "name": "input_file",
       "label": "Input Assocaition File",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": ["*.tsv"],
+      "help": "A genome wide association file in."
     },
     {
       "name": "sql_db_file",
       "label": "SQLite databse file",
       "class": "file",
+      "patterns": ["*.db"],
       "hidden": true,
+      "help": "A SQLite3 databse file.",
       "default": {
         "$dnanexus_link":
         {
@@ -27,37 +31,40 @@
     },
     {
       "name": "icd9_desc",
-      "label": "ICD-9 description",
+      "label": "Do you want to add ICD-9 descriptions?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "ICD-9 Description"
+      "group": "ICD-9 Description",
+      "help": "(Optional) Allows to add ICD-9 code long descriptions to the output."
     },
     {
       "name": "icd9_col",
-      "label": "ICD-9 Column Name",
-      "help" : "Provide column name that contains ICD-9 codes in the input file",
+      "label": "Is there a column in the input file which contains ICD-9 codes?",
+      "help" : "(Optional) Indicates which column in input file contains ICD-9 codes. It is required if icd9_desc is set to true.",
       "class": "string",
       "optional": true,
       "group": "ICD-9 Description"
-   },
+    },
     { "name": "ebi_gwas",
-      "label": "EBI GWAS catalog",
+      "label": "Do you want to add traits found in the the EBI GWAS catalog?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Add traits found in EBI GWAS catalog for SNPs position in input file."
     },
     { "name": "grasp",
-      "label": "GRASP",
+      "label": "Do you want to add traits found in the GRASP GWAS catalog for SNPs in the input file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) GRASP has more thorough list of published GWAS results but it also include results with p-value < 0.01 and that makes it a bigger database than EBI."
     },
     { "name": "grasp_pval",
       "label": "GRASP p-value threshold",
-      "help": "GRASP reports association from known GWAS with pvalue <0.01. We suggest to use a lower significance to reduce result lookup",
+      "help": "(Optional) Because GRASP reports association from known GWAS with pvalue < 0.01, we suggest to use a lower significance (<1E-05) to reduce result lookup.",
       "class": "string",
       "default": "0.00001",
       "optional": true,
@@ -65,56 +72,61 @@
     },
     {
       "name": "or_val",
-      "label": "Odds Ratio",
+      "label": "Do you want to calculate the odds ratio from the beta and standard error in the input file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Statistics (Only works with PLATO output)"
+      "group": "Statistics (Only works with PLATO output)",
+      "help": "(Optional) odds ratio and confidence interval calculated from the beta and standard error."
     },
     {
       "name": "case_control_num",
-      "label": "Case-Control Numbers",
+      "label": "Do you want to include case-control numbers in the output file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Statistics (Only works with PLATO output)"
+      "group": "Statistics (Only works with PLATO output)",
+      "help": "(Optional) Listing case-control numbers only works with output from PLATO."
     },
     {
       "name": "gene",
-      "label": "Gene",
+      "label": "Do you want to map genes to chromosome-basepair positions from the input data?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Map gene to chromosome-basepair position in input file."
     },
     {
       "name": "up_gene",
-      "label": "Upstream Gene",
+      "label": "Do you want to map upstream genes to chromosome-basepair position in the input file and provide the distances to the SNPs?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Maps upstream genes to chromosome-basepair position in input file and provides distances to SNPs."
     },
     {
       "name": "down_gene",
-      "label": "Downstream Gene",
+      "label": "Do you want to map downstream genes to chromosome-basepair positions in the input file and provide distances to the SNPs?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Maps downstream genes to chromosome-basepair position in the input file and provides distances to SNPs."
     },
     {
       "name": "chr_col",
-      "label": "Chromosome Column name",
-      "help" : "Provide column name that contains chromosome number in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "label": "Do you want to provide the column name that contains chromosome numbers in the input file?",
+      "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain chromosome numbers. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,
       "group": "Gene and GWAS Catalog"
     },
     {
       "name": "pos_col",
-      "label": "Basepair position Column name",
-      "help" : "Provide column name that contains basepair postion of a SNP in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "label": "Do you want to provide column name that contains basepair postion of a SNP in the input file?",
+      "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain basepair position. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,
       "group": "Gene and GWAS Catalog"
@@ -124,7 +136,8 @@
     {
       "name": "out_file",
       "label": "Output File",
-      "class": "file"
+      "class": "file",
+      "help": "The output file contains columns from the input file with additional columns requested for annotation."
     }
   ],
   "runSpec": {
@@ -132,8 +145,17 @@
       {"name": "python-apsw"}
     ],
     "interpreter": "bash",
-    "file": "src/association_result_annotation.sh"
-  },
+    "file": "src/association_result_annotation.sh",
+    "timeoutPolicy": {
+      "main": { 
+        "hours": 12  
+      },
+      "*": {
+        "hours": 4,
+        "minutes": 30
+      }
+    }
+   },
    "regionalOptions": {
     "aws:us-east-1": {
       "systemRequirements": {

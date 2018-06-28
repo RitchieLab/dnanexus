@@ -5,7 +5,7 @@
   "dxapi": "1.0.0",
   "version": "1.0.0",
   "details": {
-    "whatsNew": "",
+    "whatsNew": "*1.0.0: updated to ubuntu 14.04, added patterns/help to input/output spec, added regionalOptions/assetDepends;",
     "upstreamAuthor": "Ritchie, MD",
     "citations": []
   },
@@ -141,6 +141,7 @@
     {
       "name": "out_file",
       "label": "Output File",
+      "patterns": ["*.tsv" ],
       "class": "file",
       "help": "The output file contains columns from the input file with additional columns requested for annotation."
     }

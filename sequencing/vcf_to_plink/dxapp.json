@@ -100,11 +100,6 @@
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "libgsl0ldbl"},
-      {"name": "pigz"},
-      {"name": "tabix"}
-    ],
     "interpreter": "bash",
     "file": "src/vcf_to_plink.sh",
     "release": "14.04",
@@ -117,12 +112,19 @@
   },
   "regionalOptions": {
     "aws:us-east-1": {
+      "assetDepends": [
+        {
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+          "folder": "/",
+          "version": "0.0.1",
+          "name": "marylyn_asset"
+        }
+      ],
       "systemRequirements": {
         "*": {
           "instanceType": "mem1_ssd1_x4"
         }
-      },
-      "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
+      }
     }
   },
   "details": {

@@ -13,7 +13,7 @@ Also, app can annotate following irrespective of association results:
 
 ## What data are required for this app to run?
 
-App requires a tab separated file.
+App requires a tab separated file containing information from a GWAS study.
 
 **Note: App works with Human genome build 37 only**
 
@@ -46,9 +46,9 @@ App requires a tab separated file.
 
 ### Example Screenshots
 **Step 1**
-![Alt text](./blob/master/association_result_annotation/step1.png?raw=true)
+![Alt text](../../blob/master/association_result_annotation/step1.png)
 **Step 2**
-![Alt text](./blob/master/association_result_annotation/step2.png?raw=true)
+![Alt text](../../blob/master/association_result_annotation/step2.png)
 
 
 

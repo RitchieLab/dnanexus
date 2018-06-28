@@ -1,10 +1,15 @@
 {
   "name": "association_result_annotation",
   "title": "Annotate GWAS, PheWAS Associations",
-  "summary": "This app increases the number of annotations in an input GWAS tsv file.",
+  "summary": "This app increases the depth of annotation information in an input GWAS tsv file.",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
-  "categories": [],
+  "version": "1.0.0",
+  "details": {
+    "whatsNew": "",
+    "upstreamAuthor": "Ritchie, MD",
+    "citations": []
+  },
+  "categories": ["GWAS"],
   "inputSpec": [
     {
       "name": "input_file",
@@ -12,7 +17,7 @@
       "class": "file",
       "optional": false,
       "patterns": ["*.tsv"],
-      "help": "A genome wide association file in."
+      "help": "A data file containing information from a genome wide association catalog."
     },
     {
       "name": "sql_db_file",
@@ -151,7 +156,7 @@
         "hours": 12  
       },
       "*": {
-        "hours": 4,
+        "hours": 8,
         "minutes": 30
       }
     }
@@ -168,11 +173,14 @@
             "id":"record-FGkqfp801VfbYYq126ff8Fz2"
           }   
        ]   
-      }   
+    }   
   },
   "access": {
     "project": "CONTRIBUTE"
   },
    "developers" : ["user-auv13", "user-atf3"],
-   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"]
+   "openSource": true,
+   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"],
+   "distribution": "Ubuntu",
+   "release": "14.04"
 }

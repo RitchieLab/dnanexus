@@ -46,9 +46,9 @@ App requires a tab separated file.
 
 ### Example Screenshots
 **Step 1**
-![Alt text](./blob/master/association_result_annotation/step1.png)
+![Alt text](./blob/master/association_result_annotation/step1.png?raw=true)
 **Step 2**
-![Alt text](./blob/master/association_result_annotation/step2.png)
+![Alt text](./blob/master/association_result_annotation/step2.png?raw=true)
 
 
 

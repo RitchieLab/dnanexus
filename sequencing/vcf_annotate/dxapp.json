@@ -3,17 +3,44 @@
   "title": "Annotate VCF File",
   "summary": "Use a variety of tools to annotate a sites-only VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.4",
+  "version": "0.1.0",
+  "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "openSource": true,
+  "developers": [
+    "user-tnperson",
+    "user-auv13",
+    "user-atf3"
+  ],
+  "authorizedUsers": [
+    "org-geisinger_affiliate",
+    "org-geisinger",
+    "org-support",
+    "user-codushlaine",
+    "user-semanti.mukherjee",
+    "user-alexander.li",
+    "user-shannon.bruse",
+    "user-jan.freudenberg",
+    "user-crisvh"
+  ],
   "categories": [
     "Variation Calling"
   ],
+  "details": {
+    "whatsNew": "",
+    "citation": "",
+    "upstreamAuthor": "",
+    "upstreamVersion": ""
+  },
   "inputSpec": [
     {
       "name": "vcf_fn",
       "label": "VCF File",
       "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf.gz"]
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "The input VCF file(s)."
     },
     {
       "name": "vcfidx_fn",
@@ -22,51 +49,66 @@
       "optional": false,
       "patterns": [
         "*.tbi"
-      ]
+      ],
+      "help": "The input VCF index file(s)."
     },
     {
+      "group": "Annotation Options",
       "name": "VEP",
       "label": "Run VEP",
       "class": "boolean",
       "optional": false,
-      "default" : true
+      "default": true,
+      "help": "Annotate with VEP."
     },
     {
+      "group": "Annotation Options",
       "name": "dbnsfp",
       "label": "Run dbNSFP (3.3a)",
       "class": "boolean",
       "optional": false,
-      "default" : true
+      "default": true,
+      "help": "Annotate with dbNSFP."
     },
     {
-      "name" : "clinvar",
-      "label" : "Use CLINVAR",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
+      "group": "Annotation Options",
+      "name": "clinvar",
+      "label": "Use CLINVAR",
+      "class": "boolean",
+      "optional": false,
+      "default": true,
+      "help": "Annotate with ClinVar."
     },
     {
-      "name" : "HGMD",
-      "label" : "Use HGMD",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
+      "group": "Annotation Options",
+      "name": "HGMD",
+      "label": "Use HGMD",
+      "class": "boolean",
+      "optional": false,
+      "default": true,
+      "help": "Annotate with HGMD."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "annotate_header",
+      "label": "Annotations",
+      "class": "boolean",
+      "optional": true,
+      "default": false,
+      "help": "True: Annotate Header with VEP; False: Annotate VCF from VEP Annotated Header Files."
     },
     {
       "group": "Build Options",
       "name": "build_version",
       "label": "NCBI Build Version",
       "class": "string",
-      "choices": ["b38","b37_decoy"],
+      "choices": [
+        "b38",
+        "b37_decoy"
+      ],
       "default": "b38",
-      "optional": true
-    },
-    {
-      "group": "True: Annotate Header with VEP, False: Annotate VCF from VEP Annotated Header Files",
-      "name": "annotate_header",
-      "label": "Annotations",
-      "class" : "boolean",
-      "optional" : true
+      "optional": true,
+      "help": "Which build to use. [THIS IS CURRENTLY IGNORED]"
     }
   ],
   "outputSpec": [
@@ -74,17 +116,23 @@
       "name": "vcf_out",
       "label": "Annotated VCF",
       "class": "array:file",
-      "patterns" : ["*.vcf.gz"]
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "The output VCF file(s)."
     },
     {
       "name": "vcfidx_out",
       "label": "Annotated VCF Index",
       "class": "array:file",
-      "patterns" : ["*.tbi"]
+      "patterns": [
+        "*.tbi"
+      ],
+      "help": "The output VCF index file(s)."
     }
   ],
   "runSpec": {
-    "execDepends": [
+    "assetDepends": [
       {
         "name": "cpanminus"
       },
@@ -98,25 +146,44 @@
         "name": "libcpan-meta-perl"
       },
       {
-              "name": "vcftools"
+        "name": "vcftools"
       },
-      {"name": "libdbi-perl"},
       {
-              "name": "tabix"
+        "name": "libdbi-perl"
+      },
+      {
+        "name": "tabix"
       }
-
     ],
     "interpreter": "bash",
-    "file": "src/vcf_annotate.sh"
+    "file": "src/vcf_annotate.sh",
+    "timeoutPolicy": {
+      "*": {
+        "hours": 8
+      }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
+  },
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_x4"
+        }
+      }
+    },
+    "azure:westus": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "azure:mem2_ssd1_x4"
+        }
+      }
+    }
   },
   "access": {
     "network": [
       "*"
     ]
-  },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
-
+  }
 }

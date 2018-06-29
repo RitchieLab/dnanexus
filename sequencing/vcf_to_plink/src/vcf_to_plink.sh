@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e -x -o pipefail
 
 main() {
     echo "Value of vcf_fn: '${vcf_fn[@]}'"

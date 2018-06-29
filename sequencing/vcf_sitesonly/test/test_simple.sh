@@ -26,7 +26,7 @@
 
 # Parameters to fill in
 
-TARGET_PROJECT="project-BzQf6k80V3bJk7x0yv6z82j7 "  # DNAnexus Regression Testing Project AWS US east
+TARGET_PROJECT="project-BzQf6k80V3bJk7x0yv6z82j7"  # DNAnexus Regression Testing Project AWS US east
 
 # Some setup
 set -x

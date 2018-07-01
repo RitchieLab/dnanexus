@@ -191,7 +191,6 @@
   },
   "openSource" : true,
   "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"],
   "details": {
     "upstreamVersion": "PLINK 1.9 and eigenstrat 6.0",
     "whatsNew": ""

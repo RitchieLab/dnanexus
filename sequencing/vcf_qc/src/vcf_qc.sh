@@ -15,11 +15,10 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
-set -x
+set -e -x -o pipefail
 
 echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe multiverse " >> /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes openjdk-8-jre-headless
+
 
 main() {
 
@@ -89,6 +88,7 @@ run_qc() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of gatk_jar_file: '$gatk_jar_file'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -187,7 +187,7 @@ run_qc() {
 		sudo chmod -R a+rwX /usr/share/GATK
 
 
-    dx download "$DX_RESOURCES_ID:/GATK/jar/GenomeAnalysisTK-3.6.jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+    dx download "$gatk_jar_file" -o /usr/share/GATK/GenomeAnalysisTK.jar
 
     if [ "$build_version" == "b37_decoy" ]
   	then

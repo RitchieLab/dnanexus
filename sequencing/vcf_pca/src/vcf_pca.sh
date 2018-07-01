@@ -17,11 +17,9 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
-set -x
+set -x -e -o pipefail
 
 #echo "deb http://us.archive.ubuntu.com/ubuntu xenial main restricted universe multiverse " >> /etc/apt/sources.list
-#sudo apt-get update
-#sudo apt-get install --yes eigensoft
 
 main() {
 

@@ -20,7 +20,7 @@
       "help": "A data file containing information from a genome wide association catalog."
     },
     {
-      "name": "sql_db_file",
+      "name": "sql_database_file",
       "label": "SQLite databse file",
       "class": "file",
       "patterns": ["*.db"],

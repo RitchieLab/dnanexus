@@ -86,7 +86,7 @@ main() {
 
         if $ebi_gwas || $grasp
         then
-            dx download "$sql_db_file" -o anno.db
+            dx download "$sql_database_file" -o anno.db
 
             if [ "$grasp_pval" != "" ]
 				then

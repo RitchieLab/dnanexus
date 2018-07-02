@@ -21,7 +21,7 @@ set -e -x -o pipefail
 #################################################################################
 check_inputs() {
 
-    # check if the input file is tab seperated
+    # check if the input file is tab separated
     if [ -z "$(sed -n '/\t/p;q' input_file )" ]
     then
         dx-jobutil-report-error "ERROR: Incorrect input file format. App only accepts tab seperated input file."

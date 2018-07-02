@@ -115,7 +115,7 @@
       "assetDepends": [
         {
           "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
-          "folder": "/",
+          "folder": "/asset/",
           "version": "0.0.1",
           "name": "marylyn_asset"
         }
@@ -125,11 +125,25 @@
           "instanceType": "mem1_ssd1_x4"
         }
       }
+    },
+    "azure:westus": {
+      "assetDepends": [
+        {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/",
+          "version": "0.0.1",
+          "name": "marylyn_asset"
+        }
+      ],
+      "systemRequirements": {
+        "*": {
+          "instanceType": "azure:mem2_ssd1_x4"
+        }
+      }
     }
   },
   "details": {
     "whatsNew": "*1.0.0: Cleaned up, added documentation, moved to Ubuntu 14.04;",
-    "upstreamAuthor": "Ritchie, MD",
     "citations": []
   },
   "openSource" : true,

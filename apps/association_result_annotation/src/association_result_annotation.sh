@@ -48,9 +48,7 @@ check_inputs() {
 
 main() {
         
-    #echo "Value of input_file: '$input_file'"
-    #echo "Value of sql_file: '$sql_file'"
-
+    # download input TSV file containing GWAS data
     dx download "$input_file" -o input_file
     out_suffix=""
 
@@ -183,7 +181,7 @@ main() {
             delete from biofilter_anno where rowid = 1;
 !
     else
-        echo "Skipping Gene and GWAS Annotations!!!"
+        echo "Skipping Gene and GWAS Annotations"
     fi
     #################################################################################
 

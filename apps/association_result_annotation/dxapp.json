@@ -171,10 +171,30 @@
       },  
       "assetDepends": [
           {   
-            "id":"record-FGkqfp801VfbYYq126ff8Fz2"
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+          "folder": "/asset/",
+          "id":"record-FGkqfp801VfbYYq126ff8Fz2",
+          "version": "0.0.1",
+          "name": "marylyn_asset"
           }   
        ]   
-    }   
+    },
+     "azure:westus": {
+      "assetDepends": [
+        {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/",
+          "id": "record-FGpfZ1j95qzXV43bP5y5JKgV",
+          "version": "0.0.1",
+          "name": "marylyn_asset"
+        }
+      ],
+      "systemRequirements": {
+        "*": {
+          "instanceType": "azure:mem2_ssd1_x4"
+        }
+      }
+   }   
   },
   "access": {
     "project": "CONTRIBUTE"

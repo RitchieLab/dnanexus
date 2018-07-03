@@ -119,9 +119,12 @@ main() {
         # Run biofilter to get gene, upstream gene, downstream gene and GWAS
         sudo mkdir /usr/share/biofilter
         sudo chmod a+rwx /usr/share/biofilter
+        
+        #dx download -r "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/Biofilter/2.4/*" -o /usr/share/biofilter/
+        #dx download "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
 
-        dx download -r "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/Biofilter/2.4/*" -o /usr/share/biofilter/
-        dx download "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
+        dx download -r "$DX_PROJECT_CONTEXT_ID:/Biofilter/2.4/*" -o /usr/share/biofilter/
+        dx download "$DX_PROJECT_CONTEXT_ID:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
 
         python2.7 /usr/share/biofilter/biofilter.py -v -k /usr/share/biofilter/loki.db --gbv 37 -P input_file_snp_position.txt -a position gene upstream downstream
         awk 'BEGIN{OFS=FS="\t"}{gsub(":","\t",$2)}1' biofilter.position.gene-upstream-downstream | sed 's/chr//g' | sed 's/position/chr_37\tpos_37/g' > biofilter_snp_anno

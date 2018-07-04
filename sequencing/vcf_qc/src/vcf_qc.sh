@@ -88,7 +88,7 @@ run_qc() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
-    echo "Value of gatk_jar_file: '$gatk_jar_file'"
+    echo "Value of gatk_jar: '$gatk_jar'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -187,7 +187,7 @@ run_qc() {
 		sudo chmod -R a+rwX /usr/share/GATK
 
 
-    dx download "$gatk_jar_file" -o /usr/share/GATK/GenomeAnalysisTK.jar
+    dx download "$gatk_jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
 
     if [ "$build_version" == "b37_decoy" ]
   	then

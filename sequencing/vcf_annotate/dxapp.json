@@ -4,13 +4,7 @@
   "summary": "Use a variety of tools to annotate a sites-only VCF",
   "dxapi": "1.0.0",
   "version": "0.1.0",
-  "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
   "openSource": true,
-  "developers": [
-    "user-tnperson",
-    "user-auv13",
-    "user-atf3"
-  ],
   "authorizedUsers": [
     "org-geisinger_affiliate",
     "org-geisinger",
@@ -33,7 +27,7 @@
   },
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "input_vcf_gz",
       "label": "VCF File",
       "class": "array:file",
       "optional": false,
@@ -43,7 +37,7 @@
       "help": "The input VCF file(s)."
     },
     {
-      "name": "vcfidx_fn",
+      "name": "input_vcf_tbi",
       "label": "VCF Index File",
       "class": "array:file",
       "optional": false,
@@ -55,7 +49,7 @@
     {
       "group": "Annotation Options",
       "name": "VEP",
-      "label": "Run VEP",
+      "label": "Run VEP (87)",
       "class": "boolean",
       "optional": false,
       "default": true,
@@ -73,7 +67,7 @@
     {
       "group": "Annotation Options",
       "name": "clinvar",
-      "label": "Use CLINVAR",
+      "label": "Use CLINVAR (Jan2017)",
       "class": "boolean",
       "optional": false,
       "default": true,
@@ -82,7 +76,7 @@
     {
       "group": "Annotation Options",
       "name": "HGMD",
-      "label": "Use HGMD",
+      "label": "Use HGMD (2016.4)",
       "class": "boolean",
       "optional": false,
       "default": true,
@@ -108,12 +102,12 @@
       ],
       "default": "b38",
       "optional": true,
-      "help": "Which build to use. [THIS IS CURRENTLY IGNORED]"
+      "help": "Which build to use. [THIS IS CURRENTLY IGNORED; ONLY b38 IS SUPPORTED]"
     }
   ],
   "outputSpec": [
     {
-      "name": "vcf_out",
+      "name": "output_vcf_gz",
       "label": "Annotated VCF",
       "class": "array:file",
       "patterns": [
@@ -122,7 +116,7 @@
       "help": "The output VCF file(s)."
     },
     {
-      "name": "vcfidx_out",
+      "name": "output_vcf_tbi",
       "label": "Annotated VCF Index",
       "class": "array:file",
       "patterns": [
@@ -170,14 +164,20 @@
       "systemRequirements": {
         "*": {
           "instanceType": "mem1_ssd1_x4"
-        }
+        },
+        "resources": [
+          "project-FGqF5B00ByvPXG4G87yQy23G"
+        ]
       }
     },
     "azure:westus": {
       "systemRequirements": {
         "*": {
           "instanceType": "azure:mem2_ssd1_x4"
-        }
+        },
+        "resources": [
+          "project-FGvp3009BJq40pkZ683v3754"
+        ]
       }
     }
   },

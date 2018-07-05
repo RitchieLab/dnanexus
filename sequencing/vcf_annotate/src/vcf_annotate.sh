@@ -11,25 +11,7 @@
 # TODO:
 # * dxapp.json defines $build_version, but this script is hardcoded to use build 37.
 # * It would be simpler, easier, and faster to use vcfanno.
-#
-# Environment variables (defined in dxapp.json)
-# ---------------------------------------------
-# vcfidx_fn: The index file(s) to download; may be an array
-# vcf_fn: The VCF file(s) to download; may be an array of the same length as vcfidx_fn
-# VEP: annotate using Variant Effect Predictor (VEP)
-# annotate_header: If true, downloads VEP and all the supporting VEP data files and
-#   annotates the VCF by calling VEP. Otherwise, downloads a VCF with pre-computed
-#   annotations (stored in the INFO/CSQ field) and applies them to the query VCF using
-#   bcftools annotate. [TODO: maybe name this variable something more informative]
-# dbnsfp: annotate with dbNSFP (compendium of functional prediction scores for
-#   non-synonymous variants
-# HGMD: annotate with Human Gene Mutation Database (HGMD)
-# clinvar: annotate with ClinVar (database of clinically relevant variants)
-#
-# Result
-# ------
-# The output VCF and index files that were successfully annotated are appended to the
-# vcf_out and vcfidx_out list variables.
+
 
 # Set default values for environment variables
 : "${VEP:=false}"
@@ -39,8 +21,8 @@
 : "${clinvar:=true}"
 
 # TODO: are there any reasonable defaults for these?
-: "${vcf_fn:=()}"
-: "${vcfidx_fn:=()}"
+: "${input_vcf_gz:=()}"
+: "${input_vcf_tbi:=()}"
 : "${DX_RESOURCES_ID:=}"
 
 export SHELL="/bin/bash"
@@ -62,8 +44,18 @@ DXIDX_LIST=$(mktemp)
 cd ${WKDIR}
 
 
-# This function downloads a file (first argument) to a directory (second argument)
-# such that multiple downloads can be run at the same time (by gnu parallel).
+#######################################
+# Download a file to a directory such that multiple downloads can be run at the same
+# time (by gnu parallel).
+# Globals:
+#   None
+# Arguments:
+#   1. The file to download
+#   2. The directory in which to save the downloaded file
+# Returns:
+#   None
+#######################################
+cleanup() {
 function parallel_download() {
 	cd $2
 	dx download "$1"
@@ -72,8 +64,26 @@ function parallel_download() {
 export -f parallel_download
 
 
-# This function downloads source databases for annotation based on which environment
-# variables are set.
+#######################################
+# Download source databases for annotation based on which environment variables are set.
+# Globals:
+#   VEP: annotate using Variant Effect Predictor (VEP)
+#   annotate_header: If true, downloads VEP and all the supporting VEP data files and
+#     annotates the VCF by calling VEP. Otherwise, downloads a VCF with pre-computed
+#     annotations (stored in the INFO/CSQ field) and applies them to the query VCF using
+#     bcftools annotate. [TODO: maybe name this variable something more informative]
+#   dbnsfp: annotate with dbNSFP (compendium of functional prediction scores for
+#     non-synonymous variants
+#   HGMD: annotate with Human Gene Mutation Database (HGMD)
+#   clinvar: annotate with ClinVar (database of clinically relevant variants)
+#   HOME: home directory
+#   WKDIR: working directory
+#   DX_RESOURCES_ID: resource project
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
 function download_resources(){
 
 	cd ${WKDIR}
@@ -148,9 +158,26 @@ function download_resources(){
 export -f download_resources
 
 
-# This function downloads a VCF file and applies annotations. Annotations are applied
-# serially, with the output of the previous step (OUT_VCF) being used as the input
-# to the next step (IN_VCF). All the intermediate files are deleted.
+#######################################
+# Download a VCF file and apply annotations. Annotations are applied serially, with the
+# output of the previous step (OUT_VCF) being used as the input to the next step
+# (IN_VCF). All the intermediate files are deleted.
+# Globals:
+#   VEP: annotate using Variant Effect Predictor (VEP)
+#   annotate_header: If true, downloads VEP and all the supporting VEP data files and
+#     annotates the VCF by calling VEP. Otherwise, downloads a VCF with pre-computed
+#     annotations (stored in the INFO/CSQ field) and applies them to the query VCF using
+#     bcftools annotate. [TODO: maybe name this variable something more informative]
+#   dbnsfp: annotate with dbNSFP (compendium of functional prediction scores for
+#     non-synonymous variants
+#   HGMD: annotate with Human Gene Mutation Database (HGMD)
+#   clinvar: annotate with ClinVar (database of clinically relevant variants)
+# Arguments:
+#   1. The VCF file to download
+#   2. The directory in which to save the downloaded file
+# Returns:
+#   None
+#######################################
 function parallel_download_and_annotate() {
 
     # Download the VCF file
@@ -254,8 +281,8 @@ function parallel_download_and_annotate() {
 	VCF_UP=$(dx upload --brief ${OUT_VCF})
 	IDX_UP=$(dx upload --brief${OUT_VCF}.tbi)
 
-    dx-jobutil-add-output vcf_out "$VCF_UP" --class=array:file
-	dx-jobutil-add-output vcfidx_out "$IDX_UP" --class=array:file
+    dx-jobutil-add-output output_vcf_gz "$VCF_UP" --class=array:file
+	dx-jobutil-add-output output_vcf_tbi "$IDX_UP" --class=array:file
 
 	TO_RM=$(dx describe "$1" --name)
 
@@ -265,20 +292,34 @@ function parallel_download_and_annotate() {
 export -f parallel_download_and_annotate
 
 
+#######################################
+# Main function.
+# Globals:
+#   input_vcf_gz: The index file(s) to download; may be an array
+#   input_vcf_tbi: The VCF file(s) to download; may be an array of the same length as
+#     input_vcf_gz
+#   HOME: home directory
+#   WKDIR: working directory
+# Arguments:
+#   None
+# Returns:
+#   None; The output VCF and index files that were successfully annotated are appended
+#   to the output_vcf_gz and output_vcf_tbi list variables.
+#######################################
 main() {
 
 	export SHELL="/bin/bash"
 
 	cd ${HOME}
 
-    echo "Value of vcf_fn: '$vcf_fn'"
-    echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of input_vcf_gz: '$input_vcf_gz'"
+    echo "Value of input_vcf_tbi: '$input_vcf_tbi'"
 
     cd ${WKDIR}
 
     # Download the VCF index files (in parallel)
-    for i in "${!vcfidx_fn[@]}"; do
-      echo "${vcfidx_fn[$i]}" >> "$DXIDX_LIST"
+    for i in "${!input_vcf_tbi[@]}"; do
+      echo "${input_vcf_tbi[$i]}" >> "$DXIDX_LIST"
     done
 
     parallel -j $(nproc --all) -u --gnu parallel_download :::: ${DXIDX_LIST} ::: ${WKDIR}
@@ -292,8 +333,8 @@ main() {
 	halfCount=$(($procCount/2))
 
 	# Download the VCF files (in parallel)
-    for i in "${!vcf_fn[@]}"; do
-      echo "${vcf_fn[$i]}" >> ${DXVCF_LIST}
+    for i in "${!input_vcf_gz[@]}"; do
+      echo "${input_vcf_gz[$i]}" >> ${DXVCF_LIST}
     done
 
     parallel -j ${halfCount} -u --gnu parallel_download_and_annotate :::: ${DXVCF_LIST}::: ${WKDIR}

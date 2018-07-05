@@ -18,7 +18,7 @@ This script annotates one or more VCF files with one or more of the following da
 
 * List of one or more VCF files.
 * Each VCF file must be indexed using tabix, which must be specified in a list the same length of, and in the same order as, the VCF list.
-* By default, all annotations are applied. To disable any of the annotations, set its corresponding environment variable to 'false'.
+* By default, all annotations are applied. To disable any of the annotations, set its corresponding environment variable to 'false' (any of $VEP, $dbnsfp, $HGMD, $clinvar)
 * $annotate_header is an environment variable that, when $VEP=true, determines whether to annotate using the VEP executable and database (true), or to use a pre-computed VCF file with all the annotations for each position stored in the INFO/CSQ field.
 
 # Output

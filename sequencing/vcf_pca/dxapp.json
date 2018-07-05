@@ -175,6 +175,7 @@
   "runSpec": {
     "interpreter": "bash",
     "file": "src/vcf_pca.sh",
+    "restartableEntryPoints": "all", 
     "distribution": "Ubuntu",
     "release": "14.04",
     "timeoutPolicy": {

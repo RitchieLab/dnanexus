@@ -97,11 +97,6 @@ run_qc() {
     echo "Value of INDEL_ts: '$INDEL_ts'"
     echo "Value of addl_filter: '$addl_filter'"
 
-    # The following line(s) use the dx command-line tool to download your file
-    # inputs to the local file system using variable names for the filenames. To
-    # recover the original filenames, you can use the output of "dx describe
-    # "$variable" --name".
-
     dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
 	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//')
     SUBJOBS=0
@@ -272,11 +267,6 @@ run_qc() {
 
 		vcf_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz --brief)
 		vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi --brief)
-
-		# The following line(s) use the utility dx-jobutil-add-output to format and
-		# add output variables to your job's output as appropriate for the output
-		# class.  Run "dx-jobutil-add-output -h" for more information on what it
-		# does.
 
 		dx-jobutil-add-output vcf_out "$vcf_out" --class=file
 		dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file

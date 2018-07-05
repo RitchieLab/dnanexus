@@ -134,6 +134,7 @@
   "runSpec": {
     "distribution": "Ubuntu",
     "release": "14.04",
+    "restartableEntryPoints": "all", 
     "interpreter": "bash",
     "file": "src/vcf_qc.sh",
     "timeoutPolicy": {"*": { "hours": 120 }}

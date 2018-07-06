@@ -26,7 +26,7 @@ main() {
     echo "Value of vcf_fn: '${vcf_fn[@]}'"
     echo "Value of vcfidx_fn: '${vcfidx_fn[@]}'"
     echo "Value of region_fn: '$region_fn'"
-    echo "Value of suffix_fn: '$suffix_fn'"
+    echo "Value of suffix: '$suffix'"
 
     WKDIR=$(mktemp -d)
     cd $WKDIR
@@ -61,7 +61,7 @@ main() {
     dx download "$region_fn" -o region.list
 
     # Run the slice_vcf function in parallel
-    parallel --gnu -j $(nproc --all) slice_vcf :::: $VCF_ALLINFO ::: $WKDIR/region.list ::: $OUTDIR ::: $suffix_fn
+    parallel --gnu -j $(nproc --all) slice_vcf :::: $VCF_ALLINFO ::: $WKDIR/region.list ::: $OUTDIR ::: $suffix
 
     # Upload all the results
     while read f; do

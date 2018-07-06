@@ -36,7 +36,7 @@
       "optional": false
     },
     {
-      "name": "suffix_fn",
+      "name": "suffix",
       "label": "Output file name suffix (optional)",
       "help": "Include this given string in the output VCF filename extension, e.g. '*.sliced.SUFFIX.vcf.gz'",
       "class": "string",

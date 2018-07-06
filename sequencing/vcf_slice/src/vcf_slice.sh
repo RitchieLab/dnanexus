@@ -1,13 +1,6 @@
 #!/bin/bash
 set -ex -o pipefail
 
-# install GNU parallel!
-# XXX put this in the asset instead
-sudo sed -i 's/^# *\(deb .*backports.*\)$/\1/' /etc/apt/sources.list
-sudo apt-get update
-sudo apt-get install --yes parallel
-
-
 function slice_vcf () {
     set -x
     VCFFN=$(echo "$1" | cut -f3)

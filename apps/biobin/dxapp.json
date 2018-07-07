@@ -1,7 +1,7 @@
 {
   "name": "biobin",
   "title": "BioBin",
-  "summary": "The latest development version of the rare variant binning tool BioBin",
+  "summary": "The rare variant binning tool BioBin",
   "dxapi": "1.0.0",
   "version": "1.0.0",
   "inputSpec": [
@@ -10,7 +10,8 @@
       "label": "VCF File",
       "class": "file",
       "optional": false,
-      "patterns": ["*.vcf","*.vcf.gz"]
+      "patterns": ["*.vcf","*.vcf.gz"],
+      "help": "The genotyped variants in block-gzipped VCF format."
     },
     {
       "name": "role_file",
@@ -55,39 +56,14 @@
       "patterns": ["*.gen*"]
     },
     {
-      "name": "biobin_binary_exec",
-      "label": "BioBin Binary Executable",
-      "help": "If omitted, the latest available executable will be used.",
-      "class": "file",
-      "optional": true,
-      "patterns": ["biobin*"],
-      "suggestions": [
-        {"name": "Binary Executable Versions", 
-          "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", 
-          "path": "/BioBin/versions/biobin"}
-      ]
-    },
-    {
-      "name": "biobin_summary_script",
-      "label": "BioBin Summary Script",
-      "help": "If omitted, the latest available script will be used.",
-      "class": "file",
-      "optional": true,
-      "patterns": ["biobin-summary.py*"],
-      "suggestions": [
-        {"name": "Summary Script Versions", 
-          "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", 
-          "path": "/BioBin/versions/biobin-summary.py"}]
-    },
-    {
       "name": "loki_db",
       "label": "LOKI Knowledge Database",
-      "help": "If omitted, the latest available database will be used.",
+      "help": "A file, a LOKI knowledge database.",
       "class": "file",
-      "optional": true,
-      "patterns": ["LOKI*"],
+      "optional": false,
+      "patterns": ["LOKI*.db"],
       "suggestions": [
-        {"name": "LOKI Database Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/LOKI"}
+        {"name": "LOKI Database Versions", "project": "project-FGqF5B00ByvPXG4G87yQy23G", "path": "/LOKI"}
       ]
     },
     {
@@ -101,6 +77,7 @@
       "name": "output_prefix",
       "label": "Output File Prefix",
       "class": "string",
+      "optional": false,
       "default": "biobin"
     },
     {
@@ -108,14 +85,16 @@
       "label": "BioBin Arguments",
       "class": "string",
       "optional": true,
-      "default": "--weight-loci Y  --bin-pathways N  --bin-regions Y  --bin-minimum-size 1"
+      "default": "--weight-loci Y --bin-pathways N --bin-regions Y --bin-minimum-size 1",
+      "help": "(Optional) Advanced arguments for Biobin."
     },
     {
       "name": "permu_count",
-      "label": "Permutation Count (0 to disable)",
+      "label": "Permutation Count",
       "class": "int",
       "optional": true,
-      "default": 0
+      "default": 0,
+      "help": "(Optional) An integer for permutation count. Use 0 to disable permutation."
     }
   ],
   "outputSpec": [
@@ -123,6 +102,7 @@
       "name": "log_file",
       "label": "Log File",
       "class": "file",
+      "optional": false,
       "patterns": ["*.log"],
       "help": "A file, with log information from the job."
     },
@@ -130,6 +110,7 @@
       "name": "bins_files",
       "label": "Bins Files",
       "class": "array:file",
+      "optional": false,
       "patterns": ["*bins.csv"],
       "help": "A list of files, in CSV format with bins report."
     },
@@ -137,6 +118,7 @@
       "name": "summary_file",
       "label": "Bins Summary File",
       "class": "file",
+      "optional": false,
       "patterns": ["*.tsv"],
       "help": "A file, in TSV format with summary information."
     },
@@ -144,6 +126,7 @@
       "name": "locus_file",
       "label": "Locus File",
       "class": "file",
+      "optional": false,
       "patterns": ["*.csv"],
       "help": "A file, in CSV format with locus information."
     },
@@ -153,7 +136,7 @@
       "class": "array:file",
       "optional": true,
       "patterns": ["*.csv"],
-      "help": "A file, in CSV format with ulifted positions."
+      "help": "(Optional) A file, in CSV format with ulifted positions."
     },
     {
       "name": "permu_file",
@@ -166,27 +149,22 @@
   ],
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x16"}},
-                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"}]},
+                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"},
+                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem2_ssd1_x16"}},
-                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}]}
+                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]}
   },
   "runSpec": {
     "interpreter": "bash",
     "file": "src/biobin.sh",
     "distribution": "Ubuntu",
-    "release": "14.04"
+    "release": "14.04",
+    "timeoutPolicy": {
+      "*": { "hours": 12 }
+    }
   },
-  "access": {
-    "network": [ "*" ],
-    "allProjects": "VIEW"
-  },
-  "__disabled__runSpec__execDepends": [
-    { "name": "gawk" },
-    { "name": "libsqlite3-0" },
-    { "name": "python-apsw" },
-    { "name": "python-suds" },
-    { "name": "openjdk-7-jre-headless" },
-    { "name": "vcftools" },
-    { "name": "plink" }
-  ]
+  "__access__": {
+    "network": [ "*" ]
+  }
 }

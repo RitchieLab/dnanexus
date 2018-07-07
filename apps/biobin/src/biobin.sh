@@ -50,53 +50,15 @@ main() {
   tabix -p vcf "$VCF_FILE" 2>&1 | tee -a output.log
 
   # fetch the executable(s) and shared resource file(s)
-  mkdir -p bin
   mkdir -p shared
-  #	DX_RESOURCES_ID="$(dx find projects --name "App Resources" --brief)"
-  #	DX_RESOURCES_ID="project-BYpFk1Q0pB0xzQY8ZxgJFv1V"	
 
-  if [[ -z "$biobin_binary_exec" ]]; then
-    dx_pathname="Ritchie Lab Software:/BioBin/versions/biobin"
-    dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
-    biobin_binary_exec="$(dx find data \
-      --path "$dx_pathname" \
-      --name "$dx_filename" \
-      --brief \
-      )"
-    echo "Latest binary: $dx_pathname/$dx_filename"
+  if [ "${loki_db}" != "" ]; then
+    dx download "$loki_db" -o shared/loki.db
   fi
-  dx download "$biobin_binary_exec" -o bin/biobin
-  chmod +x bin/biobin
-
-  if [[ -z "$biobin_summary_script" ]]; then
-    dx_pathname="Ritchie Lab Software:/BioBin/versions/biobin-summary.py"
-    dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
-    biobin_summary_script="$(dx find data \
-      --path "$dx_pathname" \
-      --name "$dx_filename" \
-      --brief \
-      )"
-    echo "Latest summary script: $dx_pathname/$dx_filename"
-  fi
-  dx download "$biobin_summary_script" -o bin/biobin-summary.py
-  chmod +x bin/biobin-summary.py
-
-  if [[ -z "$loki_db" ]]; then
-    dx_pathname="Ritchie Lab Software:/LOKI"
-    dx_filename="$(dx ls "$dx_pathname" | sort -r | head -n 1)"
-    loki_db="$(dx find data \
-      --path "$dx_pathname" \
-      --name "$dx_filename" \
-      --brief \
-      )"
-    echo "Latest LOKI: $dx_pathname/$dx_filename"
-  fi
-  dx download "$loki_db" -o shared/loki.db
-
 
   # run biobin
   mkdir biobin
-  ./bin/biobin \
+  biobin \
     --threads "$NUM_CORES" \
     --settings-db shared/loki.db \
     --vcf-file "$VCF_FILE" \
@@ -119,7 +81,7 @@ main() {
   fi
 
   # run summary script
-  python bin/biobin-summary.py \
+  python /usr/bin/biobin-summary.py \
     --prefix="biobin/$output_prefix" \
     $ALL_CONTROL \
     > "biobin/${output_prefix}-summary.tsv"
@@ -130,7 +92,7 @@ main() {
     for p in $(seq 1 $permu_count) ; do
       mkdir permu/$p
       biobin-permute-pheno.py input/input.phenotype $p > permu/$p/input.phenotype
-      ./bin/biobin \
+      biobin \
         --threads "$NUM_CORES" \
         --settings-db shared/loki.db \
         --vcf-file "$VCF_FILE" \
@@ -144,7 +106,7 @@ main() {
         --report-prefix "permu/$p/output" \
         $biobin_args \
         2>&1 | tee -a permu/$p/output.log
-      python bin/biobin-summary.py \
+      python /usr/bin/biobin-summary.py \
         --prefix=permu/$p/output \
         $ALL_CONTROL \
         > permu/$p/output-summary.tsv
@@ -158,7 +120,6 @@ main() {
     permu_file=$(dx upload permu/*-permute-summary.tsv --brief)
     dx-jobutil-add-output permu_file --class="file" "$permu_file"
   fi
-
 
   # upload output files
   for f in biobin/*-bins.csv ; do

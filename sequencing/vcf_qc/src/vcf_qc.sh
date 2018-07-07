@@ -77,7 +77,7 @@ main() {
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
 
-		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
+		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -igatk_jar="$gatk_jar" -igenome_fasta="$genome_fasta" -igenome_fasta_fai="$genome_fasta_fai" -igenome_fasta_dict="$genome_fasta_dict" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
 
 		# for each subjob, add the output to our array
     	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref

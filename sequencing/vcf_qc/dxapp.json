@@ -31,6 +31,72 @@
       "help": "The GenomeAnalysisTK.jar file."
     },
     {
+      "name": "genome_fasta",
+      "label": "reference genome",
+      "help": "A FASTA file of reference genome.",
+      "class": "file",
+      "patterns": ["*.fasta","*.fa","*.fasta.gz","*.fa.gz"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
+    },
+    {
+      "name": "genome_fasta_dict",
+      "label": "reference genome",
+      "help": "A dict file of FASTA reference genome.",
+      "class": "file",
+      "patterns": ["*.dict"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
+    },
+    {
+      "name": "genome_fasta_fai",
+      "label": "reference genome ",
+      "help": "A FASTA fai index  of reference genome.",
+      "class": "file",
+      "patterns": ["*.fasta.fai","*.fa.fai"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
+    },
+    {
       "name" : "target",
       "label" : "Exon Target",
       "class" : "file",
@@ -106,72 +172,6 @@
       "label": "Additional Hard Filters",
       "class": "string",
       "optional": true
-    },
-    {
-      "name": "genome_fasta",
-      "label": "reference genome",
-      "help": "A FASTA file of reference genome.",
-      "class": "file",
-      "patterns": ["*.fasta","*.fa","*.fasta.gz","*.fa.gz"],
-      "optional": false,
-      "suggestions": [
-        {
-          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
-          "path": "/GATK/resources",
-          "region": "aws:us-east-1",
-          "name": "dx_ritchie_collaboration: AWS US-east"
-        },
-        {
-          "project": "project-FGvp3009BJq40pkZ683v3754",
-          "path": "/GATK/resources",
-          "region": "aws:westus",
-          "name": "dx_ritchie_collaboration: Azure West US"
-        }
-      ]
-    },
-    {
-      "name": "genome_fasta_dict",
-      "label": "reference genome",
-      "help": "A dict file of FASTA reference genome.",
-      "class": "file",
-      "patterns": ["*.dict"],
-      "optional": false,
-      "suggestions": [
-        {
-          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
-          "path": "/GATK/resources",
-          "region": "aws:us-east-1",
-          "name": "dx_ritchie_collaboration: AWS US-east"
-        },
-        {
-          "project": "project-FGvp3009BJq40pkZ683v3754",
-          "path": "/GATK/resources",
-          "region": "aws:westus",
-          "name": "dx_ritchie_collaboration: Azure West US"
-        }
-      ]
-    },
-    {
-      "name": "genome_fasta_fai",
-      "label": "reference genome ",
-      "help": "A FASTA fai index  of reference genome.",
-      "class": "file",
-      "patterns": ["*.fasta.fai","*.fa.fai"],
-      "optional": false,
-      "suggestions": [
-        {
-          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
-          "path": "/GATK/resources",
-          "region": "aws:us-east-1",
-          "name": "dx_ritchie_collaboration: AWS US-east"
-        },
-        {
-          "project": "project-FGvp3009BJq40pkZ683v3754",
-          "path": "/GATK/resources",
-          "region": "aws:westus",
-          "name": "dx_ritchie_collaboration: Azure West US"
-        }
-      ]
     }
   ],
   "outputSpec": [

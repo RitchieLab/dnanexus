@@ -209,15 +209,14 @@ downsample_plink(){
 
 			cut -f2 preld.bim > $SNP_LIST
 
-      sed -i '/rs10761581\|rs11204210\|rs3167875\|rs35515471\|rs3814160\|rs10902343\|rs11246606\|rs11246607\|rs11246608\|rs34285763\|rs61890334\|rs61890420\|rs61890422\|rs200029677\|rs201794505\|rs7170838\|rs367595809\|rs10910824\|rs11590105\|rs1628172\|rs2274616\|rs28391411\|rs28602496\|rs28639473\|rs28676508\|rs41302235\|rs41315701\|rs61742539\|rs6670984\|rs142831593\|rs199675524\|rs201703456\|rs201906478\|rs202089732\|rs62561229\|rs78487056/d' $SNP_LIST
+            sed -i '/rs10761581\|rs11204210\|rs3167875\|rs35515471\|rs3814160\|rs10902343\|rs11246606\|rs11246607\|rs11246608\|rs34285763\|rs61890334\|rs61890420\|rs61890422\|rs200029677\|rs201794505\|rs7170838\|rs367595809\|rs10910824\|rs11590105\|rs1628172\|rs2274616\|rs28391411\|rs28602496\|rs28639473\|rs28676508\|rs41302235\|rs41315701\|rs61742539\|rs6670984\|rs142831593\|rs199675524\|rs201703456\|rs201906478\|rs202089732\|rs62561229\|rs78487056/d' $SNP_LIST
 
 			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					#dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
-          dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.$ext" -o $GEN_DIR/ALL.chr$c.$ext
-          #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
-        done
+                    dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+                    #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
+                    done
 				# extract the markers in preld
 				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
 
@@ -286,7 +285,8 @@ downsample_vcf() {
 			for c in $(join <(seq 1 22 | sort) <(tabix -l input.vcf.gz | sort)); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+					dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+
 				done
 				# extract the markers in preld
 				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex

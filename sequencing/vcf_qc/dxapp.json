@@ -108,13 +108,70 @@
       "optional": true
     },
     {
-      "group": "Build Options",
-      "name": "build_version",
-      "label": "NCBI Build Version",
-      "class": "string",
-      "choices": ["rgc_b38","gatk_b38","b37_decoy","hg38chr.fa"],
-      "default": "rgc_b38",
-      "optional": false
+      "name": "genome_fasta",
+      "label": "reference genome",
+      "help": "A FASTA file of reference genome.",
+      "class": "file",
+      "patterns": ["*.fasta","*.fa","*.fasta.gz","*.fa.gz"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
+    },
+    {
+      "name": "genome_fasta_dict",
+      "label": "reference genome",
+      "help": "A dict file of FASTA reference genome.",
+      "class": "file",
+      "patterns": ["*.dict"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
+    },
+    {
+      "name": "genome_fasta_fai",
+      "label": "reference genome ",
+      "help": "A FASTA fai index  of reference genome.",
+      "class": "file",
+      "patterns": ["*.fasta.fai","*.fa.fai"],
+      "optional": false,
+      "suggestions": [
+        {
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "path": "/GATK/resources",
+          "region": "aws:us-east-1",
+          "name": "dx_ritchie_collaboration: AWS US-east"
+        },
+        {
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "path": "/GATK/resources",
+          "region": "aws:westus",
+          "name": "dx_ritchie_collaboration: Azure West US"
+        }
+      ]
     }
   ],
   "outputSpec": [
@@ -141,11 +198,9 @@
   },
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd2_x8"}},
-                    "assetDepends": [{"id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"}],
-                    "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"},
+                    "assetDepends": [{"id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"}]},
     "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem2_ssd1_x16"}},
-                    "assetDepends": [{"id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}],
-                    "resources" : "project-FGvp3009BJq40pkZ683v3754"}
+                    "assetDepends": [{"id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}]}
   },
   "openSource" : true,
   "details": {

@@ -11,7 +11,7 @@
       "name": "input_plink_binary",
       "label": "PLINK binary input files (bed, bim, fam)",
       "class": "array:file",
-      "pattern": ["*.bed", "*.bim", "*.fam"],
+      "patterns": ["*.bed", "*.bim", "*.fam"],
       "optional": false,
       "help": "A list of files with PLINK's binary fileset to be referenced."
     },
@@ -19,7 +19,7 @@
       "name": "input_phenotype",
       "label": "Input phenotype file",
       "class": "file",
-      "pattern": ["*"],
+      "patterns": ["*.txt"],
       "optional": false,
       "help": "A file, with phenotype information recorded."
     },
@@ -103,17 +103,16 @@
     {
       "name": "input_continuous_covariate",
       "label": "Continuous Covariate",
-      "help": "Here values of the covariate should be numeric and quantitative.",
       "class": "file",
-      "pattern": ["*"],
+      "patterns": ["*.txt"],
       "optional": true,
-      "help": "A file, with continuous covariate information." 
+      "help": "A file, with continuous covariate information; values should be numeric and quantitative." 
     },
     {
       "name": "input_categorical_covariate",
       "label": "Categorical Covariates",
       "class": "file",
-      "pattern": ["*"],
+      "patterns": ["*.txt"],
       "help": "Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
       "optional": true
     },
@@ -121,7 +120,7 @@
       "name": "input_samples",
       "label": "Sample file",
       "class": "file",
-      "pattern": ["*"],
+      "patterns": ["*"],
       "help": "User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
@@ -129,7 +128,7 @@
       "name": "input_markers",
       "label": "SNP file",
       "class": "file",
-      "pattern": ["*"],
+      "patterns": ["*"],
       "help": "User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label)",
       "optional": true
     },
@@ -165,25 +164,27 @@
       "name": "output_files",
       "label": "Output files",
       "class": "array:file",
-      "pattern": ["*"],
+      "patterns": ["*"],
       "help": "A list of output files"
     }
   ],
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x2"},
                                              "*": {"instanceType": "mem1_ssd1_x32"}},
-                      "execDepends": [{"name": "libgsl0ldbl"}],
-                      "assetDepends": [{"name": "TBD", "id": "record-TBD"}]},
-    "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"}},
-                                             "*": {"instanceType": "azure:mem4_ssd1_x32"}},
-                     "assetDepends": [{"name": "TBD", "id": "record-TBD"}]}
+                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"},
+                                        "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]},
+    "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
+                                             "*": {"instanceType": "azure:mem4_ssd1_x16"}},
+                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
+                                       "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]}
   },
   "runSpec": {
+    "__execDepends__": [{"name":"libboost-iostreams-dev"}],
     "distribution": "Ubuntu",
     "release": "14.04",
     "interpreter": "bash",
     "file": "src/plato_single_variant.sh"
   },
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
+  "__developers__" : ["user-tnperson", "user-auv13", "user-atf3"],
+  "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
 }

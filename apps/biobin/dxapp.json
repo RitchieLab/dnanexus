@@ -18,42 +18,48 @@
       "label": "Role File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.rol*"]
+      "patterns": ["*.rol*"],
+      "help": "(Optional) A file containing custom roles."
     },
     {
       "name": "phenotype_file",
       "label": "Phenotype File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.phe*"]
+      "patterns": ["*.phe*"],
+      "help": "(Optional) A phenotype file as a plain text file that contains two or more columns separated by whitespace."
     },
     {
       "name": "covariate_file",
       "label": "Covariate File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.cov*"]
+      "patterns": ["*.cov*"],
+      "help": "(Optional) A covariate file as a plain text file that contains two or more columns separated by whitespace. If given, all covariates in this file will be used."
     },
     {
       "name": "weight_file",
       "label": "Weight File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.weight*","*.wgt*"]
+      "patterns": ["*.weight*","*.wgt*"],
+      "help": "(Optional) A file containing custom locus weights."
     },
     {
       "name": "region_file",
       "label": "Custom Regions File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.region*","*.rgn*"]
+      "patterns": ["*.region*","*.rgn*"],
+      "help": "(Optional) A file containing custom regions."
     },
     {
       "name": "include_region_file",
       "label": "Region Names List",
       "class": "file",
       "optional": true,
-      "patterns": ["*.gen*"]
+      "patterns": ["*.gen*"],
+      "help": "(Optional) A file containing a list of names of regions to include from LOKI when constructing bins."
     },
     {
       "name": "loki_db",
@@ -64,21 +70,24 @@
       "patterns": ["LOKI*.db"],
       "suggestions": [
         {"name": "LOKI Database Versions", "project": "project-FGqF5B00ByvPXG4G87yQy23G", "path": "/LOKI"}
-      ]
+      ],
+      "help": "A file, as the Library of Knowledge Integration (LOKI) database, which contains diverse biological knowledge from multiple collections of publically available databases."
     },
     {
       "name": "regression_type",
       "label": "Regression Type",
       "class": "array:string",
       "choices": ["linear","logistic","wilcoxon","SKAT-linear","SKAT-logistic"],
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A list of statistical tests to perform on each bin."
     },
     {
       "name": "output_prefix",
       "label": "Output File Prefix",
       "class": "string",
       "optional": false,
-      "default": "biobin"
+      "default": "biobin",
+      "help": "A string, setup for the prefix of the output files."
     },
     {
       "name": "biobin_args",
@@ -163,8 +172,5 @@
     "timeoutPolicy": {
       "*": { "hours": 12 }
     }
-  },
-  "__access__": {
-    "network": [ "*" ]
   }
 }

@@ -214,7 +214,7 @@ downsample_plink(){
 			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-                    dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+                    dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
                     #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
                     done
 				# extract the markers in preld
@@ -285,7 +285,7 @@ downsample_vcf() {
 			for c in $(join <(seq 1 22 | sort) <(tabix -l input.vcf.gz | sort)); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+					dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
 
 				done
 				# extract the markers in preld

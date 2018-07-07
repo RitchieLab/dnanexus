@@ -172,14 +172,13 @@
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x2"},
                                              "*": {"instanceType": "mem1_ssd1_x32"}},
                       "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"},
-                                        "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]},
+                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
-                                             "*": {"instanceType": "azure:mem4_ssd1_x16"}},
+                                            "*": {"instanceType": "azure:mem4_ssd1_x16"}},
                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
-                                       "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]}
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
   },
   "runSpec": {
-    "__execDepends__": [{"name":"libboost-iostreams-dev"}],
     "distribution": "Ubuntu",
     "release": "14.04",
     "interpreter": "bash",

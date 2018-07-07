@@ -1,14 +1,9 @@
 {
   "name": "biobin",
-  "title": "BioBin - Latest",
+  "title": "BioBin",
   "summary": "The latest development version of the rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.4.0",
-  "categories": [],
-  "access": {
-    "network": [ "*" ],
-    "allProjects": "VIEW"
-  },
+  "version": "1.0.0",
   "inputSpec": [
     {
       "name": "vcf_file",
@@ -16,13 +11,6 @@
       "class": "file",
       "optional": false,
       "patterns": ["*.vcf","*.vcf.gz"]
-    },
-    {
-      "name": "vcf_tbi_file",
-      "label": "VCF TBI Index File",
-      "class": "file",
-      "optional": true,
-      "patterns": ["*.vcf.tbi","*.vcf.gz.tbi"]
     },
     {
       "name": "role_file",
@@ -66,7 +54,6 @@
       "optional": true,
       "patterns": ["*.gen*"]
     },
-    
     {
       "name": "biobin_binary_exec",
       "label": "BioBin Binary Executable",
@@ -75,7 +62,9 @@
       "optional": true,
       "patterns": ["biobin*"],
       "suggestions": [
-        {"name": "Binary Executable Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/BioBin/versions/biobin"}
+        {"name": "Binary Executable Versions", 
+          "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", 
+          "path": "/BioBin/versions/biobin"}
       ]
     },
     {
@@ -86,8 +75,9 @@
       "optional": true,
       "patterns": ["biobin-summary.py*"],
       "suggestions": [
-        {"name": "Summary Script Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/BioBin/versions/biobin-summary.py"}
-      ]
+        {"name": "Summary Script Versions", 
+          "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", 
+          "path": "/BioBin/versions/biobin-summary.py"}]
     },
     {
       "name": "loki_db",
@@ -132,59 +122,71 @@
     {
       "name": "log_file",
       "label": "Log File",
-      "class": "file"
+      "class": "file",
+      "patterns": ["*.log"],
+      "help": "A file, with log information from the job."
     },
     {
       "name": "bins_files",
       "label": "Bins Files",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": ["*bins.csv"],
+      "help": "A list of files, in CSV format with bins report."
     },
     {
       "name": "summary_file",
       "label": "Bins Summary File",
-      "class": "file"
+      "class": "file",
+      "patterns": ["*.tsv"],
+      "help": "A file, in TSV format with summary information."
     },
     {
       "name": "locus_file",
       "label": "Locus File",
-      "class": "file"
+      "class": "file",
+      "patterns": ["*.csv"],
+      "help": "A file, in CSV format with locus information."
     },
     {
       "name": "unlifted_files",
       "label": "Unlifted Variants Files",
       "class": "array:file",
-      "optional": true
+      "optional": true,
+      "patterns": ["*.csv"],
+      "help": "A file, in CSV format with ulifted positions."
     },
     {
       "name": "permu_file",
       "label": "Permutation Summary File",
       "class": "file",
-      "optional": true
+      "optional": true,
+      "patterns": ["*.csv"],
+      "help": "(Optional) A file, in CSV format with permutation summary."
     }
   ],
+  "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x16"}},
+                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"}]},
+    "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem2_ssd1_x16"}},
+                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}]}
+  },
   "runSpec": {
     "interpreter": "bash",
-    "file": "src/main.sh",
-    "execDepends": [
-      { "name": "libgsl0ldbl" },
-      { "name": "tabix" }
-    ]
+    "file": "src/biobin.sh",
+    "distribution": "Ubuntu",
+    "release": "14.04"
   },
-  "authorizedUsers": [
-    "org-geisinger",
-    "org-geisinger_affiliate"
-  ],
-  "developers": [
-    "user-auv13",
-    "user-atf3"
-  ],
+  "access": {
+    "network": [ "*" ],
+    "allProjects": "VIEW"
+  },
   "__disabled__runSpec__execDepends": [
-      { "name": "gawk" },
-      { "name": "libsqlite3-0" },
-      { "name": "python-apsw" },
-      { "name": "python-suds" },
-      { "name": "openjdk-7-jre-headless" },
-      { "name": "vcftools" },
-      { "name": "plink" }
+    { "name": "gawk" },
+    { "name": "libsqlite3-0" },
+    { "name": "python-apsw" },
+    { "name": "python-suds" },
+    { "name": "openjdk-7-jre-headless" },
+    { "name": "vcftools" },
+    { "name": "plink" }
   ]
 }

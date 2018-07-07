@@ -25,6 +25,10 @@ main() {
 
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of gatk_jar: '$gatk_jar'"
+    echo "Value of genome_fasta: '$genome_fasta'"
+    echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
+    echo "Value of genome_fasta_dict: '$genome_fasta_dict'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -89,6 +93,9 @@ run_qc() {
     echo "Value of vcf_fn: '$vcf_fn'"
     echo "Value of vcfidx_fn: '$vcfidx_fn'"
     echo "Value of gatk_jar: '$gatk_jar'"
+    echo "Value of genome_fasta: '$genome_fasta'"
+    echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
+    echo "Value of genome_fasta_dict: '$genome_fasta_dict'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -182,36 +189,10 @@ run_qc() {
 		sudo chmod -R a+rwX /usr/share/GATK
 
 
-    dx download "$gatk_jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
-
-    if [ "$build_version" == "b37_decoy" ]
-  	then
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta" -o /usr/share/GATK/resources/build.fasta
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
-  		dx download "$DX_RESOURCES_ID:/GATK/resources/human_g1k_v37_decoy.dict" -o /usr/share/GATK/resources/build.dict
-    elif [ "$build_version" == "rgc_b38" ]
-    then
-
-      dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta" -o /usr/share/GATK/resources/build.fasta
-      dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.fasta.fai" -o /usr/share/GATK/resources/build.fasta.fai
-      dx download "$DX_RESOURCES_ID:/GATK/resources/Homo_sapiens_assembly38.dict" -o /usr/share/GATK/resources/build.dict
-
-    elif [ "$build_version" == "gatk_b38" ]
-    then
-
-      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa" -o /usr/share/GATK/resources/build.fasta
-      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
-      dx download "$DX_RESOURCES_ID:/GATK/resources/h38flat.fasta-index.tar.gz.genome.dict" -o /usr/share/GATK/resources/build.dict
-
-  	else
-
-      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa" -o /usr/share/GATK/resources/build.fasta
-      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.fa.fai" -o /usr/share/GATK/resources/build.fasta.fai
-      dx download "$DX_RESOURCES_ID:/GATK/resources/hg38chr.dict" -o /usr/share/GATK/resources/build.dict
-
-
-  	fi
-
+        dx download "$gatk_jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
+        dx download "$genome_fasta" -o /usr/share/GATK/resources/build.fasta
+        dx download "$genome_fasta_fai" -o /usr/share/GATK/resources/build.fasta.fai
+        dx download "$genome_fasta_dict" -o /usr/share/GATK/resources/build.fasta.dict
 
 		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 		# only ask for 90% of total system memory

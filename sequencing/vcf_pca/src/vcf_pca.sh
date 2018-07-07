@@ -21,6 +21,12 @@ set -x -e -o pipefail
 
 #echo "deb http://us.archive.ubuntu.com/ubuntu xenial main restricted universe multiverse " >> /etc/apt/sources.list
 
+if [[ "$DX_RESOURCES_ID" != "" ]]; then
+  DX_ASSETS_ID="$DX_RESOURCES_ID"
+else
+  DX_ASSETS_ID="$DX_PROJECT_CONTEXT_ID"
+fi
+
 main() {
 
     echo "Value of vcf_fn: '${vcf_fn[@]}'"
@@ -40,6 +46,7 @@ main() {
     echo "Value of ldregress: '$ldregress'"
     echo "Value of numoutlier: '$numoutlier'"
     echo "Value of pca_opts: '$pca_opts'"
+    echo "value of DX_ASSETS_ID: $DX_ASSETS_ID"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
@@ -214,7 +221,7 @@ downsample_plink(){
 			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-                    dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+                    dx download "$DX_ASSETS_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
                     #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
                     done
 				# extract the markers in preld
@@ -285,7 +292,7 @@ downsample_vcf() {
 			for c in $(join <(seq 1 22 | sort) <(tabix -l input.vcf.gz | sort)); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+					dx download "$DX_ASSETS_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
 
 				done
 				# extract the markers in preld
@@ -388,7 +395,7 @@ run_pca() {
 		FAM_LINENO=$(mktemp)
 		nl -ba -nln -w1 $INPUTDIR/input.fam | sed -e 's/  */\t/g' > $FAM_LINENO
 		POP_FILE=$(mktemp)
-		dx download "$DX_RESOURCES_ID:/1K_genomes/integrated_call_samples_v3.20130502.ALL.panel" -o $POP_FILE -f
+		dx download "$DX_ASSETS_ID:/1K_genomes/integrated_call_samples_v3.20130502.ALL.panel" -o $POP_FILE -f
 
 		POP_COL=2
 		if test "$project_superpop" = "true"; then

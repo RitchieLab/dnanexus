@@ -23,8 +23,8 @@ echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe mul
 main() {
 
 
-    echo "Value of vcf_fn: '$vcf_fn'"
-    echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of fn_vcfgz: '$fn_vcfgz'"
+    echo "Value of fn_vcfidx: '$fn_vcfidx'"
     echo "Value of gatk_jar: '$gatk_jar'"
     echo "Value of genome_fasta: '$genome_fasta'"
     echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
@@ -38,20 +38,20 @@ main() {
     echo "Value of addl_filter: '$addl_filter'"
 
 	# Sanity check - make sure vcf + vcfidx have same # of elements
-	if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
+	if test "${#fn_vcfidx[@]}" -ne "${#fn_vcfgz[@]}"; then
 		dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
 	fi
 
 	# first, we need to match up the VCF and tabix index files
 	# To do that, we'll get files of filename -> dxfile ID
 	VCF_LIST=$(mktemp)
-	for i in "${!vcf_fn[@]}"; do
-		dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+	for i in "${!fn_vcfgz[@]}"; do
+		dx describe --json "${fn_vcfgz[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 	done
 
 	VCFIDX_LIST=$(mktemp)
-	for i in "${!vcfidx_fn[@]}"; do
-		dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+	for i in "${!fn_vcfidx[@]}"; do
+		dx describe --json "${fn_vcfidx[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 	done
 
 	# Now, get the prefix (strip off any .tbi) and join them
@@ -59,7 +59,7 @@ main() {
 	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
 
 	# Ensure that we still have the same number of files; throw an error if not
-	if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
+	if test $(cat $JOINT_LIST | wc -l) -ne "${#fn_vcfgz[@]}"; then
 		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 	fi
 
@@ -77,11 +77,11 @@ main() {
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
 
-		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ivcf_fn:file="$VCF_DXFN" -ivcfidx_fn:file="$VCFIDX_DXFN" -igatk_jar="$gatk_jar" -igenome_fasta="$genome_fasta" -igenome_fasta_fai="$genome_fasta_fai" -igenome_fasta_dict="$genome_fasta_dict" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
+		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ifn_vcfgz:file="$VCF_DXFN" -ifn_vcfidx:file="$VCFIDX_DXFN" -igatk_jar="$gatk_jar" -igenome_fasta="$genome_fasta" -igenome_fasta_fai="$genome_fasta_fai" -igenome_fasta_dict="$genome_fasta_dict" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
 
 		# for each subjob, add the output to our array
-    	dx-jobutil-add-output vcf_out --array "$SUBJOB:vcf_out" --class=jobref
-	    dx-jobutil-add-output vcfidx_out --array "$SUBJOB:vcfidx_out" --class=jobref
+    	dx-jobutil-add-output out_vcfgz --array "$SUBJOB:out_vcfgz" --class=jobref
+	    dx-jobutil-add-output out_vcfidx --array "$SUBJOB:out_vcfidx" --class=jobref
 
 	done < $JOINT_LIST
 
@@ -90,8 +90,8 @@ main() {
 
 run_qc() {
 
-    echo "Value of vcf_fn: '$vcf_fn'"
-    echo "Value of vcfidx_fn: '$vcfidx_fn'"
+    echo "Value of fn_vcfgz: '$fn_vcfgz'"
+    echo "Value of fn_vcfidx: '$fn_vcfidx'"
     echo "Value of gatk_jar: '$gatk_jar'"
     echo "Value of genome_fasta: '$genome_fasta'"
     echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
@@ -104,13 +104,13 @@ run_qc() {
     echo "Value of INDEL_ts: '$INDEL_ts'"
     echo "Value of addl_filter: '$addl_filter'"
 
-    dx download "$vcfidx_fn" -o raw.vcf.gz.tbi
-	PREFIX=$(dx describe --name "$vcf_fn" | sed 's/\.vcf.\(gz\)*$//')
+    dx download "$fn_vcfidx" -o raw.vcf.gz.tbi
+	PREFIX=$(dx describe --name "$fn_vcfgz" | sed 's/\.vcf.\(gz\)*$//')
     SUBJOBS=0
 
 	if test -z "$INTERVAL" -a "$target" -a "$max_sz"; then
 
-		if test "$(dx describe --json "$vcf_fn" | jq -r .size)" -gt "$((max_sz * 1000 * 1000))"; then
+		if test "$(dx describe --json "$fn_vcfgz" | jq -r .size)" -gt "$((max_sz * 1000 * 1000))"; then
 			SUBJOBS=1
 			CAT_ARGS=""
 			for chr in $(tabix -l raw.vcf.gz); do
@@ -129,8 +129,8 @@ run_qc() {
 					INTV="$chr:$START-$STOP"
 					rm $INTV_FN
 
-					new_job=$(dx-jobutil-new-job run_qc -ivcf_fn="$vcf_fn" -ivcfidx_fn="$vcfidx_fn" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter" -iINTERVAL:string="$INTV")
-					CAT_ARGS="$CAT_ARGS -ivcfidxs:array:file=${new_job}:vcfidx_out -ivcfs:array:file=${new_job}:vcf_out"
+					new_job=$(dx-jobutil-new-job run_qc -ifn_vcfgz="$fn_vcfgz" -ifn_vcfidx="$fn_vcfidx" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter" -iINTERVAL:string="$INTV")
+					CAT_ARGS="$CAT_ARGS -ivcfidxs:array:file=${new_job}:out_vcfidx -ivcfs:array:file=${new_job}:out_vcfgz"
 				done
 
 				rm $TGT_FN
@@ -140,8 +140,8 @@ run_qc() {
 			cat_job=$(dx run cat_variants -iprefix="$PREFIX.filtered" $CAT_ARGS --brief --instance-type mem2_hdd2_x2)
 
 			# dx jobutil-add-output
-			dx-jobutil-add-output vcf_out "$cat_job:vcf_out" --class=jobref
-			dx-jobutil-add-output vcfidx_out "$cat_job:vcfidx_out" --class=jobref
+			dx-jobutil-add-output out_vcfgz "$cat_job:out_vcfgz" --class=jobref
+			dx-jobutil-add-output out_vcfidx "$cat_job:out_vcfidx" --class=jobref
 		fi
 
 
@@ -152,11 +152,11 @@ run_qc() {
 
 		GATK_INTERVAL=""
 		if test -z "$INTERVAL"; then
-			dx download "$vcf_fn" -o raw.vcf.gz
+			dx download "$fn_vcfgz" -o raw.vcf.gz
 		else
 			GATK_INTERVAL="-L $INTERVAL"
 			PREFIX="$PREFIX.$(echo $INTERVAL | tr ':-' '._')"
-			download_part.py -i raw.vcf.gz.tbi -f "$(dx describe --json "$vcf_fn" | jq -r .id)" -H -o raw.vcf.gz $GATK_INTERVAL
+			download_part.py -i raw.vcf.gz.tbi -f "$(dx describe --json "$fn_vcfgz" | jq -r .id)" -H -o raw.vcf.gz $GATK_INTERVAL
 			rm raw.vcf.gz.tbi
 			tabix -p vcf raw.vcf.gz
 		fi
@@ -192,8 +192,7 @@ run_qc() {
         dx download "$gatk_jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
         
         if [[ ${genome_fasta_name: -3} == ".gz" ]]; then
-        	dx download "$genome_fasta" -o /usr/share/GATK/resources/build.fasta.gz
-        	gunzip /usr/share/GATK/resources/build.fasta.gz
+        	dx cat "$genome_fasta" | zcat > /usr/share/GATK/resources/build.fasta
         else
             dx download "$genome_fasta" -o /usr/share/GATK/resources/build.fasta
         fi
@@ -253,10 +252,10 @@ run_qc() {
 		mv $BASE_VCF $OUT_DIR/$PREFIX.filtered.vcf.gz
 		mv $BASE_VCF.tbi $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi
 
-		vcf_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz --brief)
-		vcfidx_out=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi --brief)
+		out_vcfgz=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz --brief)
+		out_vcfidx=$(dx upload $OUT_DIR/$PREFIX.filtered.vcf.gz.tbi --brief)
 
-		dx-jobutil-add-output vcf_out "$vcf_out" --class=file
-		dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=file
+		dx-jobutil-add-output out_vcfgz "$out_vcfgz" --class=file
+		dx-jobutil-add-output out_vcfidx "$out_vcfidx" --class=file
 	fi
 }

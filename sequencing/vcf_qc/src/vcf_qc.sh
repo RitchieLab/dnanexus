@@ -191,7 +191,7 @@ run_qc() {
 
         dx download "$gatk_jar" -o /usr/share/GATK/GenomeAnalysisTK.jar
         
-        if [[ ${genome_fasta: -3} == ".gz" ]]; then
+        if [[ ${genome_fasta_name: -3} == ".gz" ]]; then
         	dx download "$genome_fasta" -o /usr/share/GATK/resources/build.fasta.gz
         	gunzip /usr/share/GATK/resources/build.fasta.gz
         else

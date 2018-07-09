@@ -1,7 +1,6 @@
 production:
  aws:us-east-1:
   hs37d5_fasta: file-B6ZY7VG2J35Vfvpkj8y0KZ01
-  gatk_jar: 
   hg001_wes_vcfgz: file-F4J89Jj04g2509pv5Z9b9V9K
   hg001_wes_vcfgz_tbi: file-F4J89K004g2Jf6Bz5Z6639z2
   hg002_wes_vcfgz: file-F4J94P80JJ83Kf9ZFKX6vVPb
@@ -9,3 +8,12 @@ production:
   hg005_wes_vcfgz: file-F4J90GQ08z2ykFV90PKfF43B
   hg005_wes_vcfgz_tbi: file-F4J90Gj08z2z5pP40KvbbXJ6
   gatk_jar: file-F33BB280q6q5Y5Bx1BQ029pb
+ azure:westus:
+  hs37d5_fasta: file-F3vPVzj9F0Z3V4bg8BYJBKjF
+  hg001_wes_vcfgz: file-FJ1vp8Q0VyKFQB3y2yFPg1Vb
+  hg001_wes_vcfgz_tbi: file-FJ1vp900XbxXV43bP5yJf0qx
+  hg002_wes_vcfgz: file-FJ1vpB009z5P1xg12y5X39G4
+  hg002_wes_vcfgz_tbi: file-FJ1vpBQ0VfGP1xg12y5X39G6
+  hg005_wes_vcfgz: file-FJ1vpF80BXy99gV32y8KYV2z
+  hg005_wes_vcfgz_tbi: file-FJ1vpq80qgvB5qFV2y3pkg8x
+  gatk_jar: file-FJ1vkpQ0J4gZGXgy2y1Zx173

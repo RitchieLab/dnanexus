@@ -26,7 +26,19 @@ class VariantAnnotatorTests(unittest.TestCase):
     def setUp(self):
         print('Building applets')
         with open(TEST_DATA_YAML) as fh:
-            self.test_data = yaml.safe_load(fh)['production']['aws:us-east-1']
+            # Load the test data.
+            self.test_data = yaml.safe_load(fh)['production']
+
+            # Check if we are on staging or production
+            if dxpy.APISERVER_HOST.startswith('staging') and 'staging' in self.test_data:
+                self.test_data = self.test_data['staging']
+            elif 'production' in self.test_data:
+                self.test_data = self.test_data['production']
+
+            # Get the region of interest
+            region = dxpy.describe(dxpy.PROJECT_CONTEXT_ID)['region']
+            if region in self.test_data:
+                self.test_data = self.test_data[region]
 
         self.applet = json.loads(subprocess.check_output(['dx', 'build', '-f', MAIN_APP_DIR]).strip())['id']
 
@@ -50,15 +62,15 @@ class VariantAnnotatorTests(unittest.TestCase):
                      'no_geno': False,
                      'hdr_only': False}
         self.jobs.append(applet.run(job_input))
-        print('Running full test in job: {0}.'.format(self.jobs[-1]))
+        print('Running full test in job: {0}.'.format(self.jobs[-1].get_id()))
 
         job_input['hdr_only'] = True
         self.jobs.append(applet.run(job_input))
-        print('Running header only in job: {0}.'.format(self.jobs[-1]))
+        print('Running header only in job: {0}.'.format(self.jobs[-1].get_id()))
 
         job_input['no_geno'] = True
         self.jobs.append(applet.run(job_input))
-        print('Running header only, no genotyping test in job: {0}.'.format(self.jobs[-1]))
+        print('Running header only, no genotyping test in job: {0}.'.format(self.jobs[-1].get_id()))
 
         # Note that if we specify hdr_only = False and no_geno= True (the only combination we
         # aren't testing here) then no output is produced and the job fails.

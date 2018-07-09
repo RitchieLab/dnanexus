@@ -11,16 +11,16 @@ This tool is meant to annotate the variant calls in a given `VCF` file based on 
 
 This app requires:
 
-- An array of `vcf` files to be annotated.
-- A matching array of `tbi` index files for those `vcfs`.
-- The GATK3 `jar` file.
-- The reference genome the variants were called against in `fasta` format.
-- A boolean value indicating whether the app should produce a sites-only `vcf` (no sample level information).
-- A boolean value indicating whether the app should produce a full `vcf` (with sample level information).
+- An array of `VCF` files to be annotated.
+- A matching array of `TBI` index files for those `VCFs`.
+- The GATK3 `JAR` file.
+- The reference genome the variants were called against in `FASTA` format.
+- A boolean value indicating whether the app should produce a sites-only `VCF` (no sample level information).
+- A boolean value indicating whether the app should produce a full `VCF` (with sample level information).
 
 ## What does this app output?
 
 This app has two sets of potential outputs:
 
-- An annotated sites-only `vcf` and the corresponding `tbi` index.
-- An annotated `vcf` complete with sample information and the corresponding `tbi` index.
+- An annotated sites-only `VCF` and the corresponding `TBI` index.
+- An annotated `VCF` complete with sample information and the corresponding `TBI` index.

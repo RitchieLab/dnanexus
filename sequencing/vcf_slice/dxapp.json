@@ -7,10 +7,6 @@
   "categories": [
     "Variation Calling"
   ],
-  "details": {
-    "whatsNew": "",
-    "citation": ""
-  },
   "inputSpec": [
     {
       "name": "vcf_fn",

@@ -88,5 +88,5 @@ for site_id, site in new_vcf.viewitems():
 	outsite=outsite+",".join(site.values())
 	print outsite
 
-
+sys.stdout.flush()
 exit()

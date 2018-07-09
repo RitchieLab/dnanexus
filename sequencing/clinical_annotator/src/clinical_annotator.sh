@@ -52,8 +52,8 @@ function download_resources(){
 	tabix -p vcf -f variant_summary.b38.vcf.gz
 
 	if test "$hgmd_pro_file"; then
-		dx download "$hgmd_pro_file" -o hgmd_pro.vcf
-		python $HOME/reformatHGMD.py hgmd_pro.vcf | bgzip -c > HGMD_PRO.reformated.vcf.gz
+		dx download "$hgmd_pro_file"
+		python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
 		tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
 	fi
 
@@ -104,7 +104,7 @@ function parallel_download_and_annotate() {
 			echo $OUT_VCF
 			echo $IN_VCF
 
-			bcftools annotate -a HGMD_PRO.reformated.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO
+			bcftools annotate -a $HOME/HGMD_PRO.reformated.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO
 
 			rm $IN_VCF*
 

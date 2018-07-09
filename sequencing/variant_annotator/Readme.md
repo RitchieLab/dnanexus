@@ -5,6 +5,8 @@
 
 This app run's the [GATK VariantAnnotator](https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_annotator_VariantAnnotator.php).
 This tool is meant to annotate the variant calls in a given `VCF` file based on their context.  
+Given an array of `VCF` files, this app will launch a separate sub-job for each `VCF` and run GATK's VariantAnnotator.  Users can request that
+a sites-only `VCF` (no sample level information), a full `VCF`, or both be produced.
 
 
 ## What data are required for this app to run?

@@ -42,17 +42,26 @@ main() {
 
     for i in ${!vcf_fn[@]}
     do
-        dx describe --json "${vcf_fn[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/^\(.*\)\.vcf\.gz\t/\1\t&/'
+        echo -e "${vcf_fn_prefix[$i]}\t${vcf_fn_name[$i]}\t$(echo ${vcf_fn[$i]} | jq -r .["$dnanexus_link"])\t"
     done | tee $VCF_NAMES | wc -l
+
+    # check the output
+    less $VCF_NAMES
 
     for i in ${!vcfidx_fn[@]}
     do
-        dx describe --json "${vcfidx_fn[$i]}" | jq -r '.name,.id' | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/^\(.*\)\.vcf\.gz\.tbi\t/\1\t&/'
+        echo -e "${vcfidx_fn_prefix[$i]}\t${vcfidx_fn_name[$i]}\t$(echo ${vcfidx_fn[$i]} | jq -r .["$dnanexus_link"])\t"
     done | tee $VCFIDX_NAMES | wc -l
+    
+    # check the output
+    less $VCFIDX_NAMES
 
     # OK, join the 2 files
     VCF_ALLINFO=$(mktemp)
     NUMCOMB=$(join -t$'\t' -j1 <(sort -t$'\t' -k1,1 $VCF_NAMES) <(sort -t$'\t' -k1,1 $VCFIDX_NAMES) | tee $VCF_ALLINFO | wc -l)
+
+    # check the output
+    less $VCF_ALLINFO
 
     if test "${#vcf_fn[@]}" -ne $NUMCOMB; then
         dx-jobutil-report-error "ERROR: Could not match VCF files to indexes"

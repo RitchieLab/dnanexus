@@ -33,7 +33,8 @@
       "label": "File of regions (chr:start-stop)",
       "help": "Text file of genomic region coordinates. Variants within these ranges will be extracted from the given VCF files.",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": ["*.txt", "*.regions"]
     },
     {
       "name": "suffix",
@@ -78,5 +79,12 @@
       "assetDepends": [{"id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}]
     }
   },
+  "details": {
+        "upstreamVersion": "2.1.0",
+        "whatsNew": "",
+        "citation": "",
+        "upstreamURL": "https://www.10xgenomics.com/",
+        "upstreamLicenses": ["GPLv3"]
+        },
   "openSource": true
 }

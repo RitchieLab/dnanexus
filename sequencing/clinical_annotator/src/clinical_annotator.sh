@@ -81,7 +81,7 @@ function parallel_download_and_annotate() {
 		echo $OUT_VCF
 		echo $IN_VCF
 
-		if [ "$build_version" = "b37_decoy" ];
+		if [ "$build_version" = "b37" ];
 		then
 			bcftools annotate -a variant_summary.b37.vcf.gz -o $OUT_VCF -Oz $IN_VCF  -c +INFO
 		else
@@ -90,7 +90,7 @@ function parallel_download_and_annotate() {
 		rm $IN_VCF*
 
 	# HGMD
-		if test "$hgmd_pro_file"; then
+		if [ ! -f $HGMD_PRO.reformated.vcf.gz.tbi ]; then
 
 			IN_VCF=$OUT_VCF
 

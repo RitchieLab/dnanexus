@@ -64,7 +64,6 @@
     {
       "name": "loki_db",
       "label": "LOKI Knowledge Database",
-      "help": "A file, a LOKI knowledge database.",
       "class": "file",
       "optional": false,
       "patterns": ["LOKI*.db"],
@@ -164,6 +163,18 @@
                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]}
   },
+  "details": {
+    "upstreamVersion": "biobin-20170726-r4221",
+    "upstreamAuthor": "Ritchie Lab",
+    "upstreamUrl": "https://ritchielab.org/research/research-areas/expert-knowledge-bioinformatics/methods/biobin",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": "* 1.0.0: First Biobin app release.",
+    "citations": [
+      "doi:10.1142/9789814447973_0033",
+      "doi:10.1186/1755-8794-6-S2-S6"
+    ]
+  },
+  "openSource": true,
   "runSpec": {
     "interpreter": "bash",
     "file": "src/biobin.sh",

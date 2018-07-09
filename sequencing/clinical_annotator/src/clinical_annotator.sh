@@ -100,7 +100,7 @@ function parallel_download_and_annotate() {
 
 			OUT_VCF=${OUT_VCF%.vcf.gz}.HGMD.vcf.gz
 
-			echo "HGMD"
+			echo "Annotating HGMD"
 			echo $OUT_VCF
 			echo $IN_VCF
 

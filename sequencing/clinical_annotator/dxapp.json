@@ -3,7 +3,7 @@
   "title": "Clinical Variant Annotator",
   "summary": "Annotates a VCF File with most recent ClinVar TSV file and with a user provided HGMD PRO vcf file. Because of VCF Normalization difference some annotations will be skiped.",
   "dxapi": "1.0.0",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "inputSpec": [
     {
       "name": "vcf_fn",
@@ -11,7 +11,7 @@
       "class": "array:file",
       "optional": false,
       "patterns" : ["*.vcf.gz"],
-        "help": "VCF File to be annotated. chr prefix must be missing."
+        "help": "VCF File to be annotated. chr prefix must not be present"
     },
     {
       "name": "vcfidx_fn",
@@ -31,7 +31,7 @@
         "patterns": [
           "*.vcf","*.vcf.gz"
         ],
-        "help": "Infomation on purchasing an HGMD PRO license can be found at: https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/"
+        "help": "HGMD PRO VCF.  Make sure the build version matches the vcf to be annotated.  Infomation on purchasing an HGMD PRO license can be found at: https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/  Please ensure that the HGMD"
       },
     {
       "group": "Build Options",
@@ -49,13 +49,15 @@
       "name": "vcf_out",
       "label": "Annotated VCF",
       "class": "array:file",
-      "patterns" : ["*.vcf.gz"]
+      "patterns" : ["*.vcf.gz"],
+      "help": "Annotated VCF"
     },
     {
       "name": "vcfidx_out",
       "label": "Annotated VCF Index",
       "class": "array:file",
-      "patterns" : ["*vcf.gz.tbi"]
+      "patterns" : ["*.vcf.gz.tbi"],
+      "help": "Index File"
     }
   ],
   "runSpec": {

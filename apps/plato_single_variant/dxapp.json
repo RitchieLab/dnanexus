@@ -1,6 +1,7 @@
 {
   "name": "plato_single_variant",
   "title": "PLATO - Single Variant Analysis",
+  "summary": "The PLatform for the Analysis, Translation, and Organization of large-scale data (PLATO)",
   "dxapi": "1.0.0",
   "version": "1.0.0",
   "categories": [
@@ -49,7 +50,7 @@
       "label": "Outcome (Only required if Assocaition Type: GWAS)",
       "class": "string",
       "optional": true,
-      "help": "A comma-separated list of traits to use as outcomes for the regression models when \"GWAS\" is selected as the type of association analysis."
+      "help": "(Optional) A comma-separated list of traits to use as outcomes for the regression models when \"GWAS\" is selected as the type of association analysis."
     },
     {
       "group": "Regression Options",
@@ -57,7 +58,7 @@
       "label": "Covariates (Enter covariates column names)",
       "class": "string",
       "optional": true,
-      "help": "A comma-separated list of traits to include as covariates in each model. Covariates given in this argument are premuted along with the phenotypic status when permutation testing is performed; for this reason, this argument should include phenotypic control variables such as age and gender."
+      "help": "(Optional) A comma-separated list of traits to include as covariates in each model. Covariates given in this argument are premuted along with the phenotypic status when permutation testing is performed; for this reason, this argument should include phenotypic control variables such as age and gender."
     },
     {
       "group": "Parallel Job Options",
@@ -66,22 +67,22 @@
       "class": "int",
       "default": 0,
       "optional": true,
-      "help": "Number of phenotype to run in each sub job."
+      "help": "(Optional) Number of phenotype to run in each sub job."
     },
     {
       "name": "output_filename",
       "label": "Output Filename",
       "class": "string",
       "optional": true,
-      "help": "A string, with the expected output file name."
+      "help": "(Optional) A string, with the expected output file name."
     },
     {
       "group": "Regression Options",
       "name": "mem",
-      "label": "Lowmem",
+      "label": "Lowmem?",
       "class": "boolean",
       "default": true,
-      "help": "Reduces memory footprints.",
+      "help": "(Optional) Reduces memory footprints.",
       "optional": true
     },
     {
@@ -106,14 +107,14 @@
       "class": "file",
       "patterns": ["*.txt"],
       "optional": true,
-      "help": "A file, with continuous covariate information; values should be numeric and quantitative." 
+      "help": "(Optional) A file, with continuous covariate information; values should be numeric and quantitative." 
     },
     {
       "name": "input_categorical_covariate",
       "label": "Categorical Covariates",
       "class": "file",
       "patterns": ["*.txt"],
-      "help": "Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
+      "help": "(Optional) Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
       "optional": true
     },
     {
@@ -121,7 +122,7 @@
       "label": "Sample file",
       "class": "file",
       "patterns": ["*"],
-      "help": "User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
+      "help": "(Optional) User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
     {
@@ -129,7 +130,7 @@
       "label": "SNP file",
       "class": "file",
       "patterns": ["*"],
-      "help": "User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label)",
+      "help": "(Optional) User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label).",
       "optional": true
     },
     {
@@ -138,7 +139,7 @@
       "label": "MAF Threshold",
       "class": "float",
       "optional": true,
-      "help": "A float, with the filtering threshold of minor allele frequency."
+      "help": "(Optional) A float, with the filtering threshold of minor allele frequency."
     },
     {
       "group": "Filter Options",
@@ -146,7 +147,7 @@
       "label": "Case Threshold",
       "class": "int",
       "optional": true,
-      "help": "A integer, with the min number of cases threshold."
+      "help": "(Optional) A integer, with the min number of cases threshold."
     },
 
     {
@@ -156,7 +157,7 @@
       "class": "array:string",
       "choices": [ "Bonferoni", "FDR" ],
       "optional": true,
-      "help": "A string, with the description on which of multiple test correction strategies to use in reporting results from the regression."
+      "help": "(Optional) A string, with the description on which of multiple test correction strategies to use in reporting results from the regression."
     }
   ],
   "outputSpec": [
@@ -165,7 +166,8 @@
       "label": "Output files",
       "class": "array:file",
       "patterns": ["*"],
-      "help": "A list of output files"
+      "optional": false,
+      "help": "A list of output files."
     }
   ],
   "regionalOptions": {
@@ -178,12 +180,21 @@
                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
                                       {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
   },
+  "details": {
+    "upstreamVersion": "PLATO 2.1.0",
+    "upstreamAuthor": "Ritchie Lab",
+    "upstreamUrl": "https://ritchielab.org/plato",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": "* 1.0.0: First PlATO app release."
+  },
+  "openSource": true,
   "runSpec": {
     "distribution": "Ubuntu",
     "release": "14.04",
     "interpreter": "bash",
-    "file": "src/plato_single_variant.sh"
-  },
-  "__developers__" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
+    "file": "src/plato_single_variant.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 12 }
+    }
+  }
 }

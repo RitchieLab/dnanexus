@@ -47,9 +47,32 @@ check_inputs() {
 
 }
 
+##############################################################
+# Establishes the context id where resource files are located
+# Arguments: None
+# Returns: None
+##############################################################
+establish_resource_context() {
+
+    DX_ASSETS_ID=""
+    if [[ "$DX_RESOURCES_ID" != "" ]]; then
+        
+        DX_ASSETS_ID="$DX_RESOURCES_ID"
+
+    else
+  
+        DX_ASSETS_ID="$DX_PROJECT_CONTEXT_ID"
+
+    fi
+
+}
+
 
 main() {
-        
+       
+    # get the context id where to find resources 
+    establish_resource_context
+     
     # download input TSV file containing GWAS data
     dx download "$input_file" -o input_file
     out_suffix=""
@@ -221,7 +244,7 @@ main() {
     elif [ "$icd9_desc" == true ] || [ "$(head -n 1 input_file | tr '\t' '\n' | grep "$icd9_col")" == "$icd9_col" ]
     then
         # Import ICD-9 code description table to the database
-        dx download "$DX_RESOURCES_ID:ICD9/icd9_codes_description.txt" -o icd9_code_desc.txt
+        dx download "$DX_ASSETS_ID:ICD9/icd9_codes_description.txt" -o icd9_code_desc.txt
 
         sqlite3 anno.db <<!
             create table icd9_code_desc (icd9_code varchar(8), desc text);

@@ -67,7 +67,7 @@
       "class": "float",
       "optional": false,
       "default" : 0.05,
-      "help": "MAF = minor allele frequency"
+      "help": "MAF = minor allele frequency."
     },
     {
       "name": "sel_args",
@@ -106,7 +106,7 @@
     },
     {
       "name": "fast_pca",
-      "label": "Use Fast Eigenvalue Approx? (Non fast may not work)",
+      "label": "Use Fast Eigenvalue Approx? (If false, app may fail.)",
       "class": "boolean",
       "optional": false,
       "default" : true
@@ -162,7 +162,7 @@
       "name": "twstats_out",
       "label": "TW Statistics",
       "class": "file",
-      "help": "Tracy-Widom statistics to evaluate the statistical significance of each principal component identified by pca",
+      "help": "A file containing Tracy-Widom statistics evaluating the statistical significance of each principal component identified by PCA",
       "optional" : true
     },
     {

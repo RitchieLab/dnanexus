@@ -7,11 +7,11 @@ This app uses [GATK ApplyRecalibration](https://www.broadinstitute.org/gatk/guid
 ## What data are required for this app to run?
 
 This app requires:
-1. The array of VCF (variant calling format) files (`*.vcf.gz`) and their associated index files (`*.vcf.gz.tbi`). VCF is the standard format for variant calling.
-2. The GATK 3 tar ball
-3. The reference genome in FASTA format (`*.fasta` or `*.fasta`), the Picard FASTA index (`*.dict`), and the satools FASTA index (`*.fasta.fai`)
+1. The array of VCF files (`*.vcf.gz`) and their associated index files (`*.vcf.gz.tbi`). VCF is the standard format for variant calling.
+2. The GATK 3 tarball
+3. The reference genome in FASTA format (`*.fasta` or `*.fasta`), the Picard FASTA index (`*.dict`), and the samtools FASTA index (`*.fasta.fai`)
 
-The user can also provide the BED interval of exon target and other options for variant filtering.
+The user can also provide other options for variant filtering including the BED interval of exon target, etc.
 
 ## What does this applet output?
 

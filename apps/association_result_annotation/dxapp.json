@@ -52,8 +52,8 @@
     },
     {
       "name": "icd9_col",
-      "label": "Is there a column in the input file which contains ICD-9 codes?",
-      "help" : "(Optional) Indicates which column in input file contains ICD-9 codes. It is required if icd9_desc is set to true.",
+      "label": "Which column in the input file contains ICD-9 codes?",
+      "help" : "(Optional) Indicates the column name in input file containing ICD-9 codes. It is required if icd9_desc is set to true.",
       "class": "string",
       "optional": true,
       "group": "ICD-9 Description"

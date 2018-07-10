@@ -5,7 +5,7 @@
 ## What does this app do?
 
 Primarily, it annotates GWAS or PheWAS association results with Genes, GWAS Catalogs, Odds Ratios, and Phenotype long descriptions (mainly ICD-9 codes).
-Also, the app can annotate the following irrespective of association results:
+Additionally, the app can annotate the following irrespective of association results:
 
 - SNP with Gene: Provide chromosome and basepair location as input file and select gene annotation options.
 - SNP with EBI GWAS catalog and GRASP catalog: Provide chromosome and basepair location as input file and select GWAS catalog annotation options.
@@ -59,4 +59,4 @@ All the columns from input file with additional columns requested for annotation
 
 ## How does this app work?
 
-App run on a custom bash script that process the input file and import it into a SQLite database. Then, SQLite queries are used to add the requested annotations to the input file. It also uses [Biofilter 2.4](http://ritchielab.psu.edu/files/RL_software/biofilter-manual-2.4.pdf) to annotate SNP to Genes.
+The app runs on a custom bash script that processes the input file and imports it into a SQLite database. Then, SQLite queries are used to add the requested annotations to the input file. It also uses [Biofilter 2.4](http://ritchielab.psu.edu/files/RL_software/biofilter-manual-2.4.pdf) to annotate SNPs to Genes.

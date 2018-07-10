@@ -12,7 +12,7 @@
   "categories": ["GWAS"],
   "inputSpec": [
     {
-      "name": "input_file",
+      "name": "associations",
       "label": "Input Assocaition File",
       "class": "file",
       "optional": false,
@@ -20,19 +20,26 @@
       "help": "A data file containing information from a genome wide association catalog."
     },
     {
-      "name": "sql_database_file",
+      "name": "sql_database",
       "label": "SQLite databse file",
       "class": "file",
       "patterns": ["*.db"],
       "hidden": true,
       "help": "A SQLite3 databse file.",
-      "default": {
-        "$dnanexus_link":
-        {
-          "project": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-          "id": "file-BxGpVYQ0pB0vZkV6g5JVgz9F"
-      }
-      }
+      "suggestions": [
+        {   
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "id": "file-FGzv6FQ0Byv9p5ZV6ZkgVv3K",
+          "path": "/GWAS_Annotations",
+          "name": "Ritchie Lab Software_dx: AWS East"
+        },
+        {   
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "id": "file-FJ05Yy89bvJbYYq126fxFb81",
+          "path": "/GWAS_Annotations",
+          "name": "Ritchie Lab Software_dx: AZURE West"
+        }      
+      ]   
     },
     {
       "name": "icd9_desc",
@@ -173,8 +180,7 @@
           {   
           "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
           "folder": "/asset/",
-          "id":"record-FGkqfp801VfbYYq126ff8Fz2",
-          "version": "0.0.1",
+          "id":"record-FJ1q5ZQ0YxGB5qFV2y3pg65x",
           "name": "marylyn_asset"
           }   
        ]   
@@ -185,7 +191,6 @@
           "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
           "folder": "/",
           "id": "record-FGpfZ1j95qzXV43bP5y5JKgV",
-          "version": "0.0.1",
           "name": "marylyn_asset"
         }
       ],
@@ -199,9 +204,9 @@
   "access": {
     "project": "CONTRIBUTE"
   },
-   "developers" : ["user-auv13", "user-atf3"],
+   "__developers__" : ["user-averma"],
    "openSource": true,
-   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"],
+   "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"],
    "distribution": "Ubuntu",
    "release": "14.04"
 }

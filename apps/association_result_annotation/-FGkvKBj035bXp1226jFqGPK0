@@ -28,7 +28,7 @@ check_inputs() {
     then
         dx-jobutil-report-error "ERROR: Incorrect input file format. App only accepts tab seperated input file."
     else
-        input_filename=$(dx describe --name "$associations")
+        input_filename=$(dx describe --name "$input_file")
     fi
 
     # Seperate Var1_Pos from PLATO output to "chr" and "pos" columns
@@ -114,12 +114,12 @@ main() {
 
             if [ "$grasp_pval" != "" ]
 				then
-sqlite3 anno.db <<!
-.separator \t
-create table grasp_subset as select * from grasp where Pvalue < $grasp_pval;
-create index "grasp_subset_chr" on "grasp_subset" ("chr","pos");
-create index "grasp_subset_chr_2" on "grasp_subset" ("chr");
-create index "grasp_subset_pos" on "grasp_subset" ("pos"); 
+                    sqlite3 anno.db <<!
+                        .separator \t
+                        create table grasp_subset as select * from grasp where Pvalue < $grasp_pval;
+                        create index "grasp_subset_chr" on "grasp_subset" ("chr","pos");
+                        create index "grasp_subset_chr_2" on "grasp_subset" ("chr");
+                        create index "grasp_subset_pos" on "grasp_subset" ("pos"); 
 !
             fi
 
@@ -145,6 +145,10 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
         # Run biofilter to get gene, upstream gene, downstream gene and GWAS
         sudo mkdir /usr/share/biofilter
         sudo chmod a+rwx /usr/share/biofilter
+        
+        #dx download -r "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/Biofilter/2.4/*" -o /usr/share/biofilter/
+        #dx download "project-Bkp5fYQ0vqZfq1XXPkYK2p1z:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
+
         dx download -r "$DX_ASSETS_ID:/Biofilter/2.4/*" -o /usr/share/biofilter/
         dx download "$DX_ASSETS_ID:/LOKI/LOKI-20160428-noSNPs.db" -o /usr/share/biofilter/loki.db
 
@@ -200,10 +204,10 @@ create index "grasp_subset_pos" on "grasp_subset" ("pos");
 
         sqlite3 anno.db "create table biofilter_anno ($biofilter_anno_col)"
 
-sqlite3 anno.db <<!
-.separator \t
-.import biofilter_snp_anno biofilter_anno
-delete from biofilter_anno where rowid = 1;
+        sqlite3 anno.db <<!
+            .separator \t
+            .import biofilter_snp_anno biofilter_anno
+            delete from biofilter_anno where rowid = 1;
 !
     else
         echo "Skipping Gene and GWAS Annotations"
@@ -222,10 +226,11 @@ delete from biofilter_anno where rowid = 1;
     sqlite3 anno.db "create table assoc_result ($assoc_tbl_col)"
 
     # Insert input results to the table.
-sqlite3 anno.db <<!
-.separator \t
-.import input_file assoc_result
-delete from assoc_result where rowid = 1;
+
+    sqlite3 anno.db <<!
+        .separator \t
+        .import input_file assoc_result
+        delete from assoc_result where rowid = 1;
 !
     #################################################################################
 
@@ -242,12 +247,12 @@ delete from assoc_result where rowid = 1;
         # Import ICD-9 code description table to the database
         dx download "$DX_ASSETS_ID:ICD9/icd9_codes_description.txt" -o icd9_code_desc.txt
 
-sqlite3 anno.db <<!
-create table icd9_code_desc (icd9_code varchar(8), desc text);
-.header on
-.separator "\t"
-.import icd9_code_desc.txt icd9_code_desc
-delete from icd9_code_desc where rowid = 1;
+        sqlite3 anno.db <<!
+            create table icd9_code_desc (icd9_code varchar(8), desc text);
+            .header on
+            .separator "\t"
+            .import icd9_code_desc.txt icd9_code_desc
+            delete from icd9_code_desc where rowid = 1;
 !
 
         #Build the query
@@ -300,12 +305,12 @@ select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up
 !
 "
 
-sqlite3 anno.db <<!
-.load /usr/local/lib/libsqlitefunctions.so
-.headers on
-.mode tabs
-.output ${input_filename}${out_suffix}
-select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join} group by a.rowid;
+    sqlite3 anno.db <<!
+        .load /usr/local/lib/libsqlitefunctions.so
+        .headers on
+        .mode tabs
+        .output ${input_filename}${out_suffix}
+        select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up_gene_col} ${down_gene_col} ${gwas_query} ${grasp_query} from assoc_result a ${icd9_join} ${gene_query} ${gwas_join} ${grasp_join} group by a.rowid;
 !
 
     #################################################################################

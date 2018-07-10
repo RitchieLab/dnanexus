@@ -310,9 +310,12 @@ select a.* ${icd9_select} ${case_control_query} ${or_val_query} ${gene_col} ${up
 
     #################################################################################
 
+    # add .tsv extension to the output file
+    output_filename="${input_filename}${out_suffix}.tsv"
+    mv "${input_filename}${out_suffix}" "${output_filename}"
 
     # Upload output back to DNAnexus
-    out_file=$(dx upload ${input_filename}${out_suffix} --brief)
+    out_file=$(dx upload ${output_filename} --brief)
     dx-jobutil-add-output out_file "$out_file" --class=file
 
 }

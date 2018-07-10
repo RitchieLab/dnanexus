@@ -13,7 +13,7 @@ Also, the app can annotate the following irrespective of association results:
 
 ## What data are required for this app to run?
 
-- A tab separated file containing information from a GWAS study. 
+- A tab separated file containing information from a GWAS study (generated as output from plato). 
 - A database file compatible with sqlite3. There are recommended database files that are suggested on the platform UI.
 
 **Note: App works with Human genome build 37 only**

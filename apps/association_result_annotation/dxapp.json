@@ -129,7 +129,7 @@
     },
     {
       "name": "chr_col",
-      "label": "Do you want to provide the column name that contains chromosome numbers in the input file?",
+      "label": "Which column name contains the chromosome numbers in the input file?",
       "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain chromosome numbers. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,
@@ -137,7 +137,7 @@
     },
     {
       "name": "pos_col",
-      "label": "Do you want to provide column name that contains basepair postion of a SNP in the input file?",
+      "label": "Which column name contains the basepair postion of a SNP in the input file?",
       "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain basepair position. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,

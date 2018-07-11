@@ -55,7 +55,8 @@
           "path": "/"
         }
       ],
-      "help": "The reference genome used during variant calling."
+      "help": "The reference genome used during variant calling.",
+      "patterns": ["*.fasta.gz", "*.fa.gz"]
     },
     {
       "name" : "no_geno",
@@ -140,5 +141,9 @@
     "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem1_ssd1_x8"}},
                      "assetDepends": [{"id": "record-FJ1vJgQ99qgf9kQk264zVpKv"}]}
   },
-  "openSource" : true
+  "openSource" : true,
+  "details": {
+    "upstreamUrl": "https://software.broadinstitute.org/gatk/documentation/tooldocs/3.8-0/org_broadinstitute_gatk_tools_walkers_annotator_VariantAnnotator.php",
+    "whatsNew": "* 1.0.0 First version of the VariantAnnotator app."
+  }
 }

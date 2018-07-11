@@ -80,10 +80,10 @@
     }
   },
   "details": {
-        "upstreamVersion": "2.1.0",
+        "upstreamVersion": "",
         "whatsNew": "",
         "citation": "",
-        "upstreamURL": "https://www.10xgenomics.com/",
+        "upstreamURL": "",
         "upstreamLicenses": ["GPLv3"]
         },
   "openSource": true

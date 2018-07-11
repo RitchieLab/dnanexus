@@ -1,4 +1,19 @@
 #!/bin/bash
+# vcf_slice 0.0.1
+#
+# Basic execution pattern: Your app will run on a single machine from
+# beginning to end.
+#
+# Your job's input variables (if any) will be loaded as environment
+# variables before this script runs.  Any array inputs will be loaded
+# as bash arrays.
+#
+# Any code outside of main() (or any entry point you may add) is
+# ALWAYS executed, followed by running the entry point itself.
+#
+# See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
+# to modify this file.
+
 set -ex -o pipefail
 
 function slice_vcf () {
@@ -42,7 +57,7 @@ main() {
 
     for i in ${!vcf_fn[@]}
     do
-        echo -e "${vcf_fn_prefix[$i]}\t${vcf_fn_name[$i]}\t$(echo ${vcf_fn[$i]} | jq -r .["$dnanexus_link"])\t"
+        echo -e "${vcf_fn_prefix[$i]}\t${vcf_fn_name[$i]}\t$(echo ${vcf_fn[$i]} | jq -r .["$dnanexus_link"])"
     done | tee $VCF_NAMES | wc -l
 
     # check the output
@@ -50,7 +65,7 @@ main() {
 
     for i in ${!vcfidx_fn[@]}
     do
-        echo -e "${vcfidx_fn_prefix[$i]}\t${vcfidx_fn_name[$i]}\t$(echo ${vcfidx_fn[$i]} | jq -r .["$dnanexus_link"])\t"
+        echo -e "${vcfidx_fn_prefix[$i]}\t${vcfidx_fn_name[$i]}\t$(echo ${vcfidx_fn[$i]} | jq -r .["$dnanexus_link"])"
     done | tee $VCFIDX_NAMES | wc -l
     
     # check the output
@@ -68,6 +83,12 @@ main() {
     fi
 
     dx download "$region_fn" -o region.list
+
+    # Check that the region.list is in the correct format
+    format_check=$(head region.list -n 1 | sed -e '/^[a-z0-9]*:[0-9]*-[0-9]*$/d')
+    if ! [[ -z $format_check ]]; then
+        dx-jobutil-report-error "ERROR: Regions list not in proper format. Regions should be listed: chrom:123-456"
+    fi
 
     # Run the slice_vcf function in parallel
     parallel --gnu -j $(nproc --all) slice_vcf :::: $VCF_ALLINFO ::: $WKDIR/region.list ::: $OUTDIR ::: $suffix

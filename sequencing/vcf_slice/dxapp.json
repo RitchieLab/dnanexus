@@ -30,7 +30,7 @@
       "help": "Text file of genomic region coordinates. Variants within these ranges will be extracted from the given VCF files.",
       "class": "file",
       "optional": false,
-      "patterns": ["*.txt", "*.regions"]
+      "patterns": ["*.txt", "*.regions", "*.list"]
     },
     {
       "name": "suffix",
@@ -44,12 +44,14 @@
     {
       "name": "vcf_out",
       "label": "Sliced VCF files",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": ["*.vcf.gz.tbi"]
     },
     {
       "name": "vcfidx_out",
       "label": "Sliced VCF index files",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": ["*.vcf.gz"]
     }
   ],
   "runSpec": {

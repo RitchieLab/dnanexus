@@ -10,7 +10,7 @@
   "inputSpec": [
     {
       "name": "variants_vcfgzs",
-      "label": "VCF File",
+      "label": "VCF Files",
       "class": "array:file",
       "optional": false,
       "patterns": [
@@ -20,11 +20,11 @@
     },
     {
       "name": "variants_vcfgztbis",
-      "label": "VCF Index File",
+      "label": "VCF File Indices",
       "class": "array:file",
       "optional": false,
       "patterns": [
-        "*.tbi"
+        "*.vcf.gz.tbi"
       ],
       "help": "An array of variant index files matched to the variant files."
     },
@@ -40,7 +40,7 @@
     },
     {
       "name": "genome_fastagz",
-      "label": "Reference genome",
+      "label": "Reference Genome",
       "class": "file",
       "optional": false,
       "suggestions": [
@@ -56,7 +56,7 @@
         }
       ],
       "help": "The reference genome used during variant calling.",
-      "patterns": ["*.fasta.gz", "*.fa.gz"]
+      "patterns": ["*.fasta.gz", "*.fa.gz", "*.fasta", "*.fa"]
     },
     {
       "name" : "no_geno",

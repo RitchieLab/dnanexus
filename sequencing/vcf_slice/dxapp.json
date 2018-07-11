@@ -1,7 +1,7 @@
 {
   "name": "vcf_slice",
   "title": "Slice VCF File(s)",
-  "summary": "vcf_slice",
+  "summary": "Return a small section of a VCF file or files (similar to tabix).",
   "dxapi": "1.0.0",
   "version": "0.1.0",
   "categories": [
@@ -35,7 +35,7 @@
     {
       "name": "suffix",
       "label": "Output file name suffix (optional)",
-      "help": "Include this given string in the output VCF filename extension, e.g. '*.sliced.SUFFIX.vcf.gz'",
+      "help": "(Optional) Include this given string in the output VCF filename extension, e.g. '*.sliced.SUFFIX.vcf.gz'.",
       "class": "string",
       "optional": true
     }
@@ -44,12 +44,14 @@
     {
       "name": "vcf_out",
       "label": "Sliced VCF files",
+      "help": "Variant file containing only target regions, in VCF format.",
       "class": "array:file",
       "patterns": ["*.vcf.gz.tbi"]
     },
     {
       "name": "vcfidx_out",
       "label": "Sliced VCF index files",
+      "help": "Tabix index file corresponding to the output VCF files.",
       "class": "array:file",
       "patterns": ["*.vcf.gz"]
     }

@@ -181,7 +181,8 @@
           "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
           "folder": "/asset/",
           "id":"record-FJ1q5ZQ0YxGB5qFV2y3pg65x",
-          "name": "marylyn_asset"
+          "name": "marylyn_asset",
+          "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
           }   
        ]   
     },
@@ -191,7 +192,8 @@
           "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
           "folder": "/",
           "id": "record-FGpfZ1j95qzXV43bP5y5JKgV",
-          "name": "marylyn_asset"
+          "name": "marylyn_asset",
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
         }
       ],
       "systemRequirements": {

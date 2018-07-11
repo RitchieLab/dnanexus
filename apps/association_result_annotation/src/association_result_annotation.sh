@@ -58,16 +58,20 @@ establish_resource_context() {
     if [[ "$DX_RESOURCES_ID" != "" ]]; then
         
         DX_ASSETS_ID="$DX_RESOURCES_ID"
-
+    
     else
-  
+
         DX_ASSETS_ID="$DX_PROJECT_CONTEXT_ID"
 
     fi
 
 }
 
-
+##########################
+# Runs main code pipeline
+# Arguments: None
+# Returns: None
+##########################
 main() {
        
     # get the context id where to find resources 

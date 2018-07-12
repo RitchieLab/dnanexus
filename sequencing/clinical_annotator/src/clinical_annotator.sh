@@ -23,6 +23,11 @@ set -e -x -o pipefail
 #make -s
 #make install
 
+#################################################
+# Downloads input VCF index files
+# Arguments: 1) VCF Index File 2) /home/dnanexus
+# Returns: None
+#################################################
 function parallel_download() {
 	cd $2
 	dx download "$1"
@@ -30,7 +35,11 @@ function parallel_download() {
 }
 export -f parallel_download
 
-#Downloads and reformats resource files
+###########################################
+# Downloads and reformats resource files
+# Arguments: None
+# Returns: None
+############################################
 function reformat_resources() {
 
 	cd $HOME
@@ -44,18 +53,25 @@ function reformat_resources() {
 	tabix -p vcf -f variant_summary.b37.vcf.gz
 	tabix -p vcf -f variant_summary.b38.vcf.gz
 
-	if test "$hgmd_pro_file"; then
-		dx download "$hgmd_pro_file"
-		python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
-		tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
-	fi
+	if test "${hgmd_pro_file}"; then
+		
+        dx download "${hgmd_pro_file}"
+        python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
+        tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
+	
+    fi
 
 }
 export -f reformat_resources
 
-#Downloads input vcf files and Annotates
+###########################################
+# Downloads input VCF files and Annotates
+# Arguments: 1) VCF File 2) /home/dnanexus
+# Returns: None
+############################################
 function parallel_download_and_annotate() {
-	set -x
+	
+    #set -x
 	cd $2
 	dx download "$1"
 
@@ -120,6 +136,12 @@ function parallel_download_and_annotate() {
 }
 export -f parallel_download_and_annotate
 
+
+##########################
+# Runs main code pipeline
+# Arguments: None
+# Returns: None
+##########################
 main() {
 
 	#export SHELL="/bin/bash"

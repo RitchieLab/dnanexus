@@ -146,7 +146,5 @@
     "whatsNew": "*1.0.0: Cleaned up, added documentation, moved to Ubuntu 14.04;",
     "citations": []
   },
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "openSource" : true
 }

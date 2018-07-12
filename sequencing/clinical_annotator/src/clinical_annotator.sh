@@ -2,13 +2,6 @@
 # clinical_annotator 1.0.0
 set -e -x -o pipefail
 
-#wget https://github.com/samtools/bcftools/releases/download/1.8/bcftools-1.8.tar.bz2
-#tar -xjf bcftools-1.8.tar.bz2
-#cd /home/dnanexus/bcftools-1.8
-#./configure --prefix=/usr/local/
-#make -s
-#make install
-
 #################################################
 # Downloads input VCF index files
 # Arguments: 1) VCF Index File 2) /home/dnanexus
@@ -28,14 +21,11 @@ export -f parallel_download
 ############################################
 function reformat_resources() {
 
-	#cd $HOME
-
-	#wget ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
+	cd $HOME
 
 	#python $HOME/ClinVar_tsvTOvcf.py variant_summary.txt.gz
 	python ClinVar_tsvTOvcf.py variant_summary.txt.gz
     
-
 	vcf-sort -c variant_summary.b37.vcf | bgzip -c > variant_summary.b37.vcf.gz
 	vcf-sort -c variant_summary.b38.vcf | bgzip -c > variant_summary.b38.vcf.gz
 	tabix -p vcf -f variant_summary.b37.vcf.gz
@@ -59,7 +49,6 @@ export -f reformat_resources
 ############################################
 function parallel_download_and_annotate() {
 	
-    #set -x
     cd $2
     dx download "$1"
 
@@ -134,7 +123,7 @@ export -f parallel_download_and_annotate
 ##########################
 main() {
 
-    #export SHELL="/bin/bash"
+    export SHELL="/bin/bash"
 
     # download and variant summary file 
     dx download "${variant_summary}" -o variant_summary.txt.gz

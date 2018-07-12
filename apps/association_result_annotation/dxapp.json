@@ -154,10 +154,9 @@
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "python-apsw"}
-    ],
     "interpreter": "bash",
+    "distribution": "Ubuntu",
+	"release": "14.04",
     "file": "src/association_result_annotation.sh",
     "timeoutPolicy": {
       "main": { 
@@ -208,7 +207,5 @@
   },
    "__developers__" : ["user-averma"],
    "openSource": true,
-   "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"],
-   "distribution": "Ubuntu",
-   "release": "14.04"
+   "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"]
 }

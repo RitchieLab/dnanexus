@@ -18,5 +18,6 @@ all:
 	# Picard tools
 	sudo wget https://github.com/broadinstitute/picard/releases/download/2.18.9/picard.jar && mv picard.jar /
 	
-	sudo apt-get --yes install pigz tabix openjdk-8-jre-headless samtools parallel vcftools 
+	sudo apt-get --yes install pigz tabix openjdk-8-jre-headless parallel vcftools 
+	sudo apt-get --yes install liblzma-dev; wget  "https://github.com/samtools/samtools/releases/download/1.7/samtools-1.7.tar.bz2"  && tar xfj samtools-1.7.tar.bz2  && (cd samtools-1.7 && make)
 	sudo apt-get --yes install libtest-mockmodule-perl libcpan-meta-yaml-perl libcpan-meta-perl libdbi-perl r-recommended	

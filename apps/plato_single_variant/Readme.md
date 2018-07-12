@@ -10,7 +10,7 @@ You can find the detailed PLATO software manual here: https://ritchielab.org/sof
 
 ## What data are required for this app to run?
 There are two input options required to run the app:
-- **Genotype Files**: It is required to input genotype files in binary PLINK format (`.bed`,`.bim`,`.fam`). Please refer to the [PLINK documentation] (http://zzz.bwh.harvard.edu/plink/) for information on file format.
+- **Genotype Files**: It is required to input genotype files in binary PLINK format (`.bed`,`.bim`,`.fam`). Please refer to the [PLINK documentation](http://zzz.bwh.harvard.edu/plink/) for information on file format.
 - **Phenotype File**: An input phenotype file must be a tab-delimited, where first row indicates column headers and each subsequent row represents values for an independent sample. The first two columns must be the Family ID (FID) and Individual ID (IID) for the sample as in PLINK .FAM file, and subsequent columns contain the numeric/categorical values for each phenotype.
 
     | FID | IID | Pheno 1 | Pheno 2 |

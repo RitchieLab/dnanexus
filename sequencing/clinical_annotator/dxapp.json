@@ -83,17 +83,17 @@
       }
     },
 	"regionalOptions": {
-    "aws:us-east-1": {
+     "aws:us-east-1": {
       "systemRequirements": {
         "*": {
-          "instanceType": "mem1_ssd1_x8"
+          "instanceType": "mem1_ssd1_x4"
         }
       },
       "assetDepends": [
           {
             "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
             "folder": "/asset/",
-            "id":"record-FJ3jB5Q065gfPGJZP4Vx8F0G",
+            "id":"record-FJ3vJj00p4qXk4Yb2vBYgzG4",
             "name": "marylyn_asset",
             "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
           }

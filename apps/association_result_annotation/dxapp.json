@@ -21,7 +21,7 @@
     },
     {
       "name": "sql_database",
-      "label": "SQLite databse file",
+      "label": "SQLite Databse File",
       "class": "file",
       "patterns": ["*.db"],
       "hidden": true,
@@ -146,8 +146,8 @@
   ],
   "outputSpec": [
     {
-      "name": "out_file",
-      "label": "Output File",
+      "name": "output_tsv",
+      "label": "Output TSV",
       "patterns": ["*.tsv" ],
       "class": "file",
       "help": "The output file contains columns from the input file with additional columns requested for annotation."
@@ -191,7 +191,7 @@
         {
           "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
           "folder": "/",
-          "id": "record-FGpfZ1j95qzXV43bP5y5JKgV",
+          "id": "record-FJ3880j9FqPZGXgy2y1j6Fqv",
           "name": "marylyn_asset",
           "resources" : "project-FGvp3009BJq40pkZ683v3754"
         }

@@ -10,7 +10,7 @@
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgz",
       "label": "VCF File(s)",
       "help": "VCF file(s) to convert to PLINK format.",
       "class": "array:file",
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "name": "vcfidx_fn",
+      "name": "variants_vcfgztbi",
       "label": "VCF Index File(s)",
       "help": "Index files for VCF file(s) to convert to PLINK format.",
       "class": "array:file",

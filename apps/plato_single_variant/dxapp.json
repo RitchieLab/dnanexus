@@ -20,7 +20,7 @@
       "name": "input_phenotype",
       "label": "Input phenotype file",
       "class": "file",
-      "patterns": ["*.txt"],
+      "patterns": ["*.txt", "*.tsv"],
       "optional": false,
       "help": "A file, with phenotype information recorded."
     },
@@ -99,21 +99,22 @@
       "label": "Enter value used to denote missingness in phenotype or covariate input files",
       "class": "string",
       "optional": false,
+      "default": "NA",
       "help": "A string, used to treat as a missing value. This is especially helpful when missing data is represented by a valid number that is nonsensical in the context of the variables being loaded (e.g. \"-9999\" as a value for BMI)."
     },
     {
       "name": "input_continuous_covariate",
       "label": "Continuous Covariate",
       "class": "file",
-      "patterns": ["*.txt"],
+      "patterns": ["*.txt", "*.tsv"],
       "optional": true,
-      "help": "(Optional) A file, with continuous covariate information; values should be numeric and quantitative." 
+      "help": "(Optional) A file, with continuous covariate information; values must be continuous numeric." 
     },
     {
       "name": "input_categorical_covariate",
       "label": "Categorical Covariates",
       "class": "file",
-      "patterns": ["*.txt"],
+      "patterns": ["*.txt", "*.tsv"],
       "help": "(Optional) Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
       "optional": true
     },
@@ -121,7 +122,7 @@
       "name": "input_samples",
       "label": "Sample file",
       "class": "file",
-      "patterns": ["*"],
+      "patterns": ["*.txt", "*.tsv"],
       "help": "(Optional) User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
@@ -129,7 +130,7 @@
       "name": "input_markers",
       "label": "SNP file",
       "class": "file",
-      "patterns": ["*"],
+      "patterns": ["*.txt", "*.tsv"],
       "help": "(Optional) User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label).",
       "optional": true
     },

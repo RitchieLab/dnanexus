@@ -1,17 +1,17 @@
 # PLATO Single Variant Analysis
 
 ## What does this app do?
-App performs genetic associations using PLATO (the PLatform for the Analysis, Translation and Organization of large-scale data). PLATO is a software tool equipped to handle whole-genome and sequence data for hundreds of thousands of samples to explore complexity and genetic architecture underlying common traits using phenome-wide association studies (PheWAS), Genome-wide association studies (GWAS), genetic interactions, environment-wide association studies (EWAS) and gene-environment interactions (GxE), and copy number and rare variant analyses
+This app performs genetic associations using PLATO (the PLatform for the Analysis, Translation and Organization of large-scale data). PLATO is a software tool equipped to handle whole-genome sequence data for hundreds of thousands of samples to explore complexity and genetic architecture underlying common traits using phenome-wide association studies (PheWAS), Genome-wide association studies (GWAS), genetic interactions, environment-wide association studies (EWAS); gene-environment interactions (GxE), and copy number and rare variant analyses.
 
-Although, PLATO is platform to perform different kind of analysis, this app specifically focus on association analysis for single outcome (GWAS) or across multiple outcome (PheWAS).
+Although PLATO is a platform to perform different kinds of analyses, this app specifically focuses on single outcome (GWAS) and multiple outcome (PheWAS) analyses.
 
 ## Where can I find PLATO software manual?
 You can find the detailed PLATO software manual here: https://ritchielab.org/software/plato-download
 
 ## What data are required for this app to run?
 There are two input options required to run the app:
-- **Genotype Files**: It require input genotype files in binary PLINK format (`.bed`,`.bim`,`.fam`). Please refer to PLINK documentation for information on file format.
-- **Phenotype File**: An input phenotype file should be a tab-delimited, where first row indicates column headers and each subsequent row representing values for an independent sample. The first two columns should be Family ID (FID) and the Individual ID (IID) for the sample as in PLINK `.FAM` file, and rest of the columns should contain the numeric/categorical value for each phenotype. For example:
+- **Genotype Files**: It is required to input genotype files in binary PLINK format (`.bed`,`.bim`,`.fam`). Please refer to the [PLINK documentation] (http://zzz.bwh.harvard.edu/plink/) for information on file format.
+- **Phenotype File**: An input phenotype file must be a tab-delimited, where first row indicates column headers and each subsequent row represents values for an independent sample. The first two columns must be the Family ID (FID) and Individual ID (IID) for the sample as in PLINK .FAM file, and subsequent columns contain the numeric/categorical values for each phenotype.
 
     | FID | IID | Pheno 1 | Pheno 2 |
     | ------ | ------ | ------ | ------ |
@@ -22,13 +22,13 @@ There are two input options required to run the app:
 
 Other optional inputs:
   - Continuous Covariates: A tab-separated file with columns: `FID`,`IID`,`Cov1`,`Cov2`,`....`
-    - Here values of the covariate should be numeric and quantitative.
+    - Here values of the covariate should be numerical continuous.
   - Categorical Covariates: A tab-separated file with columns: `FID`,`IID`,`Cat_Cov1`,`Cat_Cov2`,`....`.
     - Here entry of non-numeric classes are allowed and will automatically generate a dummy encoding.
   - Sample File: User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (`FID`) in the first column and individual IDs (`IID`) in the second column.
   - SNP file: User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (`chr`,`start`,`stop`,`label`)
 
-### Options
+## Options
 
 ### REGRESSION OPTIONS
 **Regression**:
@@ -62,9 +62,9 @@ It is reccomended to use this option when running PheWAS as it will exponentiall
 ### Advanced Options
 **`WARNING: If used, leave above "Regression Options" EMPTY. Please refer to documentation in PLATO manual prior to using this option.`**
 
-**PLATO command-line options**: Command-line regression and global options that will be supplied directly to the PLATO. For example, `logistic`, `linear`, `--permutation`, `--interactions`.
+**PLATO command-line options**: Command-line regression and global options that will be supplied directly to the PLATO. For example, you can run analyses such as `logistic` and `linear` with options `--permutation` or `--interactions`.
 
-Here are some use cases for this option:
+Here are some examples of the Advanced options provided by PLATO:
   - **Permutation**:
   ```
   logistic --phewas --covariates sex,age,pc1,pc2,pc3,pc4 --permutations 10000 --output out.txt

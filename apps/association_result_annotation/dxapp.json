@@ -178,9 +178,9 @@
       },  
       "assetDepends": [
           {   
-          "project": "record-FJ3zf8j08zVZFzqYG88Pbk7z",
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
           "folder": "/asset/",
-          "id":"",
+          "id":"record-FJ3zf8j08zVZFzqYG88Pbk7z",
           "name": "marylyn_asset",
           "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
           }   

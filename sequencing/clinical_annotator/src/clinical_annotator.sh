@@ -126,7 +126,7 @@ main() {
 
     export SHELL="/bin/bash"
 
-    # download and variant summary file 
+    # download variant summary file 
     dx download "${variant_summary}" -o variant_summary.txt.gz
 
     # take security measures with temporary filenames 

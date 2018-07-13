@@ -2,11 +2,11 @@
 # association_result_annotation 1.0.0
 set -e -x -o pipefail
 
-########################################
+#########################################
 # Performs initial checks on input file
 # Arguments: None
 # Returns: None
-########################################
+#########################################
 check_inputs() {
 
     # check if the input file is tab separated

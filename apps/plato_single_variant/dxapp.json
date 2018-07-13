@@ -9,7 +9,7 @@
   ],
   "inputSpec": [
     {
-      "name": "input_plink_binary",
+      "name": "input_plink_binarys",
       "label": "PLINK binary input files (bed, bim, fam)",
       "class": "array:file",
       "patterns": ["*.bed", "*.bim", "*.fam"],
@@ -17,7 +17,7 @@
       "help": "A list of files with PLINK's binary fileset to be referenced."
     },
     {
-      "name": "input_phenotype",
+      "name": "phenotypes_tsv",
       "label": "Input phenotype file",
       "class": "file",
       "patterns": ["*.txt", "*.tsv"],
@@ -103,7 +103,7 @@
       "help": "A string, used to treat as a missing value. This is especially helpful when missing data is represented by a valid number that is nonsensical in the context of the variables being loaded (e.g. \"-9999\" as a value for BMI)."
     },
     {
-      "name": "input_continuous_covariate",
+      "name": "input_continuous_covariate_txt",
       "label": "Continuous Covariate",
       "class": "file",
       "patterns": ["*.txt", "*.tsv"],
@@ -111,7 +111,7 @@
       "help": "(Optional) A file, with continuous covariate information; values must be continuous numeric." 
     },
     {
-      "name": "input_categorical_covariate",
+      "name": "input_categorical_covariate_txt",
       "label": "Categorical Covariates",
       "class": "file",
       "patterns": ["*.txt", "*.tsv"],
@@ -119,7 +119,7 @@
       "optional": true
     },
     {
-      "name": "input_samples",
+      "name": "input_samples_txt",
       "label": "Sample file",
       "class": "file",
       "patterns": ["*.txt", "*.tsv"],
@@ -127,7 +127,7 @@
       "optional": true
     },
     {
-      "name": "input_markers",
+      "name": "input_markers_txt",
       "label": "SNP file",
       "class": "file",
       "patterns": ["*.txt", "*.tsv"],

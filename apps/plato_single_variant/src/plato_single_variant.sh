@@ -5,36 +5,36 @@
 
 set -e -x -o pipefail
 main() {
-  echo "Value of input_plink_binary: '${input_plink_binary[@]}'"
-  echo "Value of input_phenotype: '$input_phenotype'"
+  echo "Value of input_plink_binarys: '${input_plink_binarys[@]}'"
+  echo "Value of phenotypes_tsv: '$phenotypes_tsv'"
   echo "Value of plato_analysis_string: '$plato_analysis_string'"
   echo "Value of missingness: '$missingness'"
-  echo "Value of input_continuous_covariate: '$input_continuous_covariate'"
-  echo "Value of input_categorical_covariate: '$input_categorical_covariate'"
-  echo "Value of input_samples: '$input_samples'"
-  echo "Value of input_markers: '$input_markers'"
+  echo "Value of input_continuous_covariate_txt: '$input_continuous_covariate_txt'"
+  echo "Value of input_categorical_covariate_txt: '$input_categorical_covariate_txt'"
+  echo "Value of input_samples_txt: '$input_samples_txt'"
+  echo "Value of input_markers_txt: '$input_markers_txt'"
   echo "Value of maf_threshold: '$maf_threshold'"
   echo "Value of Association Type: '${association_type[@]}'"
   echo "Value of Phenotype per job: '$split_phenotype'"
   echo "Value of Phenotype per job: '$correction'"
 
   # Process Plink input files
-  for i in ${!input_plink_binary[@]}
+  for i in ${!input_plink_binarys[@]}
   do
-    name=$(dx describe "${input_plink_binary[$i]}" --name)
+    name=$(dx describe "${input_plink_binarys[$i]}" --name)
     if [[ "${name}" =~ \.bed$ ]]; then
-      bed_file="${input_plink_binary[$i]}"
+      bed_file="${input_plink_binarys[$i]}"
     elif [[ "${name}" =~ \.bim$ ]]; then
-      bim_file="${input_plink_binary[$i]}"
+      bim_file="${input_plink_binarys[$i]}"
     elif [[ "${name}" =~ \.fam$ ]]; then
-      fam_file="${input_plink_binary[$i]}"
+      fam_file="${input_plink_binarys[$i]}"
     fi
   done
 
   if [ ${split_phenotype} -gt 0 ]; then
-    dx download "${input_phenotype}" -o input_phenotype
+    dx download "${phenotypes_tsv}" -o phenotypes_tsv
     # Get column numbers from the phenotype file
-    head -n 1 input_phenotype | sed 's/ /\t/g' | tr '\t' '\n' | awk '{ print FNR "\t" $0 }' | cut -f1 | tail -n+3  > pheno_col_index
+    head -n 1 phenotypes_tsv | sed 's/ /\t/g' | tr '\t' '\n' | awk '{ print FNR "\t" $0 }' | cut -f1 | tail -n+3  > pheno_col_index
     # Split the phenotypes
     split -l ${split_phenotype} -a 3 -d pheno_col_index pheno_job
 
@@ -43,14 +43,14 @@ main() {
       process_jobs[$i]=$(dx-jobutil-new-job plato_reg -ibed_file="${bed_file}" \
         -ibim_file="${bim_file}" \
         -ifam_file="${fam_file}" \
-        -iinput_phenotype="${input_phenotype}" \
-        -iinput_continuous_covariate="${input_continuous_covariate}" \
-        -iinput_categorical_covariate="${input_categorical_covariate}" \
+        -iphenotypes_tsv="${phenotypes_tsv}" \
+        -iinput_continuous_covariate="${input_continuous_covariate_txt}" \
+        -iinput_categorical_covariate="${input_categorical_covariate_txt}" \
         -iregression="${regression}" \
         -ioutcome="${outcome}" \
         -imissingness="${missingness}" \
-        -iinput_samples="${input_samples}" \
-        -iinput_markers="${input_markers}" \
+        -iinput_samples="${input_samples_txt}" \
+        -iinput_markers="${input_markers_txt}" \
         -imaf_threshold="${maf_threshold}" \
         -iassociation_type="${association_type}" \
         -ipheno_col=$(cat $i | tr '\n' ',' | sed 's/,$//g') \
@@ -66,14 +66,14 @@ main() {
     process_jobs[$i]=$(dx-jobutil-new-job plato_reg -ibed_file="${bed_file}" \
       -ibim_file="${bim_file}" \
       -ifam_file="${fam_file}" \
-      -iinput_phenotype="${input_phenotype}" \
-      -iinput_continuous_covariate="${input_continuous_covariate}" \
-      -iinput_categorical_covariate="${input_categorical_covariate}" \
+      -iphenotypes_tsv="${phenotypes_tsv}" \
+      -iinput_continuous_covariate="${input_continuous_covariate_txt}" \
+      -iinput_categorical_covariate="${input_categorical_covariate_txt}" \
       -iregression="${regression}" \
       -ioutcome="${outcome}" \
       -imissingness="${missingness}" \
-      -iinput_samples="${input_samples}" \
-      -iinput_markers="${input_markers}" \
+      -iinput_samples="${input_samples_txt}" \
+      -iinput_markers="${input_markers_txt}" \
       -imaf_threshold="${maf_threshold}" \
       -iassociation_type="${association_type}" \
       -ipheno_col=$(cat $i | tr '\n' ',' | sed 's/,$//g') \
@@ -105,44 +105,44 @@ plato_reg() {
   dx download "$fam_file" -o input_plink.fam
 
   # Download Phenotype files
-  dx download "$input_phenotype" -o input_phenotype
+  dx download "$phenotypes_tsv" -o phenotypes_tsv
 
   #Parallelize by phenotype
   if [[ $(echo ${pheno_col} | sed 's/,/ /g' | wc -w) -gt 0 ]];then
-    cut -f1,2,"${pheno_col}" input_phenotype > input_phenotype_subset
-    pheno_string="$INPUTDIR/input_phenotype_subset"
+    cut -f1,2,"${pheno_col}" phenotypes_tsv > phenotypes_tsv_subset
+    pheno_string="$INPUTDIR/phenotypes_tsv_subset"
   else
-    pheno_string="$INPUTDIR/input_phenotype"
+    pheno_string="$INPUTDIR/phenotypes_tsv"
   fi
 
   # Download Continous Covariate files
-  if [ -n "$input_continuous_covariate" ];then
-    dx download "$input_continuous_covariate" -o input_continuous_covariate
-    load_cont="--file $INPUTDIR/input_continuous_covariate"
+  if [ -n "$input_continuous_covariate_txt" ];then
+    dx download "$input_continuous_covariate_txt" -o input_continuous_covariate_txt
+    load_cont="--file $INPUTDIR/input_continuous_covariate_txt"
   fi
 
   # Download Categorical Covariate Files
-  if [ -n "$input_categorical_covariate" ];then
-    dx download "$input_categorical_covariate" -o input_categorical_covariate
-    load_cat="load-categorical --file $INPUTDIR/input_categorical_covariate --missing $missingness --extra-samples"
+  if [ -n "$input_categorical_covariate_txt" ];then
+    dx download "$input_categorical_covariate_txt" -o input_categorical_covariate_txt
+    load_cat="load-categorical --file $INPUTDIR/input_categorical_covariate_txt --missing $missingness --extra-samples"
   fi
 
   # Download sample file if provided
-  if [ -n "$input_samples" ]; then
-    dx download "$input_samples" -o input_samples
-    plinkargs=" --keep $INPUTDIR/input_samples"
+  if [ -n "$input_samples_txt" ]; then
+    dx download "$input_samples_txt" -o input_samples_txt
+    plinkargs=" --keep $INPUTDIR/input_samples_txt"
   fi
 
   #Download marker file if provided
-  if [ -n "$input_markers" ];then
-    dx download "$input_markers" -o input_markers
-    NF=$(head -n1 input_markers | wc -w)
+  if [ -n "$input_markers_txt" ];then
+    dx download "$input_markers_txt" -o input_markers_txt
+    NF=$(head -n1 input_markers_txt | wc -w)
 
     # Check the format marker files, If its RSID format then use --extract else for range format use --extract range
     if [[ "$NF" == 1 ]];then
-      plinkargs="$plinkargs --extract $INPUTDIR/input_markers"
+      plinkargs="$plinkargs --extract $INPUTDIR/input_markers_txt"
     else
-      plinkargs="$plinkargs --extract range $INPUTDIR/input_markers"
+      plinkargs="$plinkargs --extract range $INPUTDIR/input_markers_txt"
     fi
   fi
 

@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "inputSpec": [
     {
-      "name": "vcf_file",
+      "name": "variants_vcfgz",
       "label": "VCF File",
       "class": "file",
       "optional": false,
@@ -54,7 +54,7 @@
       "help": "(Optional) A file containing custom regions."
     },
     {
-      "name": "include_region_file",
+      "name": "include_region_gen",
       "label": "Region Names List",
       "class": "file",
       "optional": true,
@@ -73,7 +73,7 @@
       "help": "A file, as the Library of Knowledge Integration (LOKI) database, which contains diverse biological knowledge from multiple collections of publically available databases."
     },
     {
-      "name": "regression_type",
+      "name": "regression_types",
       "label": "Regression Type",
       "class": "array:string",
       "choices": ["linear","logistic","wilcoxon","SKAT-linear","SKAT-logistic"],

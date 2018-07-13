@@ -38,7 +38,7 @@ if __name__ == "__main__":
         ctl_cap=f.readline().strip().split(args.sep)[2:]
         case_cap=f.readline().strip().split(args.sep)[2:]
 
-        genes=["" for n in bin_names]
+        genes = [''] * len(bin_names)
 
         # OK, now the header is read, let's read the p-values
 
@@ -64,11 +64,8 @@ if __name__ == "__main__":
 
         for l in f:
             ptid, status, junk = l.split(args.sep, 2)
-
             n_case += (status != "nan" and (not args.all_control) and status != args.control_value)
             n_control += (status != "nan" and (args.all_control or status == args.control_value))
-
-
         f.close()
 
         n_case=str(n_case)
@@ -95,7 +92,7 @@ if __name__ == "__main__":
             )
 
         # Now, enumerate all the lists we have - they should have the same # of elements
-        for i in xrange(len(bin_names)):
+        for i, bin_name in enumerate(bin_names):
             print args.output_sep.join(
                 [
                     pheno_name,
@@ -111,5 +108,4 @@ if __name__ == "__main__":
                     genes[i]
                 ] + [pv_dict[n][i] for n in pv_names]
             )
-
 

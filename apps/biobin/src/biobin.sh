@@ -20,8 +20,8 @@ main() {
   if [[ -n "$phenotype_phe" ]]; then
     dx download "$phenotype_phe" -o input/input.phenotype
     BIOBIN_PHENO_ARG="--phenotype-file input/input.phenotype"
-    if [[ ${#regression_type[*]} -gt 0 ]]; then
-      BIOBIN_TEST_ARG="--test $(IFS="," ; echo "${regression_type[*]}")"
+    if [[ ${#regression_types[*]} -gt 0 ]]; then
+      BIOBIN_TEST_ARG="--test $(IFS="," ; echo "${regression_types[*]}")"
     fi
   fi
   BIOBIN_COVAR_ARG=""
@@ -40,21 +40,18 @@ main() {
     BIOBIN_REGION_ARG="--region-file input/input.region"
   fi
   BIOBIN_INCLUDE_REGION_ARG=""
-  if [[ -n "$include_region_file" ]]; then
-    dx download "$include_region_file" -o input/input.gene
+  if [[ -n "$include_region_gen" ]]; then
+    dx download "$include_region_gen" -o input/input.gene
     BIOBIN_INCLUDE_REGION_ARG="--include-region-file input/input.gene"
   fi
   VCF_FILE="input/input.vcf.gz"
   TBI_FILE="$VCF_FILE.tbi"
-  dx download "$vcf_file" -o "$VCF_FILE"
+  dx download "$variants_vcfgz" -o "$VCF_FILE"
   tabix -p vcf "$VCF_FILE" 2>&1 | tee -a output.log
 
   # fetch the executable(s) and shared resource file(s)
   mkdir -p shared
-
-  if [ "${loki_db}" != "" ]; then
-    dx download "$loki_db" -o shared/loki.db
-  fi
+  dx download "$loki_db" -o shared/loki.db
 
   # run biobin
   mkdir biobin

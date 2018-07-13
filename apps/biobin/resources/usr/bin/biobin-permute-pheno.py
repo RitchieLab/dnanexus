@@ -16,8 +16,6 @@ with open(sys.argv[1],'rU') as infile:
         iid,pheno = line.split(None,1)
         iids.append(iid)
         phenos.append(pheno.strip())
-    #for line
-#with infile
 
 if len(sys.argv) > 2:
     random.seed(long(sys.argv[2]))

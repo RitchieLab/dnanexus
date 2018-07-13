@@ -157,18 +157,17 @@
   ],
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x16"}},
-                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"},
                                        {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem2_ssd1_x16"}},
-                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]}
   },
   "details": {
     "upstreamVersion": "biobin-20170726-r4221",
-    "upstreamAuthor": "Ritchie Lab",
     "upstreamUrl": "https://ritchielab.org/research/research-areas/expert-knowledge-bioinformatics/methods/biobin",
     "upstreamLicenses": ["GPLv3"],
-    "whatsNew": "* 1.0.0: First Biobin app release.",
+    "whatsNew": "* 1.0.0: First version of the Biobin app.",
     "citations": [
       "doi:10.1142/9789814447973_0033",
       "doi:10.1186/1755-8794-6-S2-S6"

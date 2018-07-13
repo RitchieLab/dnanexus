@@ -22,7 +22,6 @@ if len(sys.argv) > 3:
         pMax = int(pRange[1])
     else:
         pMax = int(pRange[0])
-#if arg2
 
 results = list()
 resultTestPval = collections.defaultdict(dict)
@@ -42,9 +41,6 @@ with open(sys.argv[1],'rU') as infile:
             test = tests[c - 11]
             resultTestPval[result][test] = float(cols[c])
             resultTestBetter[result][test] = 0
-        #for c
-    #for line
-#with infile
 
 for p in xrange(pMin,pMax+1):
     filename = sys.argv[2] % (p,)
@@ -61,10 +57,6 @@ for p in xrange(pMin,pMax+1):
                 test = tests[c - 11]
                 if float(cols[c]) < resultTestPval[result][test]:
                     resultTestBetter[result][test] += 1
-            #for c
-        #for line
-    #with infile
-#for p
 
 header = "Outcome\tBin"
 for test in tests:

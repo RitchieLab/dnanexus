@@ -104,7 +104,7 @@
       "assetDepends": [
         {
           "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
-          "folder": "/",
+          "folder": "/asset/",
           "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz",
           "name": "marylyn_asset",
           "resources" : "project-FGvp3009BJq40pkZ683v3754"
@@ -120,7 +120,6 @@
   "access": {
     "project": "CONTRIBUTE"
   },
-  "__developers__" : ["user-tnperson"],
   "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-support", "org-geisinger_devel"],
   "openSource" : true,
   "whatsNew": "updated execDepends to assetDepends and cleaned up src code;",

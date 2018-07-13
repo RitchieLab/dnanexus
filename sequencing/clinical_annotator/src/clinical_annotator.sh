@@ -77,8 +77,9 @@ function parallel_download_and_annotate() {
     fi
     rm $IN_VCF*
 
-    # HGMD
-    if [ ! -f $HGMD_PRO.reformated.vcf.gz.tbi ]; then
+    # test whether the reformatted HGMD VCF exists and wether its associated index doesn't
+    # then we know whether to annotate the HGMD file or not
+	if [ ! -f "$HGMD_PRO.reformated.vcf.gz.tbi" ] && [ -f "$HGMD_PRO.reformated.vcf.gz" ]; then
 
         IN_VCF=$OUT_VCF
 
@@ -105,8 +106,8 @@ function parallel_download_and_annotate() {
 	VCF_UP=$(dx upload --brief $OUT_VCF)
 	IDX_UP=$(dx upload --brief $OUT_VCF.tbi)
 
-	dx-jobutil-add-output vcf_out "$VCF_UP" --class=array:file
-	dx-jobutil-add-output vcfidx_out "$IDX_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgz "$VCF_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgztbi "$IDX_UP" --class=array:file
 
 	TO_RM=$(dx describe "$1" --name)
 

@@ -113,6 +113,5 @@
     "project": "CONTRIBUTE"
   },
   "openSource" : true,
-  "whatsNew": "updated execDepends to assetDepends and cleaned up src code;",
-  "upstreamAuthor": "Ritchie, MD"
+  "whatsNew": "1.0.0 updated execDepends to assetDepends and cleaned up src code;"
 }

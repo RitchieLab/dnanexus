@@ -28,4 +28,3 @@ all:
 	# samtools	
 	sudo wget https://github.com/samtools/samtools/releases/download/1.7/samtools-1.7.tar.bz2 && tar xfj samtools-1.7.tar.bz2
 	pushd samtools-1.7 && sudo ./configure && sudo make && sudo make install && popd
-	

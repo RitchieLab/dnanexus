@@ -120,7 +120,6 @@
   "access": {
     "project": "CONTRIBUTE"
   },
-  "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-support", "org-geisinger_devel"],
   "openSource" : true,
   "whatsNew": "updated execDepends to assetDepends and cleaned up src code;",
   "upstreamAuthor": "Ritchie, MD"

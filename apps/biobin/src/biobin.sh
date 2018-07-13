@@ -11,32 +11,32 @@ main() {
   cd "$TMPDIR"
   mkdir input
   BIOBIN_ROLE_ARG=""
-  if [[ -n "$role_file" ]]; then
-    dx download "$role_file" -o input/input.role
+  if [[ -n "$role" ]]; then
+    dx download "$role_rol" -o input/input.role
     BIOBIN_ROLE_ARG="--role-file input/input.role"
   fi
   BIOBIN_PHENO_ARG=""
   BIOBIN_TEST_ARG=""
-  if [[ -n "$phenotype_file" ]]; then
-    dx download "$phenotype_file" -o input/input.phenotype
+  if [[ -n "$phenotype_phe" ]]; then
+    dx download "$phenotype_phe" -o input/input.phenotype
     BIOBIN_PHENO_ARG="--phenotype-file input/input.phenotype"
     if [[ ${#regression_type[*]} -gt 0 ]]; then
       BIOBIN_TEST_ARG="--test $(IFS="," ; echo "${regression_type[*]}")"
     fi
   fi
   BIOBIN_COVAR_ARG=""
-  if [[ -n "$covariate_file" ]]; then
-    dx download "$covariate_file" -o input/input.covariate
+  if [[ -n "$covariate_cov" ]]; then
+    dx download "$covariate_cov" -o input/input.covariate
     BIOBIN_COVAR_ARG="--covariates input/input.covariate"
   fi
   BIOBIN_WEIGHT_ARG=""
-  if [[ -n "$weight_file" ]]; then
-    dx download "$weight_file" -o input/input.weight
+  if [[ -n "$weight_wgt" ]]; then
+    dx download "$weight_wgt" -o input/input.weight
     BIOBIN_WEIGHT_ARG="--weight-file input/input.weight"
   fi
   BIOBIN_REGION_ARG=""
-  if [[ -n "$region_file" ]]; then
-    dx download "$region_file" -o input/input.region
+  if [[ -n "$region_rgn" ]]; then
+    dx download "$region_rgn" -o input/input.region
     BIOBIN_REGION_ARG="--region-file input/input.region"
   fi
   BIOBIN_INCLUDE_REGION_ARG=""

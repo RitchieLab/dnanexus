@@ -14,7 +14,7 @@
       "help": "The genotyped variants in block-gzipped VCF format."
     },
     {
-      "name": "role_file",
+      "name": "role_rol",
       "label": "Role File",
       "class": "file",
       "optional": true,
@@ -22,7 +22,7 @@
       "help": "(Optional) A file containing custom roles."
     },
     {
-      "name": "phenotype_file",
+      "name": "phenotype_phe",
       "label": "Phenotype File",
       "class": "file",
       "optional": true,
@@ -30,7 +30,7 @@
       "help": "(Optional) A phenotype file as a plain text file that contains two or more columns separated by whitespace."
     },
     {
-      "name": "covariate_file",
+      "name": "covariate_cov",
       "label": "Covariate File",
       "class": "file",
       "optional": true,
@@ -38,7 +38,7 @@
       "help": "(Optional) A covariate file as a plain text file that contains two or more columns separated by whitespace. If given, all covariates in this file will be used."
     },
     {
-      "name": "weight_file",
+      "name": "weight_wgt",
       "label": "Weight File",
       "class": "file",
       "optional": true,
@@ -46,7 +46,7 @@
       "help": "(Optional) A file containing custom locus weights."
     },
     {
-      "name": "region_file",
+      "name": "region_rgn",
       "label": "Custom Regions File",
       "class": "file",
       "optional": true,

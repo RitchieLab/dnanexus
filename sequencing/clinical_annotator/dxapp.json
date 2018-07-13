@@ -4,6 +4,8 @@
   "summary": "Annotates a VCF File with most recent ClinVar TSV file and with a user provided HGMD PRO VCF file.",
   "dxapi": "1.0.0",
   "version": "1.0.0",
+  "openSource" : true,
+  "whatsNew": "*1.0.0 updated execDepends to assetDepends and cleaned up src code;",
   "inputSpec": [
     {
       "name": "variants_vcfgz",
@@ -111,7 +113,5 @@
   },
   "access": {
     "project": "CONTRIBUTE"
-  },
-  "openSource" : true,
-  "whatsNew": "1.0.0 updated execDepends to assetDepends and cleaned up src code;"
+  }
 }

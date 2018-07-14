@@ -7,21 +7,22 @@ This app runs the BioBin software, which is a comprehensive bioinformatics tool 
 You can find the detailed BioBin software manual here: http://www.ritchielab.com/software/biobin-download
 
 ## What data is required for this app to run?
-This app requires a VCF file to run. If the user has a VCF TBI Index file available, he/she can upload that as an input as well. Otherwise the app will generate the index file for the inputted VCF file. Depending on the type of analysis that the user would like to run (e.g. limiting the analysis to a list of desired genes or to just LOF variants etc.), there are additional input files that need to be included (for more information on which input files to use and on the format of input files, please refer to the software manual above):
+This app requires a VCF file to run. For more information on which input files to use and on the format of input files, please refer to the software manual above. Depending on the type of analysis that the user would like to run (e.g. limiting the analysis to a list of desired genes or to just LOF variants etc.), there are additional
+input files that need to be included:
   - Phenotype file (`*.phe`)
   - Covariate file (`*.cov`)
   - Role file (`*.rol`)
   - Weight file (`*.wgt`)
   - Custom regions file (`*.rgn`) - referred to as "Region file" in the BioBin software manual
-  - Region names list (`*.gen`) - list of gene symbols (1 per line) that the user would like to limit the analysis to. This input file is specific to the app, it is not available in the BioBin command-line application.
-  - BioBin Binary Executable - used only if the user would like to use older versions of the app, should be ignored in most cases.
-  - BioBin Summary Script - used only if the user would like to use older versions of the script that generates the summary output file, should be ignored in most cases.
+  - Region names list (`*.gen`) - list of gene symbols (1 per line) to which the user would like to limit the analysis. This input file is specific to the app; it is not available in the BioBin command-line application
+  - BioBin Binary Executable - used only if the user would like to use older versions of the app; should be ignored in most cases
+  - BioBin Summary Script - used only if the user would like to use older versions of the script that generates the summary output file; should be ignored in most cases
 
 ## Usage of the app
-Once you upload all the input files, go to settings where all the available options are listed. Unless you have a reason to change it, keep the "LOKI Knowledge Database" selection as is (the most recent LOKI version is selected by default). If you’d like to do binning followed by an association test, select one of the desired statistical tests: linear regression, logistic regression, wilcoxon test, SKAT-linear (SKAT for continuous phenotypes), or SKAT-logistic (SKAT for categorical phenotypes). In the window with "BioBin arguments" you should include options that you would like to use (specific to the type of analysis that you would like to run). All available options are listed in the manual.
+Once you upload all of the input files, go to the settings menu, where all available options are listed. Select the "LOKI Knowledge Database" (the most recent is recommended). If you’d like to do binning followed by an association test, select one of the desired statistical tests: linear regression, logistic regression, wilcoxon test, SKAT-linear (SKAT for continuous phenotypes), or SKAT-logistic (SKAT for continuous phenotypes), or SKAT-logistic (SKAT for categorical phenotypes). In the window with "BioBin arguments", you should include options that you would like to use (specific to the type of analysis that you would like to run). All available options are listed in the manual.
 
 ## Examples of analysis type-specific arguments 
-(note - these are just examples; these options are not necessarily complete and should be modified according to user’s preferences):
+Note: these are just examples; these options are not necessarily complete and should be modified according to user’s preferences:
   - Gene binning analysis:
   ```
   --weight-loci Y --bin-pathways N --bin-regions Y  --bin-minimum-size 5 -F 0.01 -G 37
@@ -35,13 +36,13 @@ Once you upload all the input files, go to settings where all the available opti
   --weight-loci Y --bin-pathways N --bin-regions Y --bin-minimum-size 5 -F 0.01 -G 37 --bin-expand-roles Y --bin-expand-size 1
   ```
 
-If the user would like to perform a permutation analysis to empirically assess the significance of the obtained results, the app (unlike the BioBin command-line application) can also be used to run a permutation analysis, in which the sample IDs in the phenotype file are being permuted. For that, the user needs to specify, in the "Permutation Count" window, how many permutations he/she would like to perform, and the app will re-run the BioBin analysis for each permuted phenotype file, keeping track of the p-values obtained from each permuted test. In addition to the regular output files described below, permutation analysis also outputs a `*permute-summary.tsv` file, which contains the empirical p-value (obtained based on individual p-values from the permuted tests) for each phenotype-bin combination tested (see below for details).
+If the user would like to perform a permutation analysis to empirically assess the significance of the obtained results, the app (unlike the BioBin command-line application) can also be used to run a permutation analysis, in which the sample IDs in the phenotype file are being permuted. For that, the user needs to specify, in the "Permutation Count" window, how many permutations they would like to perform, and the app will re-run the BioBin analysis for each permuted phenotype
+file, keeping track of the p-values obtained from each permuted test. In addition to the regular output files described below, permutation analysis also outputs a `*permute-summary.tsv` file, which contains the empirical p-value (obtained based on individual p-values from the permuted tests) for each phenotype-bin combination tested (see below for details).
 
 ## What does this app output?
-For detailed description of the output files listed below, please see the software manual.
+For a detailed description of the output files listed below, please see the software manual.
   - Bins report file (`*bins.csv`; one per phenotype)
-  - Summary file (`*summary.tsv`) - specific to the BioBin app, not available in the BioBin command-line application. This file contains data from the bins reports concatenated across all phenotypes.
+  - Summary file (`*summary.tsv`) - specific to the BioBin app; not available in the BioBin command-line application. This file contains data from the bins reports concatenated across all phenotypes.
   - Locus file (`*locus.csv`)
   - List of unlifted variants (`*unlifted.csv`; outputted only if the VCF file used as an input is based on a different genomic build than LOKI, which is currently based on build hg38).
-  - Permutation summary file (`*permute-summary.tsv`) - outputted only when the permutation option is enabled (i.e. when the "Permutation Count" is set to > 0 in the app settings). This output file is specific to the app, it is not available in the BioBin command-line application. This file consists of 3 columns: Outcome (i.e. phenotype name), bin (e.g. gene A), empirical p-value (which can be interpreted as the number of times out of X permutation runs that the permutation analysis returned a p-value that is lower or equal to the observed p-value, where the observed p-value is the p-value from the original BioBin run).
-
+  - Permutation summary file (`*permute-summary.tsv`); output only when the permutation option is enabled (i.e. when the "Permutation Count" is set to > 0 in the app settings). This output file is specific to the app, it is not available in the BioBin command-line application. This file consists of 3 columns: outcome (i.e. phenotype name), bin (e.g. gene A), empirical p-value (which can be interpreted as the number of times out of X permutation runs that the permutation analysis returned a p-value that is lower or equal to the observed p-value, where the observed p-value is the p-value from the original BioBin run).

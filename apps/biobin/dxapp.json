@@ -68,7 +68,8 @@
       "optional": false,
       "patterns": ["LOKI*.db"],
       "suggestions": [
-        {"name": "LOKI Database Versions", "project": "project-FGqF5B00ByvPXG4G87yQy23G", "path": "/LOKI"}
+        {"name": "LOKI Database Versions", "project": "project-FGqF5B00ByvPXG4G87yQy23G", "path": "/LOKI"},
+        {"name": "LOKI Database Versions", "project": "project-FGvp3009BJq40pkZ683v3754", "path": "/LOKI"}
       ],
       "help": "A file, as the Library of Knowledge Integration (LOKI) database, which contains diverse biological knowledge from multiple collections of publically available databases."
     },
@@ -161,7 +162,7 @@
                                        {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem2_ssd1_x16"}},
                      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
-                                      {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]}
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
   },
   "details": {
     "upstreamVersion": "biobin-20170726-r4221",

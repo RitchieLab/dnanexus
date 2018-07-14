@@ -21,8 +21,8 @@
 : "${clinvar:=true}"
 
 # TODO: are there any reasonable defaults for these?
-: "${variants_vcfgz:=()}"
-: "${variants_vcfgztbi:=()}"
+: "${variants_vcfgzs:=()}"
+: "${variants_vcfgztbis:=()}"
 : "${DX_RESOURCES_ID:=}"
 
 export SHELL="/bin/bash"
@@ -55,11 +55,10 @@ cd ${WKDIR}
 # Returns:
 #   None
 #######################################
-cleanup() {
 function parallel_download() {
 	cd $2
 	dx download "$1"
-	cd - >/dev/null
+	cd - > /dev/null
 }
 export -f parallel_download
 
@@ -281,8 +280,8 @@ function parallel_download_and_annotate() {
 	VCF_UP=$(dx upload --brief ${OUT_VCF})
 	IDX_UP=$(dx upload --brief${OUT_VCF}.tbi)
 
-    dx-jobutil-add-output out_variants_vcfgz "$VCF_UP" --class=array:file
-	dx-jobutil-add-output out_variants_vcfgztbi "$IDX_UP" --class=array:file
+    dx-jobutil-add-output out_variants_vcfgzs "$VCF_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgztbis "$IDX_UP" --class=array:file
 
 	TO_RM=$(dx describe "$1" --name)
 
@@ -295,21 +294,21 @@ export -f parallel_download_and_annotate
 #######################################
 # Main function.
 # Globals:
-#   variants_vcfgz: The index file(s) to download; may be an array
-#   variants_vcfgztbi: The VCF file(s) to download; may be an array of the same length as
-#     variants_vcfgz
+#   variants_vcfgzs: The index file(s) to download; may be an array
+#   variants_vcfgztbis: The VCF file(s) to download; may be an array of the same length as
+#     variants_vcfgzs
 #   HOME: home directory
 #   WKDIR: working directory
 # Arguments:
 #   None
 # Returns:
 #   None; The output VCF and index files that were successfully annotated are appended
-#   to the out_variants_vcfgz and out_variants_vcfgztbi list variables.
+#   to the out_variants_vcfgzs and out_variants_vcfgztbis list variables.
 #######################################
 main() {
 
-    echo "Value of variants_vcfgz: '$variants_vcfgz'"
-    echo "Value of variants_vcfgztbi: '$variants_vcfgztbi'"
+    echo "Value of variants_vcfgzs: '$variants_vcfgzs'"
+    echo "Value of variants_vcfgztbis: '$variants_vcfgztbis'"
     echo "Value of VEP: '$VEP'"
     echo "Value of annotate_header: '$annotate_header'"
     echo "Value of dbnsfp: '$dbnsfp'"
@@ -323,8 +322,8 @@ main() {
     cd ${WKDIR}
 
     # Download the VCF index files (in parallel)
-    for i in "${!variants_vcfgztbi[@]}"; do
-      echo "${variants_vcfgztbi[$i]}" >> "$DXIDX_LIST"
+    for i in "${!variants_vcfgztbis[@]}"; do
+      echo "${variants_vcfgztbis[$i]}" >> "$DXIDX_LIST"
     done
 
     parallel -j $(nproc --all) -u --gnu parallel_download :::: ${DXIDX_LIST} ::: ${WKDIR}
@@ -338,8 +337,8 @@ main() {
 	halfCount=$(($procCount/2))
 
 	# Download the VCF files (in parallel)
-    for i in "${!variants_vcfgz[@]}"; do
-      echo "${variants_vcfgz[$i]}" >> ${DXVCF_LIST}
+    for i in "${!variants_vcfgzs[@]}"; do
+      echo "${variants_vcfgzs[$i]}" >> ${DXVCF_LIST}
     done
 
     parallel -j ${halfCount} -u --gnu parallel_download_and_annotate :::: ${DXVCF_LIST}::: ${WKDIR}

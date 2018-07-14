@@ -9,7 +9,7 @@
 # to modify this file.
 #
 # TODO:
-# * dxapp.json defines $build_version, but this script is hardcoded to use build 37.
+# * dxapp.json defines $build_version, but this script is hardcoded to use build 38.
 # * It would be simpler, easier, and faster to use vcfanno.
 
 
@@ -21,8 +21,8 @@
 : "${clinvar:=true}"
 
 # TODO: are there any reasonable defaults for these?
-: "${input_vcf_gz:=()}"
-: "${input_vcf_tbi:=()}"
+: "${variants_vcfgz:=()}"
+: "${variants_vcfgztbi:=()}"
 : "${DX_RESOURCES_ID:=}"
 
 export SHELL="/bin/bash"
@@ -281,8 +281,8 @@ function parallel_download_and_annotate() {
 	VCF_UP=$(dx upload --brief ${OUT_VCF})
 	IDX_UP=$(dx upload --brief${OUT_VCF}.tbi)
 
-    dx-jobutil-add-output output_vcf_gz "$VCF_UP" --class=array:file
-	dx-jobutil-add-output output_vcf_tbi "$IDX_UP" --class=array:file
+    dx-jobutil-add-output out_variants_vcfgz "$VCF_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgztbi "$IDX_UP" --class=array:file
 
 	TO_RM=$(dx describe "$1" --name)
 
@@ -295,31 +295,36 @@ export -f parallel_download_and_annotate
 #######################################
 # Main function.
 # Globals:
-#   input_vcf_gz: The index file(s) to download; may be an array
-#   input_vcf_tbi: The VCF file(s) to download; may be an array of the same length as
-#     input_vcf_gz
+#   variants_vcfgz: The index file(s) to download; may be an array
+#   variants_vcfgztbi: The VCF file(s) to download; may be an array of the same length as
+#     variants_vcfgz
 #   HOME: home directory
 #   WKDIR: working directory
 # Arguments:
 #   None
 # Returns:
 #   None; The output VCF and index files that were successfully annotated are appended
-#   to the output_vcf_gz and output_vcf_tbi list variables.
+#   to the out_variants_vcfgz and out_variants_vcfgztbi list variables.
 #######################################
 main() {
 
+    echo "Value of variants_vcfgz: '$variants_vcfgz'"
+    echo "Value of variants_vcfgztbi: '$variants_vcfgztbi'"
+    echo "Value of VEP: '$VEP'"
+    echo "Value of annotate_header: '$annotate_header'"
+    echo "Value of dbnsfp: '$dbnsfp'"
+    echo "Value of HGMD: '$HGMD'"
+    echo "Value of clinvar: '$clinvar'"
+
 	export SHELL="/bin/bash"
 
+    # TODO: I'm not sure why cd HOME and then WKDIR, unless WKDIR might be relative
 	cd ${HOME}
-
-    echo "Value of input_vcf_gz: '$input_vcf_gz'"
-    echo "Value of input_vcf_tbi: '$input_vcf_tbi'"
-
     cd ${WKDIR}
 
     # Download the VCF index files (in parallel)
-    for i in "${!input_vcf_tbi[@]}"; do
-      echo "${input_vcf_tbi[$i]}" >> "$DXIDX_LIST"
+    for i in "${!variants_vcfgztbi[@]}"; do
+      echo "${variants_vcfgztbi[$i]}" >> "$DXIDX_LIST"
     done
 
     parallel -j $(nproc --all) -u --gnu parallel_download :::: ${DXIDX_LIST} ::: ${WKDIR}
@@ -333,8 +338,8 @@ main() {
 	halfCount=$(($procCount/2))
 
 	# Download the VCF files (in parallel)
-    for i in "${!input_vcf_gz[@]}"; do
-      echo "${input_vcf_gz[$i]}" >> ${DXVCF_LIST}
+    for i in "${!variants_vcfgz[@]}"; do
+      echo "${variants_vcfgz[$i]}" >> ${DXVCF_LIST}
     done
 
     parallel -j ${halfCount} -u --gnu parallel_download_and_annotate :::: ${DXVCF_LIST}::: ${WKDIR}

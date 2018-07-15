@@ -38,9 +38,9 @@ main() {
 
     export SHELL=/bin/bash
 
-    echo "Value of vcf_fn: '${vcf_fn[@]}'"
-    echo "Value of vcfidx_fn: '${vcfidx_fn[@]}'"
-    echo "Value of region_fn: '$region_fn'"
+    echo "Value of variants_vcfgzs: '${variants_vcfgzs[@]}'"
+    echo "Value of variants_vcfgztbis: '${variants_vcfgztbis[@]}'"
+    echo "Value of region_list: '$region_list'"
     echo "Value of suffix: '$suffix'"
 
     WKDIR=$(mktemp -d)
@@ -50,22 +50,22 @@ main() {
     VCF_NAMES=$(mktemp)
     VCFIDX_NAMES=$(mktemp)
 
-    if test "${#vcf_fn[@]}" -ne "${#vcfidx_fn[@]}"; then
+    if test "${#variants_vcfgzs[@]}" -ne "${#variants_vcfgztbis[@]}"; then
         dx-jobutil-report-error "ERROR: Number of VCF files and index files do not match"
     fi
 
 
-    for i in ${!vcf_fn[@]}
+    for i in ${!variants_vcfgzs[@]}
     do
-        echo -e "${vcf_fn_prefix[$i]}\t${vcf_fn_name[$i]}\t$(echo ${vcf_fn[$i]} | jq -r .["$dnanexus_link"])"
+        echo -e "${variants_vcfgzs_prefix[$i]}\t${variants_vcfgzs_name[$i]}\t$(echo ${variants_vcfgzs[$i]} | jq -r .["$dnanexus_link"])"
     done | tee $VCF_NAMES | wc -l
 
     # check the output
     less $VCF_NAMES
 
-    for i in ${!vcfidx_fn[@]}
+    for i in ${!variants_vcfgztbis[@]}
     do
-        echo -e "${vcfidx_fn_prefix[$i]}\t${vcfidx_fn_name[$i]}\t$(echo ${vcfidx_fn[$i]} | jq -r .["$dnanexus_link"])"
+        echo -e "${variants_vcfgztbis_prefix[$i]}\t${variants_vcfgztbis_name[$i]}\t$(echo ${variants_vcfgztbis[$i]} | jq -r .["$dnanexus_link"])"
     done | tee $VCFIDX_NAMES | wc -l
     
     # check the output
@@ -78,11 +78,11 @@ main() {
     # check the output
     less $VCF_ALLINFO
 
-    if test "${#vcf_fn[@]}" -ne $NUMCOMB; then
-        dx-jobutil-report-error "ERROR: Could not match VCF files to indexes"
+    if test "${#variants_vcfgzs[@]}" -ne $NUMCOMB; then
+        dx-jobutil-report-error "ERROR: Could not match VCF files to indices."
     fi
 
-    dx download "$region_fn" -o region.list
+    dx download "$region_list" -o region.list
 
     # Check that the region.list is in the correct format
     format_check=$(head region.list -n 1 | sed -e '/^[a-z0-9]*:[0-9]*-[0-9]*$/d')
@@ -96,10 +96,10 @@ main() {
     # Upload all the results
     while read f; do
 
-        vcf_out=$(dx upload "$f" --brief)
-        dx-jobutil-add-output vcf_out "$vcf_out" --class=array:file
-        vcfidx_out=$(dx upload "$f.tbi" --brief)
-        dx-jobutil-add-output vcfidx_out "$vcfidx_out" --class=array:file
+        out_variants_vcfgz=$(dx upload "$f" --brief)
+        dx-jobutil-add-output out_variants_vcfgz "$out_variants_vcfgz" --class=array:file
+        out_variants_vcfgztbi=$(dx upload "$f.tbi" --brief)
+        dx-jobutil-add-output out_variants_vcfgztbi "$out_variants_vcfgztbi" --class=array:file
 
     done < <(ls -1 $OUTDIR/*.vcf.gz)
 }

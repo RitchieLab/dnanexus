@@ -3,34 +3,34 @@
   "title": "Slice VCF File(s)",
   "summary": "Return a small section of a VCF file or files (similar to tabix).",
   "dxapi": "1.0.0",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
-      "label": "VCF files",
+      "name": "variants_vcfgzs",
+      "label": "VCF Files",
       "help": "Variant files to be sliced, in VCF format.",
       "class": "array:file",
       "optional": false,
-      "patterns": ["*.vcf.gz"]
+      "patterns": ["*.vcf.gz", "*.vcf"]
     },
     {
-      "name": "vcfidx_fn",
-      "label": "VCF index files",
+      "name": "variants_vcfgztbis",
+      "label": "VCF Indices",
       "help": "Tabix index files corresponding to VCF files. Each VCF must have a corresponding index with matching base filename.",
       "class": "array:file",
       "optional": false,
-      "patterns": ["*.vcf.gz.tbi"]
+      "patterns": ["*.vcf.gz.tbi", "*.vcf.tbi", "*.vcf.idx"]
     },
     {
-      "name": "region_fn",
-      "label": "File of regions (chr:start-stop)",
+      "name": "region_list",
+      "label": "File of Regions (chr:start-stop)",
       "help": "Text file of genomic region coordinates. Variants within these ranges will be extracted from the given VCF files.",
       "class": "file",
       "optional": false,
-      "patterns": ["*.txt", "*.regions", "*.list"]
+      "patterns": ["*.txt", "*.list"]
     },
     {
       "name": "suffix",
@@ -42,15 +42,15 @@
   ],
   "outputSpec": [
     {
-      "name": "vcf_out",
-      "label": "Sliced VCF files",
+      "name": "out_variants_vcfgz",
+      "label": "Sliced VCF Files",
       "help": "Variant file containing only target regions, in VCF format.",
       "class": "array:file",
       "patterns": ["*.vcf.gz.tbi"]
     },
     {
-      "name": "vcfidx_out",
-      "label": "Sliced VCF index files",
+      "name": "out_variants_vcfgztbi",
+      "label": "Sliced VCF Indices",
       "help": "Tabix index file corresponding to the output VCF files.",
       "class": "array:file",
       "patterns": ["*.vcf.gz"]
@@ -70,18 +70,18 @@
       "systemRequirements": {
         "*": { "instanceType": "mem1_ssd1_x4" }
       },
-      "assetDepends": [{"id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"}]
+      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}]
     },
     "azure:westus": {
       "systemRequirements": {
         "*": { "instanceType": "azure:mem2_ssd1_x4" }
       },
-      "assetDepends": [{"id": "record-FGpfZ1j95qzXV43bP5y5JKgV"}]
+      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}]
     }
   },
   "details": {
         "upstreamVersion": "",
-        "whatsNew": "",
+        "whatsNew": "* 1.0.0 First version of the Slice VCF File(s) app.",
         "citation": "",
         "upstreamURL": "",
         "upstreamLicenses": ["GPLv3"]

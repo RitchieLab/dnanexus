@@ -3,13 +3,14 @@
   "title": "VCF Summary Statistics",
   "summary": "Generate summary statistics for a VCF file (by sample and by variant)",
   "dxapi": "1.0.0",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "categories": [
     "Statistics"
   ],
   "details": {
-    "whatsNew": "",
-    "citation": ""
+    "whatsNew": "* 1.0.0 Initial release\n",
+    "citation": "",
+    "license": "GPLv3"
   },
   "inputSpec": [
     {

@@ -1,190 +1,187 @@
 {
   "name": "biobin",
-  "title": "BioBin - Latest",
-  "summary": "The latest development version of the rare variant binning tool BioBin",
+  "title": "BioBin",
+  "summary": "The rare variant binning tool BioBin",
   "dxapi": "1.0.0",
-  "version": "0.4.0",
-  "categories": [],
-  "access": {
-    "network": [ "*" ],
-    "allProjects": "VIEW"
-  },
+  "version": "1.0.0",
   "inputSpec": [
     {
-      "name": "vcf_file",
+      "name": "variants_vcfgz",
       "label": "VCF File",
       "class": "file",
       "optional": false,
-      "patterns": ["*.vcf","*.vcf.gz"]
+      "patterns": ["*.vcf","*.vcf.gz"],
+      "help": "The genotyped variants in block-gzipped VCF format."
     },
     {
-      "name": "vcf_tbi_file",
-      "label": "VCF TBI Index File",
-      "class": "file",
-      "optional": true,
-      "patterns": ["*.vcf.tbi","*.vcf.gz.tbi"]
-    },
-    {
-      "name": "role_file",
+      "name": "role_rol",
       "label": "Role File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.rol*"]
+      "patterns": ["*.rol*"],
+      "help": "(Optional) A file containing custom roles."
     },
     {
-      "name": "phenotype_file",
+      "name": "phenotype_phe",
       "label": "Phenotype File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.phe*"]
+      "patterns": ["*.phe*"],
+      "help": "(Optional) A phenotype file as a plain text file that contains two or more columns separated by whitespace."
     },
     {
-      "name": "covariate_file",
+      "name": "covariate_cov",
       "label": "Covariate File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.cov*"]
+      "patterns": ["*.cov*"],
+      "help": "(Optional) A covariate file as a plain text file that contains two or more columns separated by whitespace. If given, all covariates in this file will be used."
     },
     {
-      "name": "weight_file",
+      "name": "weight_wgt",
       "label": "Weight File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.weight*","*.wgt*"]
+      "patterns": ["*.weight*","*.wgt*"],
+      "help": "(Optional) A file containing custom locus weights."
     },
     {
-      "name": "region_file",
+      "name": "region_rgn",
       "label": "Custom Regions File",
       "class": "file",
       "optional": true,
-      "patterns": ["*.region*","*.rgn*"]
+      "patterns": ["*.region*","*.rgn*"],
+      "help": "(Optional) A file containing custom regions."
     },
     {
-      "name": "include_region_file",
+      "name": "include_region_gen",
       "label": "Region Names List",
       "class": "file",
       "optional": true,
-      "patterns": ["*.gen*"]
-    },
-    
-    {
-      "name": "biobin_binary_exec",
-      "label": "BioBin Binary Executable",
-      "help": "If omitted, the latest available executable will be used.",
-      "class": "file",
-      "optional": true,
-      "patterns": ["biobin*"],
-      "suggestions": [
-        {"name": "Binary Executable Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/BioBin/versions/biobin"}
-      ]
-    },
-    {
-      "name": "biobin_summary_script",
-      "label": "BioBin Summary Script",
-      "help": "If omitted, the latest available script will be used.",
-      "class": "file",
-      "optional": true,
-      "patterns": ["biobin-summary.py*"],
-      "suggestions": [
-        {"name": "Summary Script Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/BioBin/versions/biobin-summary.py"}
-      ]
+      "patterns": ["*.gen*"],
+      "help": "(Optional) A file containing a list of names of regions to include from LOKI when constructing bins."
     },
     {
       "name": "loki_db",
       "label": "LOKI Knowledge Database",
-      "help": "If omitted, the latest available database will be used.",
       "class": "file",
-      "optional": true,
-      "patterns": ["LOKI*"],
+      "optional": false,
+      "patterns": ["LOKI*.db"],
       "suggestions": [
-        {"name": "LOKI Database Versions", "project": "project-Bkp5fYQ0vqZfq1XXPkYK2p1z", "path": "/LOKI"}
-      ]
+        {"name": "LOKI Database Versions", "project": "project-FGqF5B00ByvPXG4G87yQy23G", "path": "/LOKI"},
+        {"name": "LOKI Database Versions", "project": "project-FGvp3009BJq40pkZ683v3754", "path": "/LOKI"}
+      ],
+      "help": "A file, as the Library of Knowledge Integration (LOKI) database, which contains diverse biological knowledge from multiple collections of publically available databases."
     },
     {
-      "name": "regression_type",
+      "name": "regression_types",
       "label": "Regression Type",
       "class": "array:string",
       "choices": ["linear","logistic","wilcoxon","SKAT-linear","SKAT-logistic"],
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A list of statistical tests to perform on each bin."
     },
     {
       "name": "output_prefix",
       "label": "Output File Prefix",
       "class": "string",
-      "default": "biobin"
+      "optional": false,
+      "default": "biobin",
+      "help": "A string, setup for the prefix of the output files."
     },
     {
       "name": "biobin_args",
       "label": "BioBin Arguments",
       "class": "string",
       "optional": true,
-      "default": "--weight-loci Y  --bin-pathways N  --bin-regions Y  --bin-minimum-size 1"
+      "default": "--weight-loci Y --bin-pathways N --bin-regions Y --bin-minimum-size 1",
+      "help": "(Optional) Advanced arguments for Biobin."
     },
     {
       "name": "permu_count",
-      "label": "Permutation Count (0 to disable)",
+      "label": "Permutation Count",
       "class": "int",
       "optional": true,
-      "default": 0
+      "default": 0,
+      "help": "(Optional) An integer for permutation count. Use 0 to disable permutation."
     }
   ],
   "outputSpec": [
     {
       "name": "log_file",
       "label": "Log File",
-      "class": "file"
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.log"],
+      "help": "A file, with log information from the job."
     },
     {
       "name": "bins_files",
       "label": "Bins Files",
-      "class": "array:file"
+      "class": "array:file",
+      "optional": false,
+      "patterns": ["*bins.csv"],
+      "help": "A list of files, in CSV format with bins report."
     },
     {
       "name": "summary_file",
       "label": "Bins Summary File",
-      "class": "file"
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.tsv"],
+      "help": "A file, in TSV format with summary information."
     },
     {
       "name": "locus_file",
       "label": "Locus File",
-      "class": "file"
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.csv"],
+      "help": "A file, in CSV format with locus information."
     },
     {
       "name": "unlifted_files",
       "label": "Unlifted Variants Files",
       "class": "array:file",
-      "optional": true
+      "optional": true,
+      "patterns": ["*.csv"],
+      "help": "(Optional) A file, in CSV format with ulifted positions."
     },
     {
       "name": "permu_file",
       "label": "Permutation Summary File",
       "class": "file",
-      "optional": true
+      "optional": true,
+      "patterns": ["*.csv"],
+      "help": "(Optional) A file, in CSV format with permutation summary."
     }
   ],
-  "runSpec": {
-    "interpreter": "bash",
-    "file": "src/main.sh",
-    "execDepends": [
-      { "name": "libgsl0ldbl" },
-      { "name": "tabix" }
+  "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x16"}},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"},
+                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
+    "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem2_ssd1_x16"}},
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
+  },
+  "details": {
+    "upstreamVersion": "biobin-20170726-r4221",
+    "upstreamUrl": "https://ritchielab.org/research/research-areas/expert-knowledge-bioinformatics/methods/biobin",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": "* 1.0.0: First version of the Biobin app.",
+    "citations": [
+      "doi:10.1142/9789814447973_0033",
+      "doi:10.1186/1755-8794-6-S2-S6"
     ]
   },
-  "authorizedUsers": [
-    "org-geisinger",
-    "org-geisinger_affiliate"
-  ],
-  "developers": [
-    "user-auv13",
-    "user-atf3"
-  ],
-  "__disabled__runSpec__execDepends": [
-      { "name": "gawk" },
-      { "name": "libsqlite3-0" },
-      { "name": "python-apsw" },
-      { "name": "python-suds" },
-      { "name": "openjdk-7-jre-headless" },
-      { "name": "vcftools" },
-      { "name": "plink" }
-  ]
+  "openSource": true,
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/biobin.sh",
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "timeoutPolicy": {
+      "*": { "hours": 12 }
+    }
+  }
 }

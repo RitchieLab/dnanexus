@@ -54,8 +54,12 @@ main() {
             DX_ASSETS_ID="$DX_PROJECT_CONTEXT_ID"
         fi
     
-        dx download -r "$DX_ASSETS_ID:/biofilter/*" -o /usr/share/biofilter
-        dx download "$DX_ASSETS_ID:/LOKI/loki-20150427-nosnps.db" -o /usr/share/biofilter/loki.db
+        # download the entire contents of the biofilter folder
+        dx download -r "$DX_ASSETS_ID:/Biofilter/"
+        sudo mv ./Biofilter/* /usr/share/biofilter/
+
+        # download LOKI DB
+        dx download "$DX_ASSETS_ID:/LOKI/LOKI-20150427-noSNPs.db" -o /usr/share/biofilter/loki.db
 
         # Convert the chrom/pos of each position in the VCF into a biofilter-compatible chrom/pos input
         cat $LOCALFN | grep -v '^#' | cut -f1,2 | tee bf_chrpos | wc -l

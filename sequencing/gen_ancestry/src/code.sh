@@ -1,13 +1,13 @@
-set -x
+set -x -e -o pipefail
 
 main() {
 
-    echo "Value of evec_fn: '$evec_fn'"
-    echo "Value of ancestry_fn: '$ancestry_fn'"
+    echo "Value of pca_evec: '$pca_evec'"
+    echo "Value of ancestry_txt: '$ancestry_txt'"
     echo "Value of thresh: '$thresh'"
 
 	if test -z "$prefix"; then
-		prefix=$(dx describe --name "$evec_fn" | sed 's/\.evec$//')
+		prefix=$(dx describe --name "$pca_evec" | sed 's/\.evec$//')
 	fi
 
 	WKDIR=$(mktemp -d)
@@ -15,8 +15,8 @@ main() {
 	cd $WKDIR
 	
 
-    dx download "$evec_fn" -o evec
-    dx download "$ancestry_fn" -o ancestry
+    dx download "$pca_evec" -o evec
+    dx download "$ancestry_txt" -o ancestry
     
     # remove "Other" from the ancestry; it's special!
     grep -v 'Other$' ancestry > ancestry_R
@@ -30,7 +30,7 @@ main() {
     # Assumes that "ancestry" and "evec" are formatted correctly.
     gen_ancestry.R ancestry_R evec_R $thresh $num_evec > $OUTDIR/$prefix.ancestry
     
-    ancestry_out=$(dx upload $OUTDIR/$prefix.ancestry --brief)
+    output_ancestry=$(dx upload $OUTDIR/$prefix.ancestry --brief)
 
-    dx-jobutil-add-output ancestry_out "$ancestry_out" --class=file
+    dx-jobutil-add-output output_ancestry "$output_ancestry" --class=file
 }

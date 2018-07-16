@@ -3,7 +3,7 @@
 
 ## What does this app do?
 
-This app determines from a PCA eigenvector file. It runs QDA (quadratic discriminant analysis) using a custom R script to determine posterior ancestries for all samples, even those in the training set.
+This app determines ancestry from a PCA eigenvector file. It runs QDA (quadratic discriminant analysis) using a custom R script to determine posterior ancestries for all samples, even those in the training set.
 
 ## What data are required for this app to run?
 

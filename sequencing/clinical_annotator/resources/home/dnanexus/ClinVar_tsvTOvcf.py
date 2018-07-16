@@ -6,69 +6,86 @@ __author__ = "Thomas Nate Person"
 __license__ = "GPLv3"
 __email__ = "thomas.n.person@gmail.com"
 
-import re
-import sys
-import time
-import gzip
+import re, sys, time, gzip, csv
 
-MonthYear = time.strftime("%b%Y") #+ time.strftime("%Y")
-DayMonthYear = time.strftime("%d%b%Y") #+ time.strftime("%b") + time.strftime("%Y")
+
+def write_vcf(assembly, new_vcf, vcf_csv_writer):
+
+    for site_id, site in new_vcf[assembly].items():
+
+        outsite = site_id.split("\t") + [",".join(site[site_id]), ".", "."]
+        site.pop(site_id, None)
+        line = outsite + [new_vcf["source"] + ",".join(site.values())]
+        vcf_csv_writer.writerows([line])
+
 
 dbFile = gzip.open(sys.argv[1], "r")
-db_b37_vcf = open(sys.argv[1].replace("txt.gz", "b37.vcf"), "w")
-db_b38_vcf = open(sys.argv[1].replace("txt.gz", "b38.vcf"), "w")
+with open(sys.argv[1].replace("txt.gz", "") + "b37.vcf", "w") as db_b37_vcf:
+    with open(sys.argv[1].replace("txt.gz", "") + "b38.vcf", "w") as db_b38_vcf:
 
-
-for line in dbFile:
-    if line.startswith("#AlleleID"):
-        headerFields = "|".join(line.lstrip("#").strip().split("\t"))
+        # grab header fields
+        header = dbFile.next()
+        headerFields = "|".join(header.lstrip("#").strip().split("\t"))
         headerFields = "Allele|" + headerFields
-    else:
-        break
 
-db_b37_vcf.write("##fileformat=VCFv4.2\n")
-db_b37_vcf.write(
-    "##INFO=<ID=ClinVar.TSV."
-    + DayMonthYear
-    + ',Number=.,Type=String,Description="ClinVar.TSV.'
-    + DayMonthYear
-    + ": '"
-    + headerFields
-    + "'\">\n"
-)
-db_b37_vcf.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
+        # get dates
+        MonthYear = time.strftime("%b%Y")
+        DayMonthYear = time.strftime("%d%b%Y")
 
-db_b38_vcf.write("##fileformat=VCFv4.2\n")
-db_b38_vcf.write(
-    "##INFO=<ID=ClinVar.TSV."
-    + DayMonthYear
-    + ',Number=.,Type=String,Description="ClinVar.TSV.'
-    + DayMonthYear
-    + ": '"
-    + headerFields
-    + "'\">\n"
-)
-db_b38_vcf.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
+        # initialize csv writers
+        db_b37_vcf_writer = csv.writer(
+            db_b37_vcf,
+            delimiter="\t",
+            quoting=csv.QUOTE_NONE,
+            quotechar="",
+            escapechar="\\",
+            lineterminator="\n",
+        )
+        db_b38_vcf_writer = csv.writer(
+            db_b38_vcf,
+            delimiter="\t",
+            quoting=csv.QUOTE_NONE,
+            quotechar="",
+            escapechar="\\",
+            lineterminator="\n",
+        )
 
-CHROM = -1
-POS = -1
-REF = -1
-ALT = -1
-ASSEMBLY = -1
+        # write b37 header
+        db_b37_vcf_writer.writerow(["##fileformat=VCFv4.2"])
+        db_b37_vcf_writer.writerow(
+            [
+                '##INFO=<ID=ClinVar.TSV.{},Number=.,Type=String,Description="ClinVar.TSV.{}:'.format(
+                    DayMonthYear, DayMonthYear
+                )
+                + " '{}'\">".format(headerFields)
+            ]
+        )
+        db_b37_vcf_writer.writerow(
+            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
+        )
 
-dbFile.seek(0)
+        # write b38 header
+        db_b38_vcf_writer.writerow(["##fileformat=VCFv4.2"])
+        db_b38_vcf_writer.writerow(
+            [
+                '##INFO=<ID=ClinVar.TSV.{},Number=.,Type=String,Description="ClinVar.TSV.{}:'.format(
+                    DayMonthYear, DayMonthYear
+                )
+                + " '{}'\">".format(headerFields)
+            ]
+        )
+        db_b38_vcf_writer.writerow(
+            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
+        )
 
-new_vcf = dict()
-new_vcf_b37 = dict()
-new_vcf_b38 = dict()
-new_vcf["GRCh37"] = new_vcf_b37
-new_vcf["GRCh38"] = new_vcf_b38
-new_vcf["source"] = "ClinVar.TSV." + DayMonthYear + "="
-
-for line in dbFile:
-    if line.startswith("#"):
-        fields = [x.strip() for x in line.split("\t")]
+        CHROM, POS, REF, ALT, ASSEMBLY = -1, -1, -1, -1, -1
+        new_vcf, new_vcf["GRCh37"], new_vcf["GRCh38"] = {}, {}, {}
+        new_vcf["source"] = "ClinVar.TSV.{}=".format(DayMonthYear)
+        dbFile.seek(0)
+        header = dbFile.next()
+        fields = [x.strip() for x in header.split("\t")]
         for i, f in enumerate(fields):
+
             if f == "Chromosome":
                 CHROM = i
             elif f == "Start":
@@ -79,63 +96,55 @@ for line in dbFile:
                 ALT = i
             elif f == "Assembly":
                 ASSEMBLY = i
-    else:
-        fields = [x.strip() for x in line.split("\t")]
-        if fields[REF] == fields[ALT]:
-            continue
-        elif fields[ASSEMBLY] == "NCBI36":
-            continue
 
-        if bool(re.search("^[AGCT]+$", fields[REF])) and bool(
-            re.search("^[AGCT]+$", fields[ALT])
-        ):
-            site_id = fields[CHROM] + "\t" + fields[POS] + "\t.\t" + fields[REF] + "\t"
-            variant_id = (
-                fields[CHROM]
-                + "\t"
-                + fields[POS]
-                + "\t"
-                + fields[REF]
-                + "\t"
-                + fields[ALT]
-            )
+        for line in dbFile:
 
-            INFO = fields[ALT] + "|" + "|".join(fields)
-            INFO = INFO.replace(";", "/")
-            INFO = INFO.replace(",", "/")
-            INFO = INFO.replace(" ", "_")
+            fields = [x.strip() for x in line.split("\t")]
+            if fields[REF] == fields[ALT]:
+                continue
+            elif fields[ASSEMBLY] == "NCBI36":
+                continue
 
-            if site_id in new_vcf[fields[ASSEMBLY]]:
-                site = new_vcf[fields[ASSEMBLY]][site_id]
-                site[site_id].add(fields[ALT])
+            if bool(re.search("^[AGCT]+$", fields[REF])) and bool(
+                re.search("^[AGCT]+$", fields[ALT])
+            ):
 
-                if variant_id in site:
-                    site[variant_id] = site[variant_id] + "," + INFO
+                site_id = fields[CHROM] + "\t" + fields[POS] + "\t.\t" + fields[REF]
+                variant_id = (
+                    fields[CHROM]
+                    + "\t"
+                    + fields[POS]
+                    + "\t"
+                    + fields[REF]
+                    + "\t"
+                    + fields[ALT]
+                )
+
+                INFO = fields[ALT] + "|" + "|".join(fields)
+                INFO = INFO.replace(";", "/")
+                INFO = INFO.replace(",", "/")
+                INFO = INFO.replace(" ", "_")
+
+                if site_id in new_vcf[fields[ASSEMBLY]]:
+
+                    site = new_vcf[fields[ASSEMBLY]][site_id]
+                    site[site_id].add(fields[ALT])
+                    if variant_id in site:
+                        site[variant_id] = site[variant_id] + "," + INFO
+                    else:
+                        site[variant_id] = INFO
+
+                    new_vcf[fields[ASSEMBLY]][site_id] = site
+
                 else:
-                    site[variant_id] = INFO
 
-                new_vcf[fields[ASSEMBLY]][site_id] = site
+                    new_vcf[fields[ASSEMBLY]][site_id] = {
+                        variant_id: INFO,
+                        site_id: {fields[ALT]},
+                    }
 
-            else:
-                site = dict()
-                site[variant_id] = INFO
-                site[site_id] = set()
-                site[site_id].add(fields[ALT])
-                new_vcf[fields[ASSEMBLY]][site_id] = site
+        write_vcf("GRCh37", new_vcf, db_b37_vcf_writer)
+        write_vcf("GRCh38", new_vcf, db_b38_vcf_writer)
 
-for site_id, site in new_vcf["GRCh37"].viewitems():
-    outsite = site_id + ",".join(site[site_id]) + "\t.\t.\t" + new_vcf["source"]
-    site.pop(site_id, None)
-    outsite = outsite + ",".join(site.values()) + "\n"
-    db_b37_vcf.write(outsite)
 
-db_b37_vcf.close()
-
-for site_id, site in new_vcf["GRCh38"].viewitems():
-    outsite = site_id + ",".join(site[site_id]) + "\t.\t.\t" + new_vcf["source"]
-    site.pop(site_id, None)
-    outsite = outsite + ",".join(site.values()) + "\n"
-    db_b38_vcf.write(outsite)
-
-db_b38_vcf.close()
 exit()

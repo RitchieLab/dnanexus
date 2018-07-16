@@ -23,7 +23,6 @@ function reformat_resources() {
 
 	cd $HOME
 
-	#python $HOME/ClinVar_tsvTOvcf.py variant_summary.txt.gz
 	python ClinVar_tsvTOvcf.py variant_summary.txt.gz
     
 	vcf-sort -c variant_summary.b37.vcf | bgzip -c > variant_summary.b37.vcf.gz
@@ -34,7 +33,8 @@ function reformat_resources() {
 	if test "${hgmd_pro_file}"; then
 		
         dx download "${hgmd_pro_file}"
-        python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
+        #python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
+        python reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
         tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
 	
     fi

@@ -10,7 +10,7 @@
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgz",
       "label": "VCF File(s)",
       "help": "VCF file(s) to convert to PLINK format.",
       "class": "array:file",
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "name": "vcfidx_fn",
+      "name": "variants_vcfgztbi",
       "label": "VCF Index File(s)",
       "help": "Index files for VCF file(s) to convert to PLINK format.",
       "class": "array:file",
@@ -146,7 +146,5 @@
     "whatsNew": "*1.0.0: Cleaned up, added documentation, moved to Ubuntu 14.04;",
     "citations": []
   },
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "openSource" : true
 }

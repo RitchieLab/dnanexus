@@ -137,13 +137,13 @@
   },
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd1_x8"}},
-                      "assetDepends": [{"id": "record-FJ1pP980FJfZFzqYG88B8Zj1"}]},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}]},
     "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem1_ssd1_x8"}},
-                     "assetDepends": [{"id": "record-FJ1vJgQ99qgf9kQk264zVpKv"}]}
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}]}
   },
   "openSource" : true,
   "details": {
     "upstreamUrl": "https://software.broadinstitute.org/gatk/documentation/tooldocs/3.8-0/org_broadinstitute_gatk_tools_walkers_annotator_VariantAnnotator.php",
-    "whatsNew": "* 1.0.0 First version of the VariantAnnotator app."
+    "whatsNew": "* 1.0.0 First version of the GATK3 VariantAnnotator app."
   }
 }

@@ -1,6 +1,8 @@
-<!-- dx-header -->
 # VCF Summary Statistics (DNAnexus Platform App)
 
-Generate summary statistics for a VCF file (by sample and by variant).
+This app takes as input variants VCF files in `*.vcf.gz` format and uses
+biofilter to generate sample level summary statistics.
 
-<!-- /dx-header -->
+In the future, this app will also be able to generate variant-level summary
+statistics. However, this option is not currently implemented.
+

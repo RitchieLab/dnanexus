@@ -130,11 +130,11 @@ main() {
 
     # take security measures with temporary filenames 
     # for VCF file(s) and indices
-	DXVCF_LIST=$(mktemp)
-	DXIDX_LIST=$(mktemp)
+    DXVCF_LIST=$(mktemp)
+    DXIDX_LIST=$(mktemp)
 
     # reformat the resources in the variant summary file
-	reformat_resources
+    reformat_resources
 
     # Download all the VCF index files
     for i in "${!variants_vcfgztbi[@]}"; do

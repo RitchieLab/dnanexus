@@ -25,7 +25,9 @@ It can also annotate the following irrespective of association results:
 - **ICD-9 description:** Allows users to add ICD-9 code long descriptions to the column name.
 - **ICD-9 column name:** Required if "ICD-9 description" is true. This option allows the app to know which column in the input file contains ICD-9 codes.
 
-####Gene and GWAS Catalog
+</br>
+
+#### Gene and GWAS Catalog
 
 - **EBI GWAS catalog:** Add traits found in EBI GWAS catalog for SNPs position in input file.
 - **GRASP:** Add traits found in GRASP GWAS catalog for SNPs position in input file. GRASP has a more thorough list of published GWAS results, including results with p-value < 0.01, making it a bigger database than EBI.

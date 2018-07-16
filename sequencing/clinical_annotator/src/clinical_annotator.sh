@@ -30,8 +30,8 @@ function reformat_resources() {
 	tabix -p vcf -f variant_summary.b37.vcf.gz
 	tabix -p vcf -f variant_summary.b38.vcf.gz
 
-	if test "${hgmd_pro_file}"; then
-		
+    if test "${hgmd_pro_file}"; then
+
         dx download "${hgmd_pro_file}"
         python reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
         tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
@@ -98,19 +98,19 @@ function parallel_download_and_annotate() {
 
     fi
 
-	if [ ! -f $OUT_VCF.tbi ]; then
-		tabix -p vcf -f $OUT_VCF
-	fi
+    if [ ! -f $OUT_VCF.tbi ]; then
+        tabix -p vcf -f $OUT_VCF
+    fi
 
-	VCF_UP=$(dx upload --brief $OUT_VCF)
-	IDX_UP=$(dx upload --brief $OUT_VCF.tbi)
+    VCF_UP=$(dx upload --brief $OUT_VCF)
+    IDX_UP=$(dx upload --brief $OUT_VCF.tbi)
 
-	dx-jobutil-add-output out_variants_vcfgzs "$VCF_UP" --class=array:file
-	dx-jobutil-add-output out_variants_vcfgztbis "$IDX_UP" --class=array:file
+    dx-jobutil-add-output out_variants_vcfgzs "$VCF_UP" --class=array:file
+    dx-jobutil-add-output out_variants_vcfgztbis "$IDX_UP" --class=array:file
 
-	TO_RM=$(dx describe "$1" --name)
+    TO_RM=$(dx describe "$1" --name)
 
-	rm $OUT_VCF*
+    rm $OUT_VCF*
 
 }
 export -f parallel_download_and_annotate

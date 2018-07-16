@@ -3,120 +3,266 @@
   "title": "Annotate VCF File",
   "summary": "Use a variety of tools to annotate a sites-only VCF",
   "dxapi": "1.0.0",
-  "version": "0.0.4",
+  "version": "1.0.0",
+  "openSource": true,
   "categories": [
     "Variation Calling"
   ],
+  "details": {
+    "upstreamLicense": ["GPLv3"],
+    "whatsNew": "* 1.0.0: First vcf_annotate app release.",
+    "citation": ""
+  },
   "inputSpec": [
     {
-      "name": "vcf_fn",
-      "label": "VCF File",
-      "class": "array:file",
-      "optional": false,
-      "patterns" : ["*.vcf.gz"]
-    },
-    {
-      "name": "vcfidx_fn",
-      "label": "VCF Index File",
+      "name": "variants_vcfgz",
+      "label": "VCF File(s)",
       "class": "array:file",
       "optional": false,
       "patterns": [
-        "*.tbi"
-      ]
+        "*.vcf.gz"
+      ],
+      "help": "The input VCF file(s)."
     },
     {
-      "name": "VEP",
-      "label": "Run VEP",
-      "class": "boolean",
+      "name": "variants_vcfgztbi",
+      "label": "VCF File Indices",
+      "class": "array:file",
       "optional": false,
-      "default" : true
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "The input VCF index file(s)."
     },
     {
-      "name": "dbnsfp",
-      "label": "Run dbNSFP (3.3a)",
-      "class": "boolean",
-      "optional": false,
-      "default" : true
+      "group": "Annotation Options",
+      "name": "vep_vcfgz",
+      "label": "VEP VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "VEP annotations VCF file."
     },
     {
-      "name" : "clinvar",
-      "label" : "Use CLINVAR",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
+      "group": "Annotation Options",
+      "name": "vep_vcfgztbi",
+      "label": "VEP VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "VEP annotations VCF Index."
     },
     {
-      "name" : "HGMD",
-      "label" : "Use HGMD",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
+      "group": "Annotation Options",
+      "name": "vep_header_txt",
+      "label": "VEP Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "VEP header file."
     },
     {
-      "group": "Build Options",
-      "name": "build_version",
-      "label": "NCBI Build Version",
-      "class": "string",
-      "choices": ["b38","b37_decoy"],
-      "default": "b38",
-      "optional": true
+      "group": "Annotation Options",
+      "name": "vep_source_zip",
+      "label": "VEP Source Archive",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.zip"
+      ],
+      "help": "Source archive used to install VEP."
     },
     {
-      "group": "True: Annotate Header with VEP, False: Annotate VCF from VEP Annotated Header Files",
-      "name": "annotate_header",
-      "label": "Annotations",
-      "class" : "boolean",
-      "optional" : true
+      "group": "Annotation Options",
+      "name": "vep_cache_targz",
+      "label": "VEP Cache Archive",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tar.gz"
+      ],
+      "help": "Archive containing VEP caches required to run VEP."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_vcfgz",
+      "label": "dbNSFP VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "dbNSFP annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_vcfgztbi",
+      "label": "dbNSFP VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "dbNSFP annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_header_txt",
+      "label": "dbNSFP Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "dbNSFP header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_vcfgz",
+      "label": "HGMD VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "HGMD annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_vcfgztbi",
+      "label": "HGMD VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "HGMD annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_header_txt",
+      "label": "HGMD Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "HGMD header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_vcfgz",
+      "label": "ClinVar VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "ClinVar annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_vcfgztbi",
+      "label": "ClinVar VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "ClinVar annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_header_txt",
+      "label": "ClinVar Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "ClinVar header file."
     }
   ],
   "outputSpec": [
     {
-      "name": "vcf_out",
-      "label": "Annotated VCF",
+      "name": "out_variants_vcfgz",
+      "label": "VCF File(s)",
       "class": "array:file",
-      "patterns" : ["*.vcf.gz"]
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "The output VCF file(s)."
     },
     {
-      "name": "vcfidx_out",
-      "label": "Annotated VCF Index",
+      "name": "out_variants_vcfgztbi",
+      "label": "VCF File Indices",
       "class": "array:file",
-      "patterns" : ["*.tbi"]
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "The output VCF index file(s)."
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {
-        "name": "cpanminus"
-      },
-      {
-        "name": "libtest-mockmodule-perl"
-      },
-      {
-        "name": "libcpan-meta-yaml-perl"
-      },
-      {
-        "name": "libcpan-meta-perl"
-      },
-      {
-              "name": "vcftools"
-      },
-      {"name": "libdbi-perl"},
-      {
-              "name": "tabix"
-      }
-
-    ],
     "interpreter": "bash",
-    "file": "src/vcf_annotate.sh"
+    "file": "src/vcf_annotate.sh",
+    "timeoutPolicy": {
+      "*": {
+        "hours": 8
+      }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
+  },
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "main": {
+          "instanceType": "mem1_ssd1_x2"
+        },
+        "*": {
+          "instanceType": "mem1_ssd1_x32"
+        }
+      },
+      "assetDepends": [
+        {
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+          "folder": "/asset/",
+          "id":"record-FJ3zf8j08zVZFzqYG88Pbk7z",
+          "name": "marylyn_asset",
+          "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
+        }
+      ]
+    },
+    "azure:westus": {
+      "systemRequirements": {
+        "main": {
+          "instanceType": "azure:mem1_ssd1_x2"
+        },
+        "*": {
+          "instanceType": "azure:mem4_ssd1_x16"
+        }
+      },
+      "assetDepends": [
+        {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/asset/",
+          "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz",
+          "name": "marylyn_asset",
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
+        }
+      ]
+    }
   },
   "access": {
     "network": [
       "*"
     ]
-  },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
-
+  }
 }

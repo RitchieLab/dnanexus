@@ -9,26 +9,35 @@ __email__ = "thomas.n.person@gmail.com"
 import re, sys, time, gzip
 from string import maketrans, translate
 
+
 def write_vcf_fields(assembly, new_vcf, file_obj):
     """ writes non-header lines to a VCF file """
     for site_id, site in new_vcf[assembly].items():
 
-        outsite= site_id + ",".join(site[site_id])+"\t.\t.\t"+new_vcf["source"]
-        site.pop(site_id,None)
-        outsite=outsite+",".join(site.values())+"\n"
+        outsite = site_id + ",".join(site[site_id]) + "\t.\t.\t" + new_vcf["source"]
+        site.pop(site_id, None)
+        outsite = outsite + ",".join(site.values()) + "\n"
         file_obj.write(outsite)
 
 
 def write_vcf_header(DayMonthYear, headerFields, file_obj):
     """ writes header lines to a VCF file """
     file_obj.write("##fileformat=VCFv4.2\n")
-    file_obj.write("##INFO=<ID=ClinVar.TSV."+DayMonthYear+",Number=.,Type=String,Description=\"ClinVar.TSV." + DayMonthYear+": '"+headerFields+"'\">\n")
+    file_obj.write(
+        "##INFO=<ID=ClinVar.TSV."
+        + DayMonthYear
+        + ',Number=.,Type=String,Description="ClinVar.TSV.'
+        + DayMonthYear
+        + ": '"
+        + headerFields
+        + "'\">\n"
+    )
     file_obj.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
 
-def main():    
+def main():
 
-    # intialize database file containing ClinVar variants 
+    # intialize database file containing ClinVar variants
     dbFile = gzip.open(sys.argv[1], "r")
     with open(sys.argv[1].replace("txt.gz", "") + "b37.vcf", "w") as db_b37_vcf:
         with open(sys.argv[1].replace("txt.gz", "") + "b38.vcf", "w") as db_b38_vcf:
@@ -42,7 +51,7 @@ def main():
             MonthYear = time.strftime("%b%Y")
             DayMonthYear = time.strftime("%d%b%Y")
 
-            # write header fields 
+            # write header fields
             write_vcf_header(DayMonthYear, headerFields, db_b37_vcf)
             write_vcf_header(DayMonthYear, headerFields, db_b38_vcf)
 
@@ -52,7 +61,7 @@ def main():
             dbFile.seek(0)
             header = dbFile.next()
             fields = [x.strip() for x in header.split("\t")]
-            info_trans_table = maketrans(';, ', '//_')
+            info_trans_table = maketrans(";, ", "//_")
             for i, f in enumerate(fields):
 
                 if f == "Chromosome":
@@ -70,18 +79,25 @@ def main():
 
                 fields = [x.strip() for x in line.split("\t")]
                 if fields[REF] == fields[ALT]:
-                    
+
                     continue
-                
+
                 elif fields[ASSEMBLY] == "NCBI36":
-                    
+
                     continue
 
                 if bool(re.search("^[AGCT]+$", fields[REF])) and bool(
                     re.search("^[AGCT]+$", fields[ALT])
                 ):
 
-                    site_id = fields[CHROM] + "\t" + fields[POS] + "\t.\t" + fields[REF]+"\t"
+                    site_id = (
+                        fields[CHROM]
+                        + "\t"
+                        + fields[POS]
+                        + "\t.\t"
+                        + fields[REF]
+                        + "\t"
+                    )
                     variant_id = (
                         fields[CHROM]
                         + "\t"
@@ -94,7 +110,7 @@ def main():
 
                     # translate info fiels with trans table
                     INFO = fields[ALT] + "|" + "|".join(fields)
-                    INFO = translate(INFO, info_trans_table) 
+                    INFO = translate(INFO, info_trans_table)
 
                     if site_id in new_vcf[fields[ASSEMBLY]]:
 
@@ -109,15 +125,15 @@ def main():
 
                     else:
 
-                        #site = set(); site.add(fields[ALT])
                         new_vcf[fields[ASSEMBLY]][site_id] = {
                             variant_id: INFO,
                             site_id: {fields[ALT]},
                         }
 
-            # write non-header VCF fields 
+            # write non-header VCF fields
             write_vcf_fields("GRCh37", new_vcf, db_b37_vcf)
             write_vcf_fields("GRCh38", new_vcf, db_b38_vcf)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

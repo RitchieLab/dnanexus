@@ -1,6 +1,7 @@
 {
   "name": "plato_single_variant",
   "title": "PLATO - Single Variant Analysis",
+  "summary": "The PLatform for the Analysis, Translation, and Organization of large-scale data (PLATO)",
   "dxapi": "1.0.0",
   "version": "1.0.0",
   "categories": [
@@ -8,7 +9,7 @@
   ],
   "inputSpec": [
     {
-      "name": "input_plink_binary",
+      "name": "input_plink_binarys",
       "label": "PLINK binary input files (bed, bim, fam)",
       "class": "array:file",
       "patterns": ["*.bed", "*.bim", "*.fam"],
@@ -16,10 +17,10 @@
       "help": "A list of files with PLINK's binary fileset to be referenced."
     },
     {
-      "name": "input_phenotype",
+      "name": "phenotypes_tsv",
       "label": "Input phenotype file",
       "class": "file",
-      "patterns": ["*.txt"],
+      "patterns": ["*.txt", "*.tsv"],
       "optional": false,
       "help": "A file, with phenotype information recorded."
     },
@@ -49,7 +50,7 @@
       "label": "Outcome (Only required if Assocaition Type: GWAS)",
       "class": "string",
       "optional": true,
-      "help": "A comma-separated list of traits to use as outcomes for the regression models when \"GWAS\" is selected as the type of association analysis."
+      "help": "(Optional) A comma-separated list of traits to use as outcomes for the regression models when \"GWAS\" is selected as the type of association analysis."
     },
     {
       "group": "Regression Options",
@@ -57,7 +58,7 @@
       "label": "Covariates (Enter covariates column names)",
       "class": "string",
       "optional": true,
-      "help": "A comma-separated list of traits to include as covariates in each model. Covariates given in this argument are premuted along with the phenotypic status when permutation testing is performed; for this reason, this argument should include phenotypic control variables such as age and gender."
+      "help": "(Optional) A comma-separated list of traits to include as covariates in each model. Covariates given in this argument are premuted along with the phenotypic status when permutation testing is performed; for this reason, this argument should include phenotypic control variables such as age and gender."
     },
     {
       "group": "Parallel Job Options",
@@ -66,22 +67,22 @@
       "class": "int",
       "default": 0,
       "optional": true,
-      "help": "Number of phenotype to run in each sub job."
+      "help": "(Optional) Number of phenotype to run in each sub job."
     },
     {
       "name": "output_filename",
       "label": "Output Filename",
       "class": "string",
       "optional": true,
-      "help": "A string, with the expected output file name."
+      "help": "(Optional) A string, with the expected output file name."
     },
     {
       "group": "Regression Options",
       "name": "mem",
-      "label": "Lowmem",
+      "label": "Lowmem?",
       "class": "boolean",
       "default": true,
-      "help": "Reduces memory footprints.",
+      "help": "(Optional) Reduces memory footprints.",
       "optional": true
     },
     {
@@ -98,38 +99,39 @@
       "label": "Enter value used to denote missingness in phenotype or covariate input files",
       "class": "string",
       "optional": false,
+      "default": "NA",
       "help": "A string, used to treat as a missing value. This is especially helpful when missing data is represented by a valid number that is nonsensical in the context of the variables being loaded (e.g. \"-9999\" as a value for BMI)."
     },
     {
-      "name": "input_continuous_covariate",
+      "name": "input_continuous_covariate_txt",
       "label": "Continuous Covariate",
       "class": "file",
-      "patterns": ["*.txt"],
+      "patterns": ["*.txt", "*.tsv"],
       "optional": true,
-      "help": "A file, with continuous covariate information; values should be numeric and quantitative." 
+      "help": "(Optional) A file, with continuous covariate information; values must be continuous numeric." 
     },
     {
-      "name": "input_categorical_covariate",
+      "name": "input_categorical_covariate_txt",
       "label": "Categorical Covariates",
       "class": "file",
-      "patterns": ["*.txt"],
-      "help": "Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
       "optional": true
     },
     {
-      "name": "input_samples",
+      "name": "input_samples_txt",
       "label": "Sample file",
       "class": "file",
-      "patterns": ["*"],
-      "help": "User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
     {
-      "name": "input_markers",
+      "name": "input_markers_txt",
       "label": "SNP file",
       "class": "file",
-      "patterns": ["*"],
-      "help": "User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label)",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label).",
       "optional": true
     },
     {
@@ -138,7 +140,7 @@
       "label": "MAF Threshold",
       "class": "float",
       "optional": true,
-      "help": "A float, with the filtering threshold of minor allele frequency."
+      "help": "(Optional) A float, with the filtering threshold of minor allele frequency."
     },
     {
       "group": "Filter Options",
@@ -146,7 +148,7 @@
       "label": "Case Threshold",
       "class": "int",
       "optional": true,
-      "help": "A integer, with the min number of cases threshold."
+      "help": "(Optional) A integer, with the min number of cases threshold."
     },
 
     {
@@ -156,7 +158,7 @@
       "class": "array:string",
       "choices": [ "Bonferoni", "FDR" ],
       "optional": true,
-      "help": "A string, with the description on which of multiple test correction strategies to use in reporting results from the regression."
+      "help": "(Optional) A string, with the description on which of multiple test correction strategies to use in reporting results from the regression."
     }
   ],
   "outputSpec": [
@@ -165,26 +167,34 @@
       "label": "Output files",
       "class": "array:file",
       "patterns": ["*"],
-      "help": "A list of output files"
+      "optional": false,
+      "help": "A list of output files."
     }
   ],
   "regionalOptions": {
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x2"},
                                              "*": {"instanceType": "mem1_ssd1_x32"}},
-                      "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpf7zQ0kfbZxj6q4ZzQ2BPG"},
-                                        "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"},
+                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
-                                             "*": {"instanceType": "azure:mem4_ssd1_x16"}},
-                     "assetDepends": [{"name": "marylyn_asset", "id": "record-FGpfZ1j95qzXV43bP5y5JKgV"},
-                                       "name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"]}
+                                            "*": {"instanceType": "azure:mem4_ssd1_x16"}},
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
   },
+  "details": {
+    "upstreamVersion": "PLATO 2.1.0",
+    "upstreamUrl": "https://ritchielab.org/plato",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": "* 1.0.0 First version of the PLATO - Single Variant Analysis app."
+  },
+  "openSource": true,
   "runSpec": {
-    "__execDepends__": [{"name":"libboost-iostreams-dev"}],
     "distribution": "Ubuntu",
     "release": "14.04",
     "interpreter": "bash",
-    "file": "src/plato_single_variant.sh"
-  },
-  "__developers__" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "__authorizedUsers__": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
+    "file": "src/plato_single_variant.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 12 }
+    }
+  }
 }

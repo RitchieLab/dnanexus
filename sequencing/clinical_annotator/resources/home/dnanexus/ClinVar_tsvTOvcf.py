@@ -6,145 +6,118 @@ __author__ = "Thomas Nate Person"
 __license__ = "GPLv3"
 __email__ = "thomas.n.person@gmail.com"
 
-import re, sys, time, gzip, csv
+import re, sys, time, gzip
+from string import maketrans, translate
 
-
-def write_vcf(assembly, new_vcf, vcf_csv_writer):
-
+def write_vcf_fields(assembly, new_vcf, file_obj):
+    """ writes non-header lines to a VCF file """
     for site_id, site in new_vcf[assembly].items():
 
-        outsite = site_id.split("\t") + [",".join(site[site_id]), ".", "."]
-        site.pop(site_id, None)
-        line = outsite + [new_vcf["source"] + ",".join(site.values())]
-        vcf_csv_writer.writerows([line])
+        outsite= site_id + ",".join(site[site_id])+"\t.\t.\t"+new_vcf["source"]
+        site.pop(site_id,None)
+        outsite=outsite+",".join(site.values())+"\n"
+        file_obj.write(outsite)
 
 
-dbFile = gzip.open(sys.argv[1], "r")
-with open(sys.argv[1].replace("txt.gz", "") + "b37.vcf", "w") as db_b37_vcf:
-    with open(sys.argv[1].replace("txt.gz", "") + "b38.vcf", "w") as db_b38_vcf:
+def write_vcf_header(DayMonthYear, headerFields, file_obj):
+    """ writes header lines to a VCF file """
+    file_obj.write("##fileformat=VCFv4.2\n")
+    file_obj.write("##INFO=<ID=ClinVar.TSV."+DayMonthYear+",Number=.,Type=String,Description=\"ClinVar.TSV." + DayMonthYear+": '"+headerFields+"'\">\n")
+    file_obj.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
-        # grab header fields
-        header = dbFile.next()
-        headerFields = "|".join(header.lstrip("#").strip().split("\t"))
-        headerFields = "Allele|" + headerFields
 
-        # get dates
-        MonthYear = time.strftime("%b%Y")
-        DayMonthYear = time.strftime("%d%b%Y")
+def main():    
 
-        # initialize csv writers
-        db_b37_vcf_writer = csv.writer(
-            db_b37_vcf,
-            delimiter="\t",
-            quoting=csv.QUOTE_NONE,
-            quotechar="",
-            escapechar="\\",
-            lineterminator="\n",
-        )
-        db_b38_vcf_writer = csv.writer(
-            db_b38_vcf,
-            delimiter="\t",
-            quoting=csv.QUOTE_NONE,
-            quotechar="",
-            escapechar="\\",
-            lineterminator="\n",
-        )
+    # intialize database file containing ClinVar variants 
+    dbFile = gzip.open(sys.argv[1], "r")
+    with open(sys.argv[1].replace("txt.gz", "") + "b37.vcf", "w") as db_b37_vcf:
+        with open(sys.argv[1].replace("txt.gz", "") + "b38.vcf", "w") as db_b38_vcf:
 
-        # write b37 header
-        db_b37_vcf_writer.writerow(["##fileformat=VCFv4.2"])
-        db_b37_vcf_writer.writerow(
-            [
-                '##INFO=<ID=ClinVar.TSV.{},Number=.,Type=String,Description="ClinVar.TSV.{}:'.format(
-                    DayMonthYear, DayMonthYear
-                )
-                + " '{}'\">".format(headerFields)
-            ]
-        )
-        db_b37_vcf_writer.writerow(
-            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
-        )
+            # grab header fields
+            header = dbFile.next()
+            headerFields = "|".join(header.lstrip("#").strip().split("\t"))
+            headerFields = "Allele|" + headerFields
 
-        # write b38 header
-        db_b38_vcf_writer.writerow(["##fileformat=VCFv4.2"])
-        db_b38_vcf_writer.writerow(
-            [
-                '##INFO=<ID=ClinVar.TSV.{},Number=.,Type=String,Description="ClinVar.TSV.{}:'.format(
-                    DayMonthYear, DayMonthYear
-                )
-                + " '{}'\">".format(headerFields)
-            ]
-        )
-        db_b38_vcf_writer.writerow(
-            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
-        )
+            # get dates
+            MonthYear = time.strftime("%b%Y")
+            DayMonthYear = time.strftime("%d%b%Y")
 
-        CHROM, POS, REF, ALT, ASSEMBLY = -1, -1, -1, -1, -1
-        new_vcf, new_vcf["GRCh37"], new_vcf["GRCh38"] = {}, {}, {}
-        new_vcf["source"] = "ClinVar.TSV.{}=".format(DayMonthYear)
-        dbFile.seek(0)
-        header = dbFile.next()
-        fields = [x.strip() for x in header.split("\t")]
-        for i, f in enumerate(fields):
+            # write header fields 
+            write_vcf_header(DayMonthYear, headerFields, db_b37_vcf)
+            write_vcf_header(DayMonthYear, headerFields, db_b38_vcf)
 
-            if f == "Chromosome":
-                CHROM = i
-            elif f == "Start":
-                POS = i
-            elif f == "ReferenceAllele":
-                REF = i
-            elif f == "AlternateAllele":
-                ALT = i
-            elif f == "Assembly":
-                ASSEMBLY = i
+            CHROM, POS, REF, ALT, ASSEMBLY = -1, -1, -1, -1, -1
+            new_vcf, new_vcf["GRCh37"], new_vcf["GRCh38"] = {}, {}, {}
+            new_vcf["source"] = "ClinVar.TSV.{}=".format(DayMonthYear)
+            dbFile.seek(0)
+            header = dbFile.next()
+            fields = [x.strip() for x in header.split("\t")]
+            info_trans_table = maketrans(';, ', '//_')
+            for i, f in enumerate(fields):
 
-        for line in dbFile:
+                if f == "Chromosome":
+                    CHROM = i
+                elif f == "Start":
+                    POS = i
+                elif f == "ReferenceAllele":
+                    REF = i
+                elif f == "AlternateAllele":
+                    ALT = i
+                elif f == "Assembly":
+                    ASSEMBLY = i
 
-            fields = [x.strip() for x in line.split("\t")]
-            if fields[REF] == fields[ALT]:
-                continue
-            elif fields[ASSEMBLY] == "NCBI36":
-                continue
+            for line in dbFile:
 
-            if bool(re.search("^[AGCT]+$", fields[REF])) and bool(
-                re.search("^[AGCT]+$", fields[ALT])
-            ):
+                fields = [x.strip() for x in line.split("\t")]
+                if fields[REF] == fields[ALT]:
+                    
+                    continue
+                
+                elif fields[ASSEMBLY] == "NCBI36":
+                    
+                    continue
 
-                site_id = fields[CHROM] + "\t" + fields[POS] + "\t.\t" + fields[REF]
-                variant_id = (
-                    fields[CHROM]
-                    + "\t"
-                    + fields[POS]
-                    + "\t"
-                    + fields[REF]
-                    + "\t"
-                    + fields[ALT]
-                )
+                if bool(re.search("^[AGCT]+$", fields[REF])) and bool(
+                    re.search("^[AGCT]+$", fields[ALT])
+                ):
 
-                INFO = fields[ALT] + "|" + "|".join(fields)
-                INFO = INFO.replace(";", "/")
-                INFO = INFO.replace(",", "/")
-                INFO = INFO.replace(" ", "_")
+                    site_id = fields[CHROM] + "\t" + fields[POS] + "\t.\t" + fields[REF]+"\t"
+                    variant_id = (
+                        fields[CHROM]
+                        + "\t"
+                        + fields[POS]
+                        + "\t"
+                        + fields[REF]
+                        + "\t"
+                        + fields[ALT]
+                    )
 
-                if site_id in new_vcf[fields[ASSEMBLY]]:
+                    # translate info fiels with trans table
+                    INFO = fields[ALT] + "|" + "|".join(fields)
+                    INFO = translate(INFO, info_trans_table) 
 
-                    site = new_vcf[fields[ASSEMBLY]][site_id]
-                    site[site_id].add(fields[ALT])
-                    if variant_id in site:
-                        site[variant_id] = site[variant_id] + "," + INFO
+                    if site_id in new_vcf[fields[ASSEMBLY]]:
+
+                        site = new_vcf[fields[ASSEMBLY]][site_id]
+                        site[site_id].add(fields[ALT])
+                        if variant_id in site:
+                            site[variant_id] = site[variant_id] + "," + INFO
+                        else:
+                            site[variant_id] = INFO
+
+                        new_vcf[fields[ASSEMBLY]][site_id] = site
+
                     else:
-                        site[variant_id] = INFO
 
-                    new_vcf[fields[ASSEMBLY]][site_id] = site
+                        #site = set(); site.add(fields[ALT])
+                        new_vcf[fields[ASSEMBLY]][site_id] = {
+                            variant_id: INFO,
+                            site_id: {fields[ALT]},
+                        }
 
-                else:
+            # write non-header VCF fields 
+            write_vcf_fields("GRCh37", new_vcf, db_b37_vcf)
+            write_vcf_fields("GRCh38", new_vcf, db_b38_vcf)
 
-                    new_vcf[fields[ASSEMBLY]][site_id] = {
-                        variant_id: INFO,
-                        site_id: {fields[ALT]},
-                    }
-
-        write_vcf("GRCh37", new_vcf, db_b37_vcf_writer)
-        write_vcf("GRCh38", new_vcf, db_b38_vcf_writer)
-
-
-exit()
+if __name__=="__main__":
+    main()

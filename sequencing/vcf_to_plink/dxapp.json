@@ -10,7 +10,7 @@
   ],
   "inputSpec": [
     {
-      "name": "variants_vcfgz",
+      "name": "variants_vcfgzs",
       "label": "VCF File(s)",
       "help": "VCF file(s) to convert to PLINK format.",
       "class": "array:file",
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "name": "variants_vcfgztbi",
+      "name": "variants_vcfgztbis",
       "label": "VCF Index File(s)",
       "help": "Index files for VCF file(s) to convert to PLINK format.",
       "class": "array:file",
@@ -113,13 +113,14 @@
   "regionalOptions": {
     "aws:us-east-1": {
       "assetDepends": [
-        {
+          {   
           "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
           "folder": "/asset/",
-          "version": "0.0.1",
-          "name": "marylyn_asset"
-        }
-      ],
+          "id":"record-FJ3zf8j08zVZFzqYG88Pbk7z",
+          "name": "marylyn_asset",
+          "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
+          }   
+       ],
       "systemRequirements": {
         "*": {
           "instanceType": "mem1_ssd1_x4"
@@ -130,9 +131,10 @@
       "assetDepends": [
         {
           "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
-          "folder": "/",
-          "version": "0.0.1",
-          "name": "marylyn_asset"
+          "folder": "/asset/",
+          "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz",
+          "name": "marylyn_asset",
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
         }
       ],
       "systemRequirements": {
@@ -143,8 +145,10 @@
     }
   },
   "details": {
-    "whatsNew": "*1.0.0: Cleaned up, added documentation, moved to Ubuntu 14.04;",
+    "whatsNew": "*1.0.0 First version of the Convert VCF file to PLINK file app.",
     "citations": []
   },
-  "openSource" : true
+  "openSource" : true,
+  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
 }

@@ -1,17 +1,18 @@
 {
   "name": "vcf_sitesonly",
   "title": "Get Sites-only VCF",
-  "summary": "Get a sites-only vcf (1st 8 columns) using cut",
+  "summary": "Get a sites-only VCF (1st 8 columns) using cut",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgzs",
       "label": "VCF File",
       "class": "array:file",
+      "help": "One or more VCF files in gzipped format.",
       "optional": false,
       "patterns": [
         "*.vcf.gz"
@@ -22,32 +23,33 @@
     {
       "name": "vcf_out",
       "label": "Filtered VCF file",
+      "help": "One or more filtered VCF file(s) in gzipped format.",
       "class": "array:file",
-      "optional" : true
+      "optional" : false
     },
     {
       "name": "vcfidx_out",
       "label": "Filtered VCF Index file",
+      "help": "One or more filtered VCF index file(s) in gzipped format.",      
       "class": "array:file",
-      "optional" : true
+      "optional" : false
     }
   ],
   "runSpec": {
-  "execDepends": [
-      {"name": "pigz"},
-      {"name": "tabix"}
-    ],
     "interpreter": "bash",
-    "file": "src/vcf_sitesonly.sh"
+    "file": "src/vcf_sitesonly.sh",
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "timeoutPolicy": {"main": {"hours": 24}, "*": {"hours": 12}}
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "access": {
-    "network": [
-      "*"
-    ],
-     "allProjects": "VIEW"
+    "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd1_x4"}},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}]},
+    "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem1_ssd1_x4"}},
+                      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}]}
   },
-  "developers": ["user-tnperson", "user-johnwallace123", "user-auv13"],
-  "openSource" : true,
-  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+    "details": {
+    "whatsNew": "* 1.0.0 First version of the Get Sites-only VCF app."
+  },
+  "openSource" : true
 }

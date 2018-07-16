@@ -33,7 +33,6 @@ function reformat_resources() {
 	if test "${hgmd_pro_file}"; then
 		
         dx download "${hgmd_pro_file}"
-        #python $HOME/reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
         python reformatHGMD.py $(dx describe "$hgmd_pro_file" --name) | bgzip -c > $HOME/HGMD_PRO.reformated.vcf.gz
         tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
 	
@@ -79,7 +78,7 @@ function parallel_download_and_annotate() {
 
     # test whether the reformatted HGMD VCF exists and wether its associated index doesn't
     # then we know whether to annotate the HGMD file or not
-	if [ ! -f "$HGMD_PRO.reformated.vcf.gz.tbi" ] && [ -f "$HGMD_PRO.reformated.vcf.gz" ]; then
+    if [ ! -f "$HGMD_PRO.reformated.vcf.gz.tbi" ] && [ -f "$HGMD_PRO.reformated.vcf.gz" ]; then
 
         IN_VCF=$OUT_VCF
 
@@ -145,7 +144,7 @@ main() {
     done
     parallel -j $(nproc --all) -u --gnu parallel_download :::: $DXIDX_LIST ::: $HOME
 
-	#Download and annotate VCF Files
+    #Download and annotate VCF Files
     procCount=$(nproc --all)
     quarterCount=$(($procCount * 3 / 4))
     for i in "${!variants_vcfgz[@]}"; do

@@ -13,7 +13,7 @@
       "class": "array:file",
       "optional": false,
       "patterns" : ["*.vcf.gz"],
-        "help": "The VCF File to be annotated (chr prefix must not be present in VCF)."
+      "help": "The VCF File to be annotated (chr prefix must not be present in VCF)."
     },
     {
       "name": "variant_summary",
@@ -31,7 +31,7 @@
       "patterns": [
         "*.vcf.gz.tbi"
       ],
-        "help": "(Optional) Tabix index file for VCF to be annotated."
+      "help": "(Optional) Tabix index file for VCF to be annotated."
     },
     {
       "name": "hgmd_pro_file",

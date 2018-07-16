@@ -36,61 +36,157 @@
     },
     {
       "group": "Annotation Options",
-      "name": "VEP",
-      "label": "Run VEP (87)",
-      "class": "boolean",
-      "optional": false,
-      "default": true,
-      "help": "Annotate with VEP."
-    },
-    {
-      "group": "Annotation Options",
-      "name": "dbnsfp",
-      "label": "Run dbNSFP (3.3a)",
-      "class": "boolean",
-      "optional": false,
-      "default": true,
-      "help": "Annotate with dbNSFP."
-    },
-    {
-      "group": "Annotation Options",
-      "name": "clinvar",
-      "label": "Use CLINVAR (Jan2017)",
-      "class": "boolean",
-      "optional": false,
-      "default": true,
-      "help": "Annotate with ClinVar."
-    },
-    {
-      "group": "Annotation Options",
-      "name": "HGMD",
-      "label": "Use HGMD (2016.4)",
-      "class": "boolean",
-      "optional": false,
-      "default": true,
-      "help": "Annotate with HGMD."
-    },
-    {
-      "group": "Annotation Options",
-      "name": "annotate_header",
-      "label": "Annotations",
-      "class": "boolean",
+      "name": "vep_vcfgz",
+      "label": "VEP VCF File",
+      "class": "file",
       "optional": true,
-      "default": false,
-      "help": "True: Annotate Header with VEP; False: Annotate VCF from VEP Annotated Header Files."
-    },
-    {
-      "group": "Build Options",
-      "name": "build_version",
-      "label": "NCBI Build Version",
-      "class": "string",
-      "choices": [
-        "b38",
-        "b37_decoy"
+      "patterns": [
+        "*.vcf.gz"
       ],
-      "default": "b38",
+      "help": "VEP annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "vep_vcfgztbi",
+      "label": "VEP VCF Index",
+      "class": "file",
       "optional": true,
-      "help": "Which build to use. [THIS IS CURRENTLY IGNORED; ONLY b38 IS SUPPORTED]"
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "VEP annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "vep_header_txt",
+      "label": "VEP Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "VEP header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "vep_source_zip",
+      "label": "VEP Source Archive",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.zip"
+      ],
+      "help": "Source archive used to install VEP."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "vep_cache_targz",
+      "label": "VEP Cache Archive",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tar.gz"
+      ],
+      "help": "Archive containing VEP caches required to run VEP."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_vcfgz",
+      "label": "dbNSFP VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "dbNSFP annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_vcfgztbi",
+      "label": "dbNSFP VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "dbNSFP annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "dbnsfp_header_txt",
+      "label": "dbNSFP Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "dbNSFP header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_vcfgz",
+      "label": "HGMD VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "HGMD annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_vcfgztbi",
+      "label": "HGMD VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "HGMD annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_header_txt",
+      "label": "HGMD Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "HGMD header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_vcfgz",
+      "label": "ClinVar VCF File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz"
+      ],
+      "help": "ClinVar annotations VCF file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_vcfgztbi",
+      "label": "ClinVar VCF Index",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "ClinVar annotations VCF Index."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_header_txt",
+      "label": "ClinVar Header File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "ClinVar header file."
     }
   ],
   "outputSpec": [
@@ -114,29 +210,6 @@
     }
   ],
   "runSpec": {
-    "assetDepends": [
-      {
-        "name": "cpanminus"
-      },
-      {
-        "name": "libtest-mockmodule-perl"
-      },
-      {
-        "name": "libcpan-meta-yaml-perl"
-      },
-      {
-        "name": "libcpan-meta-perl"
-      },
-      {
-        "name": "vcftools"
-      },
-      {
-        "name": "libdbi-perl"
-      },
-      {
-        "name": "tabix"
-      }
-    ],
     "interpreter": "bash",
     "file": "src/vcf_annotate.sh",
     "timeoutPolicy": {
@@ -159,12 +232,12 @@
       },
       "assetDepends": [
         {
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+          "folder": "/asset/",
+          "id":"record-FJ3zf8j08zVZFzqYG88Pbk7z",
           "name": "marylyn_asset",
-          "id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"
+          "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
         }
-      ],
-      "resources": [
-        "project-FGqF5B00ByvPXG4G87yQy23G"
       ]
     },
     "azure:westus": {
@@ -178,12 +251,12 @@
       },
       "assetDepends": [
         {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/asset/",
+          "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz",
           "name": "marylyn_asset",
-          "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
         }
-      ],
-      "resources": [
-        "project-FGvp3009BJq40pkZ683v3754"
       ]
     }
   },

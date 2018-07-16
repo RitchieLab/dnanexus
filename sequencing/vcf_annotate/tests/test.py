@@ -5,15 +5,18 @@ import logging
 import os
 import subprocess
 import unittest
+import uuid
 
 import dxpy
 import yaml
 
 
+APP_NAME = 'vcf_annotate'
 TEST_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 TEST_DATA_YAML = os.path.join(TEST_DIRECTORY, '../../../test_data.yml')
 MAIN_APP_DIR = os.path.join(TEST_DIRECTORY, '../')
-BUILD_CMD = ['dx', 'build', '-f', MAIN_APP_DIR]
+MKDIR_CMD = ['dx', 'mkdir', '-p']
+BUILD_CMD = ['dx', 'build', MAIN_APP_DIR, '-a', '--destination']
 LOG = logging.getLogger()
 
 
@@ -38,13 +41,23 @@ def load_test_data():
     return host_data[region]
 
 
-def build_applet():
-    applet_config = subprocess.check_output(BUILD_CMD).strip()
-    return json.loads(applet_config)['id']
+def build_applet(target_project):
+    suffix = str(uuid.uuid4())
+    unq_app_name = '{}_{}'.format(APP_NAME, suffix)
+    target_relpath = '/{}/{}'.format(APP_NAME, unq_app_name)
+    target_path = '{}:{}'.format(target_project, target_relpath)
+    mkdir_cmd = MKDIR_CMD + [target_path]
+    subprocess.check_output(mkdir_cmd)
+    build_cmd = BUILD_CMD + ['{}/{}'.format(target_path, unq_app_name)]
+    applet_config = subprocess.check_output(build_cmd).strip()
+    applet_id = json.loads(applet_config)['id']
+    return target_relpath, applet_id
 
 
-def remove_applet(applet_id):
-    subprocess.check_call(['dx', 'rm', applet_id])
+def remove_applet(target_project, target_relpath):
+    subprocess.check_call([
+        'dx', 'rm', '-r', '{}:{}'.format(target_project, target_relpath)
+    ])
 
 
 def remove_output(output_value):
@@ -54,26 +67,33 @@ def remove_output(output_value):
         map(remove_output, output_value.values())
     elif dxpy.is_dxlink(output_value):
         dxpy.remove(output_value)
-    elif True: # TODO: test whether output_value is a job
-        remove_output(output_value.describe()['output'])
+    elif True:  # TODO: test whether output_value is a job
+        output = output_value.describe()['output']
+        if output:
+            remove_output(output)
     else:
         LOG.warn('Unrecognized output type: %s', output_value)
 
 
 class VcfAnnotateTests(unittest.TestCase):
+    @property
+    def target_project(self):
+        return self.test_data['project']
+
     def setUp(self):
         LOG.info('Loading test data')
         self.test_data = load_test_data()
 
         LOG.info('Building applets')
-        self.applet_id = build_applet()
+        self.target_relpath, self.applet_id = build_applet(self.target_project)
 
         self.jobs = []
 
     def tearDown(self):
         LOG.info('Removing applet')
-        remove_applet(self.applet_id)
+        remove_applet(self.target_project, self.target_relpath)
 
+        # TODO: this is probably no longer necessary
         LOG.info('Removing job outputs')
         remove_output(self.jobs)
         self.jobs = None
@@ -85,17 +105,20 @@ class VcfAnnotateTests(unittest.TestCase):
         applet = dxpy.DXApplet(self.applet_id)
 
         job_input = {
-            'variants_vcfgzs': [
+            'variants_vcfgz': [
                 dxpy.dxlink(self.test_data['hg001_wes_vcfgz']),
                 dxpy.dxlink(self.test_data['hg002_wes_vcfgz'])
             ],
-            'variants_vcfgztbis': [
+            'variants_vcfgztbi': [
                 dxpy.dxlink(self.test_data['hg001_wes_vcfgz_tbi']),
                 dxpy.dxlink(self.test_data['hg002_wes_vcfgz_tbi'])
             ],
-            'build_version': 'b38'
+            'clinvar_vcfgz': dxpy.dxlink(self.test_data['clinvar_vcfgz']),
+            'clinvar_vcfgztbi': dxpy.dxlink(self.test_data['clinvar_vcfgztbi'])
         }
-        self.jobs.append(applet.run(job_input))
+        self.jobs.append(applet.run(
+            job_input, project=self.target_project, folder=self.target_relpath
+        ))
         LOG.info('Running full test in job: %d.', self.jobs[-1].get_id())
 
         for job in self.jobs:

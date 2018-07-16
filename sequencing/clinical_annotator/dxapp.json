@@ -8,7 +8,7 @@
   "whatsNew": "*1.0.0 updated execDepends to assetDepends and cleaned up src code;",
   "inputSpec": [
     {
-      "name": "variants_vcfgz",
+      "name": "variants_vcfgzs",
       "label": "VCF File(s)",
       "class": "array:file",
       "optional": false,
@@ -24,7 +24,7 @@
       "help": "A text file containing summarization of variant annotations (one such file can be downloaded here: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)."
     },
     {
-      "name": "variants_vcfgztbi",
+      "name": "variants_vcfgztbis",
       "label": "VCF File Indices",
       "class": "array:file",
       "optional": true,
@@ -56,14 +56,14 @@
   ],
   "outputSpec": [
     {
-      "name": "out_variants_vcfgz",
+      "name": "out_variants_vcfgzs",
       "label": "VCF File(s)",
       "class": "array:file",
       "patterns" : ["*.vcf.gz"],
       "help": "VCF file(s) with included annotations."
     },
     {
-      "name": "out_variants_vcfgztbi",
+      "name": "out_variants_vcfgztbis",
       "label": "VCF File Indices",
       "class": "array:file",
       "patterns" : ["*.vcf.gz.tbi"],

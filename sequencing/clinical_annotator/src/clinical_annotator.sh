@@ -105,8 +105,8 @@ function parallel_download_and_annotate() {
 	VCF_UP=$(dx upload --brief $OUT_VCF)
 	IDX_UP=$(dx upload --brief $OUT_VCF.tbi)
 
-	dx-jobutil-add-output out_variants_vcfgz "$VCF_UP" --class=array:file
-	dx-jobutil-add-output out_variants_vcfgztbi "$IDX_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgzs "$VCF_UP" --class=array:file
+	dx-jobutil-add-output out_variants_vcfgztbis "$IDX_UP" --class=array:file
 
 	TO_RM=$(dx describe "$1" --name)
 
@@ -137,9 +137,9 @@ main() {
     reformat_resources
 
     # Download all the VCF index files
-    for i in "${!variants_vcfgztbi[@]}"; do
+    for i in "${!variants_vcfgztbis[@]}"; do
         
-        echo "${variants_vcfgztbi[$i]}" >> "$DXIDX_LIST"
+        echo "${variants_vcfgztbis[$i]}" >> "$DXIDX_LIST"
     
     done
     parallel -j $(nproc --all) -u --gnu parallel_download :::: $DXIDX_LIST ::: $HOME
@@ -147,9 +147,9 @@ main() {
     #Download and annotate VCF Files
     procCount=$(nproc --all)
     quarterCount=$(($procCount * 3 / 4))
-    for i in "${!variants_vcfgz[@]}"; do
+    for i in "${!variants_vcfgzs[@]}"; do
       
-        echo "${variants_vcfgz[$i]}" >> $DXVCF_LIST
+        echo "${variants_vcfgzs[$i]}" >> $DXVCF_LIST
     
     done
     parallel -j $quarterCount -u --gnu parallel_download_and_annotate :::: $DXVCF_LIST ::: $HOME

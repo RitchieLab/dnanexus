@@ -1,0 +1,117 @@
+{
+  "name": "clinical_annotator",
+  "title": "Clinical Variant Annotator",
+  "summary": "Annotates a VCF File with most recent ClinVar TSV file and with a user provided HGMD PRO VCF file.",
+  "dxapi": "1.0.0",
+  "version": "1.0.0",
+  "openSource" : true,
+  "whatsNew": "*1.0.0 updated execDepends to assetDepends and cleaned up src code;",
+  "inputSpec": [
+    {
+      "name": "variants_vcfgzs",
+      "label": "VCF File(s)",
+      "class": "array:file",
+      "optional": false,
+      "patterns" : ["*.vcf.gz"],
+      "help": "The VCF File to be annotated (chr prefix must not be present in VCF)."
+    },
+    {
+      "name": "variant_summary",
+      "label": "Variant Summary File",
+      "class": "file",
+      "optional": false,
+      "patterns": ["*.txt.gz"],
+      "help": "A text file containing summarization of variant annotations (one such file can be downloaded here: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)."
+    },
+    {
+      "name": "variants_vcfgztbis",
+      "label": "VCF File Indices",
+      "class": "array:file",
+      "optional": true,
+      "patterns": [
+        "*.vcf.gz.tbi"
+      ],
+      "help": "(Optional) Tabix index file for VCF to be annotated."
+    },
+    {
+      "name": "hgmd_pro_file",
+      "label": "HGMD PRO File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.vcf","*.vcf.gz"
+      ],
+      "help": "(Optional) Make sure the build version matches the VCF to be annotated (infomation on purchasing an HGMD PRO license can be found at: https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/)."
+    },
+    {
+      "group": "Build Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37"],
+      "default": "b38",
+      "optional": false,
+      "help": "Please indicate which build your VCF is (the default is NCBI b38)."
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "out_variants_vcfgzs",
+      "label": "VCF File(s)",
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz"],
+      "help": "VCF file(s) with included annotations."
+    },
+    {
+      "name": "out_variants_vcfgztbis",
+      "label": "VCF File Indices",
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz.tbi"],
+      "help": "VCF index file(s) associated with annotated VCF file(s)."
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "file": "src/clinical_annotator.sh",
+    "timeoutPolicy": { "main": { "hours": 48 }, "*": { "hours": 8, "minutes": 30 } }
+   },	
+   "regionalOptions": {
+     "aws:us-east-1": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_x4"
+        }
+      },
+      "assetDepends": [
+          {
+            "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+            "folder": "/asset/",
+            "id":"record-FJ3zf8j08zVZFzqYG88Pbk7z",
+            "name": "marylyn_asset",
+            "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
+          }
+       ]
+     },
+     "azure:westus": {
+      "assetDepends": [
+        {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/asset/",
+          "id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz",
+          "name": "marylyn_asset",
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
+        }
+      ],
+      "systemRequirements": {
+        "*": {
+          "instanceType": "azure:mem2_ssd1_x4"
+        }
+      }
+    }
+  },
+  "access": {
+    "project": "CONTRIBUTE"
+  }
+}

@@ -154,10 +154,9 @@
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "python-apsw"}
-    ],
     "interpreter": "bash",
+    "distribution": "Ubuntu",
+	"release": "14.04",
     "file": "src/association_result_annotation.sh",
     "timeoutPolicy": { "main": { "hours": 24 }, "*": { "hours": 8, "minutes": 30 } } },
    "regionalOptions": {

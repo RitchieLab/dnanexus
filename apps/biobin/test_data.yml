@@ -1,0 +1,13 @@
+production:
+ aws:us-east-1:
+  variants_vcfgz: file-FGvjpfQ0fYj9ZvxkG9ZGJP6z
+  role_rol: file-FGvjpfQ0fYj4BBVB2Q7kX2JG
+  phenotype_phe: file-FGvjpfQ0fYj3xx4p2Q0bzbjf
+  covariate_cov: file-FGvjpfQ0fYj1kxG6G922Vg43
+  loki_db: file-FGvQvBj034ZfPGJZP4VVvKpP
+ azure:westus:
+  variants_vcfgz: file-FJ0XF009YqF69kQk264vx1Fk
+  role_rol: file-FJ0XBF09X8BZGXgy2y1X8qKY
+  phenotype_phe: file-FJ0XBF89PY64ky272P9gjJVj
+  covariate_cov: file-FJ0XBFQ9v1B0YFBK2yJ7K614
+  loki_db: file-FGvpBBQ9YBG4FzqYG8846QVb

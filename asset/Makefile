@@ -16,7 +16,11 @@ all:
 	# install GNU Scientific library
 	sudo apt-get --yes install gsl-bin libgsl0-dbg libgsl0-dev libgsl0ldbl
 	# SQLite
-	sudo apt-get --yes install libsqlite3-0
+	sudo wget https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz 
+	sudo tar -zxvf sqlite-autoconf-3240000.tar.gz 
+	pushd sqlite-autoconf-3240000 && ./configure --enable-dynamic-extensions && sudo make && sudo make install && popd 
+	sudo wget -c "https://sqlite.org/contrib/download/extension-functions.c/download/extension-functions.c?get=25" -O extension-functions.c
+	sudo gcc -fPIC -lm -shared extension-functions.c -o libsqlitefunctions.so && mv libsqlitefunctions.so /usr/local/lib
 	# Picard tools
 	sudo wget https://github.com/broadinstitute/picard/releases/download/2.18.9/picard.jar && mv picard.jar /
 	# HTSlib

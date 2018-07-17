@@ -1,0 +1,9 @@
+{
+  "name": "plato_boost_1_67_0_asset",
+  "title": "Plato and Boost 1.67.0 asset",
+  "description": "Boost 1.67.0 asset",
+  "version": "0.0.1",
+  "distribution": "Ubuntu",
+  "release": "14.04",
+  "instanceType": "mem1_ssd1_x4"
+}

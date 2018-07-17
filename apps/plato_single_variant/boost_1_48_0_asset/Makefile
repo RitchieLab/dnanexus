@@ -15,3 +15,7 @@ all:
 
 	sudo apt-get install -y libgsl0-dev
 
+	wget https://dl.dnanex.us/F/D/77pyvj79g4g9g2BQjj9bZ392V9Y47b5PY6f5v3kV/plato-2.1.0-beta3.tar.gz
+	tar -zxvf plato-2.1.0-beta3.tar.gz
+	cd plato-2.1.0-beta3; autoreconf -i; mkdir -p build; cd build; ../configure --with-boost-libdir=/usr/local/lib; make && sudo make install
+

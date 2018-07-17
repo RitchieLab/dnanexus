@@ -25,6 +25,8 @@ It can also annotate the following irrespective of association results:
 - **ICD-9 description:** Allows users to add ICD-9 code long descriptions to the column name.
 - **ICD-9 column name:** Required if "ICD-9 description" is true. This option allows the app to know which column in the input file contains ICD-9 codes.
 
+**Note: Ensure that the column containing ICD codes is not the first column in the input TSV file.
+
 </br>
 
 #### Gene and GWAS Catalog

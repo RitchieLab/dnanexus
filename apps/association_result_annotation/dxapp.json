@@ -48,12 +48,12 @@
       "default": false,
       "optional": true,
       "group": "ICD-9 Description",
-      "help": "(Optional) Allows to add ICD-9 code long descriptions to the output."
+      "help": "(Optional) Adds ICD-9 code long descriptions to the output."
     },
     {
       "name": "icd9_col",
       "label": "Which column in the input file contains ICD-9 codes?",
-      "help" : "(Optional) Indicates the column name in input file containing ICD-9 codes. It is required if icd9_desc is set to true.",
+      "help" : "(Optional) Indicates the column name in input file containing ICD-9 codes (ensure that it is not the first column). It is required if icd9_desc is set to true.",
       "class": "string",
       "optional": true,
       "group": "ICD-9 Description"

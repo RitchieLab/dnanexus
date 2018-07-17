@@ -10,7 +10,7 @@
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgz",
       "label": "VCF File(s)",
       "class": "array:file",
       "optional": true,
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "name": "vcfidx_fn",
+      "name": "variants_vcfgztbi",
       "label": "VCF Index File(s)",
       "class": "array:file",
       "optional": true,

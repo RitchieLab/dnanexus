@@ -1,119 +1,137 @@
 {
   "name": "plato_single_variant",
   "title": "PLATO - Single Variant Analysis",
+  "summary": "The PLatform for the Analysis, Translation, and Organization of large-scale data (PLATO)",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Statistics"
   ],
   "inputSpec": [
     {
-      "name": "input_plink_binary",
+      "name": "input_plink_binarys",
       "label": "PLINK binary input files (bed, bim, fam)",
       "class": "array:file",
-      "optional": false
+      "patterns": ["*.bed", "*.bim", "*.fam"],
+      "optional": false,
+      "help": "A list of files with PLINK's binary fileset to be referenced."
     },
     {
-      "name": "input_phenotype",
+      "name": "phenotypes_tsv",
       "label": "Input phenotype file",
       "class": "file",
-      "optional": false
+      "patterns": ["*.txt", "*.tsv"],
+      "optional": false,
+      "help": "A file, with phenotype information recorded."
     },
     {
       "group": "Regression Options",
       "name": "regression",
       "label": "Regression",
       "class": "string",
-      "choices": ["regress-auto","linear","logistic","firth"],
+      "choices": ["regress-auto", "linear", "logistic", "firth"],
       "default": "regress-auto",
-      "optional": true
+      "optional": false,
+      "help": "A string describing the type of regression applied for the analysis."
     },
     {
       "group": "Regression Options",
       "name": "association_type",
       "label": "Association Type",
       "class": "string",
-      "choices": ["PheWAS","GWAS"],
+      "choices": ["PheWAS", "GWAS"],
       "default": "PheWAS",
-      "optional": true
+      "optional": false,
+      "help": "A string describing which type of association analysis is performed. If selected \"PheWAS\", PLATO will use all traits not explicity excluded or used as covariates as outcomes."
     },
     {
       "group": "Regression Options",
       "name": "outcome",
       "label": "Outcome (Only required if Assocaition Type: GWAS)",
       "class": "string",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A comma-separated list of traits to use as outcomes for the regression models when \"GWAS\" is selected as the type of association analysis."
     },
     {
       "group": "Regression Options",
       "name": "covariates",
       "label": "Covariates (Enter covariates column names)",
       "class": "string",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A comma-separated list of traits to include as covariates in each model. Covariates given in this argument are premuted along with the phenotypic status when permutation testing is performed; for this reason, this argument should include phenotypic control variables such as age and gender."
     },
     {
       "group": "Parallel Job Options",
       "name": "split_phenotype",
-      "label": "Phenotype per job (Provide the number of phenotype to run in each sub job)",
+      "label": "Phenotype per job",
       "class": "int",
       "default": 0,
-      "optional": true
+      "optional": true,
+      "help": "(Optional) Number of phenotype to run in each sub job."
     },
     {
       "name": "output_filename",
       "label": "Output Filename",
       "class": "string",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A string, with the expected output file name."
     },
     {
       "group": "Regression Options",
       "name": "mem",
-      "label": "Lowmem",
+      "label": "Lowmem?",
       "class": "boolean",
       "default": true,
-      "help": "Reduces memory footprints",
+      "help": "(Optional) Reduces memory footprints.",
       "optional": true
     },
     {
       "group": "Advanced Options",
       "name": "plato_analysis_string",
-      "label": "PLATO command-line options (If used, leave above Regression Options EMPTY)",
+      "label": "PLATO command-line options",
       "class": "string",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) Extra command line options that will be supplied directly to the PLATO execution. If used, leave above Regression Options EMPTY."
     },
     {
       "group": "Regression Options",
       "name": "missingness",
       "label": "Enter value used to denote missingness in phenotype or covariate input files",
       "class": "string",
-      "optional": false
+      "optional": false,
+      "default": "NA",
+      "help": "A string, used to treat as a missing value. This is especially helpful when missing data is represented by a valid number that is nonsensical in the context of the variables being loaded (e.g. \"-9999\" as a value for BMI)."
     },
     {
-      "name": "input_continuous_covariate",
+      "name": "input_continuous_covariate_txt",
       "label": "Continuous Covariate",
-      "help": "Here values of the covariate should be numeric and quantitative.",
       "class": "file",
-      "optional": true
+      "patterns": ["*.txt", "*.tsv"],
+      "optional": true,
+      "help": "(Optional) A file, with continuous covariate information; values must be continuous numeric." 
     },
     {
-      "name": "input_categorical_covariate",
+      "name": "input_categorical_covariate_txt",
       "label": "Categorical Covariates",
       "class": "file",
-      "help": "Here entry of non-numeric classes are allowed and will automatically generate a dummy encoding.",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) Here entry of non-numeric classes are allowedand will automatically generate a dummy encoding.",
       "optional": true
     },
     {
-      "name": "input_samples",
+      "name": "input_samples_txt",
       "label": "Sample file",
       "class": "file",
-      "help": "User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) User-specified list of sample ID's to include in the analysis. The file format should be a space/tab-delimited text file with family IDs (FID) in the first column and individual IDs (IID) in the second column.",
       "optional": true
     },
     {
-      "name": "input_markers",
+      "name": "input_markers_txt",
       "label": "SNP file",
       "class": "file",
-      "help": "User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label)",
+      "patterns": ["*.txt", "*.tsv"],
+      "help": "(Optional) User-specified list of SNPs to include in the analysis. The file format should be either one `RSID` per line or positions in rage format (chr start stop label).",
       "optional": true
     },
     {
@@ -121,14 +139,16 @@
       "name": "maf_threshold",
       "label": "MAF Threshold",
       "class": "float",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A float, with the filtering threshold of minor allele frequency."
     },
     {
       "group": "Filter Options",
       "name": "case_threshold",
       "label": "Case Threshold",
       "class": "int",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A integer, with the min number of cases threshold."
     },
 
     {
@@ -137,32 +157,44 @@
       "label": "Correction Type",
       "class": "array:string",
       "choices": [ "Bonferoni", "FDR" ],
-      "optional": true
+      "optional": true,
+      "help": "(Optional) A string, with the description on which of multiple test correction strategies to use in reporting results from the regression."
     }
   ],
   "outputSpec": [
     {
       "name": "output_files",
       "label": "Output files",
-      "class": "array:file"
+      "class": "array:file",
+      "patterns": ["*"],
+      "optional": false,
+      "help": "A list of output files."
     }
   ],
-  "runSpec": {
-    "execDepends":[
-      {
-        "name": "libgsl0ldbl"
-      }],
-    "systemRequirements": {
-      "main": {
-        "instanceType": "mem1_ssd1_x2"
-      },
-      "*": {
-        "instanceType": "mem1_ssd1_x32"
-      }
-    },
-    "interpreter": "bash",
-    "file": "src/plato_single_variant.sh"
+  "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x2"},
+                                             "*": {"instanceType": "mem1_ssd1_x32"}},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"},
+                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
+    "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
+                                            "*": {"instanceType": "azure:mem4_ssd1_x16"}},
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
+                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
   },
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-emerge_geisinger"]
+  "details": {
+    "upstreamVersion": "PLATO 2.1.0",
+    "upstreamUrl": "https://ritchielab.org/plato",
+    "upstreamLicenses": ["GPLv3"],
+    "whatsNew": "* 1.0.0 First version of the PLATO - Single Variant Analysis app."
+  },
+  "openSource": true,
+  "runSpec": {
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "interpreter": "bash",
+    "file": "src/plato_single_variant.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 12 }
+    }
+  }
 }

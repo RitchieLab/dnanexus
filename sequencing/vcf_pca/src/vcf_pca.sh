@@ -17,16 +17,20 @@
 # See https://wiki.dnanexus.com/Developer-Portal for tutorials on how
 # to modify this file.
 
-set -x
+set -x -e -o pipefail
 
 #echo "deb http://us.archive.ubuntu.com/ubuntu xenial main restricted universe multiverse " >> /etc/apt/sources.list
-#sudo apt-get update
-#sudo apt-get install --yes eigensoft
+
+if [[ "$DX_RESOURCES_ID" != "" ]]; then
+  DX_ASSETS_ID="$DX_RESOURCES_ID"
+else
+  DX_ASSETS_ID="$DX_PROJECT_CONTEXT_ID"
+fi
 
 main() {
 
-    echo "Value of vcf_fn: '${vcf_fn[@]}'"
-    echo "Value of vcfidx_fn: '${vcfidx_fn[@]}'"
+    echo "Value of variants_vcfgz: '${variants_vcfgz[@]}'"
+    echo "Value of variants_vcfgztbi: '${variants_vcfgztbi[@]}'"
     echo "Value of bed_fn: '${bed_fn[@]}'"
     echo "Value of bim_fn: '${bim_fn[@]}'"
     echo "Value of fam_fn: '${fam_fn[@]}'"
@@ -42,6 +46,7 @@ main() {
     echo "Value of ldregress: '$ldregress'"
     echo "Value of numoutlier: '$numoutlier'"
     echo "Value of pca_opts: '$pca_opts'"
+    echo "value of DX_ASSETS_ID: $DX_ASSETS_ID"
 
     # The following line(s) use the dx command-line tool to download your file
     # inputs to the local file system using variable names for the filenames. To
@@ -51,7 +56,7 @@ main() {
 	# Sanity checks:
 
 	USE_VCF=1
-	if test -z "${vcf_fn[@]}" -o -z "${vcfidx_fn[@]}"; then
+	if test -z "${variants_vcfgz[@]}" -o -z "${variants_vcfgztbi[@]}"; then
 		# If here, either VCF/TBI is empty
 		USE_VCF=0
 		if test -z "${bed_fn[@]}" -o -z "${bim_fn[@]}" -o -z "${fam_fn[@]}" ; then
@@ -64,20 +69,20 @@ main() {
 
 	if test $USE_VCF -gt 0; then
 		# - make sure vcf + vcfidx have same # of elements
-		if test "${#vcfidx_fn[@]}" -ne "${#vcf_fn[@]}"; then
+		if test "${#variants_vcfgztbi[@]}" -ne "${#variants_vcfgz[@]}"; then
 			dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
 		fi
 
 		# first, we need to match up the VCF and tabix index files
 		# To do that, we'll get files of filename -> dxfile ID
 		VCF_LIST=$(mktemp)
-		for i in "${!vcf_fn[@]}"; do
-			dx describe --json "${vcf_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+		for i in "${!variants_vcfgz[@]}"; do
+			dx describe --json "${variants_vcfgz[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 		done
 
 		VCFIDX_LIST=$(mktemp)
-		for i in "${!vcfidx_fn[@]}"; do
-			dx describe --json "${vcfidx_fn[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+		for i in "${!variants_vcfgztbi[@]}"; do
+			dx describe --json "${variants_vcfgztbi[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 		done
 
 		# Now, get the prefix (strip off any .tbi) and join them
@@ -85,7 +90,7 @@ main() {
 		join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
 
 		# Ensure that we still have the same number of files; throw an error if not
-		if test $(cat $JOINT_LIST | wc -l) -ne "${#vcf_fn[@]}"; then
+		if test $(cat $JOINT_LIST | wc -l) -ne "${#variants_vcfgz[@]}"; then
 			dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 		fi
 
@@ -211,15 +216,14 @@ downsample_plink(){
 
 			cut -f2 preld.bim > $SNP_LIST
 
-      sed -i '/rs10761581\|rs11204210\|rs3167875\|rs35515471\|rs3814160\|rs10902343\|rs11246606\|rs11246607\|rs11246608\|rs34285763\|rs61890334\|rs61890420\|rs61890422\|rs200029677\|rs201794505\|rs7170838\|rs367595809\|rs10910824\|rs11590105\|rs1628172\|rs2274616\|rs28391411\|rs28602496\|rs28639473\|rs28676508\|rs41302235\|rs41315701\|rs61742539\|rs6670984\|rs142831593\|rs199675524\|rs201703456\|rs201906478\|rs202089732\|rs62561229\|rs78487056/d' $SNP_LIST
+            sed -i '/rs10761581\|rs11204210\|rs3167875\|rs35515471\|rs3814160\|rs10902343\|rs11246606\|rs11246607\|rs11246608\|rs34285763\|rs61890334\|rs61890420\|rs61890422\|rs200029677\|rs201794505\|rs7170838\|rs367595809\|rs10910824\|rs11590105\|rs1628172\|rs2274616\|rs28391411\|rs28602496\|rs28639473\|rs28676508\|rs41302235\|rs41315701\|rs61742539\|rs6670984\|rs142831593\|rs199675524\|rs201703456\|rs201906478\|rs202089732\|rs62561229\|rs78487056/d' $SNP_LIST
 
 			for c in $(sed 's/  */\t/g' preld.bim | cut -f1 | sort -u); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					#dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
-          dx download "$DX_RESOURCES_ID:/1K_genomes/b38/ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.$ext" -o $GEN_DIR/ALL.chr$c.$ext
-          #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
-        done
+                    dx download "$DX_ASSETS_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+                    #ALL.chr$c.phase3_shapeit2_mvncall_integrated_v3plus_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz
+                    done
 				# extract the markers in preld
 				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
 
@@ -288,7 +292,8 @@ downsample_vcf() {
 			for c in $(join <(seq 1 22 | sort) <(tabix -l input.vcf.gz | sort)); do
 				# download the bed/bim/fam from dnanexus
 				for ext in bed bim fam; do
-					dx download "$DX_RESOURCES_ID:/1K_genomes/ALL.chr$c.snp.biallelic.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+					dx download "$DX_ASSETS_ID:/1K_genomes/b38/ALL.chr${c}_GRCh38.genotypes.20170504.genotypes.$ext" -o $GEN_DIR/ALL.chr$c.$ext
+
 				done
 				# extract the markers in preld
 				plink2 --bfile $GEN_DIR/ALL.chr$c --extract $SNP_LIST --out $GEN_DIR/ALL.chr$c.extracted --make-bed --allow-no-sex
@@ -390,7 +395,7 @@ run_pca() {
 		FAM_LINENO=$(mktemp)
 		nl -ba -nln -w1 $INPUTDIR/input.fam | sed -e 's/  */\t/g' > $FAM_LINENO
 		POP_FILE=$(mktemp)
-		dx download "$DX_RESOURCES_ID:/1K_genomes/integrated_call_samples_v3.20130502.ALL.panel" -o $POP_FILE -f
+		dx download "$DX_ASSETS_ID:/1K_genomes/integrated_call_samples_v3.20130502.ALL.panel" -o $POP_FILE -f
 
 		POP_COL=2
 		if test "$project_superpop" = "true"; then

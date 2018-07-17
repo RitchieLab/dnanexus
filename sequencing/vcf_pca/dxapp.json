@@ -1,16 +1,16 @@
 {
   "name": "vcf_pca",
   "title": "Calculate PCs from VCF",
-  "summary": "vcf_pca",
+  "summary": "Uses PLINK 1.9 and eigenstrat 6.0 to calculate principal components from VCF or PLINK bed/bim/fam files",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling",
     "Statistics"
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgz",
       "label": "VCF File(s)",
       "class": "array:file",
       "optional": true,
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "name": "vcfidx_fn",
+      "name": "variants_vcfgztbi",
       "label": "VCF Index File(s)",
       "class": "array:file",
       "optional": true,
@@ -66,7 +66,8 @@
       "label": "Minimum MAF",
       "class": "float",
       "optional": false,
-      "default" : 0.05
+      "default" : 0.05,
+      "help": "MAF = minor allele frequency."
     },
     {
       "name": "sel_args",
@@ -91,28 +92,28 @@
     },
     {
       "name" : "project_1kg",
-      "label" : "Project onto 1000 Genomes samples",
+      "label" : "Project onto 1000 Genomes samples?",
       "class" : "boolean",
       "optional" : false,
       "default" : true
     },
     {
       "name" : "project_superpop",
-      "label" : "Calculate projection using super-populations (EUR, etc.)",
+      "label" : "Calculate projection using super-populations (EUR, etc.)?",
       "class" : "boolean",
       "optional" : true,
       "default" : false
     },
     {
       "name": "fast_pca",
-      "label": "Use Fast Eigenvalue Approx. (Non fast may not work)",
+      "label": "Use Fast Eigenvalue Approx? (If false, app may fail.)",
       "class": "boolean",
       "optional": false,
       "default" : true
     },
     {
       "name": "twstats",
-      "label": "Calculate Tracy-Widom Stats",
+      "label": "Calculate Tracy-Widom Stats?",
       "class": "boolean",
       "optional": false,
       "default" : true
@@ -161,6 +162,7 @@
       "name": "twstats_out",
       "label": "TW Statistics",
       "class": "file",
+      "help": "A file containing Tracy-Widom statistics evaluating the statistical significance of each principal component identified by PCA.",
       "optional" : true
     },
     {
@@ -171,16 +173,26 @@
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "libgsl0ldbl"},
-      {"name": "pigz"},
-      {"name": "tabix"}
-    ],
     "interpreter": "bash",
-    "file": "src/vcf_pca.sh"
+    "file": "src/vcf_pca.sh",
+    "restartableEntryPoints": "all", 
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "timeoutPolicy": {
+      "*": { "hours": 120 }
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
+  "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd1_x16"}},
+                    "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}],
+                    "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"},
+    "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem2_ssd1_x16"}},
+                    "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}],
+                    "resources" : "project-FGvp3009BJq40pkZ683v3754"}
+  },
   "openSource" : true,
-  "developers" : ["user-tnperson", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "details": {
+    "upstreamVersion": "PLINK 1.9 and eigenstrat 6.0",
+    "whatsNew": "* 1.0.0 First version of the Calculate PCs from VCF app."
+  }
 }

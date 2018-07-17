@@ -179,7 +179,7 @@
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
                                             "*": {"instanceType": "azure:mem4_ssd1_x16"}},
                      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
-                                      {"name": "boost_1_48_0_asset", "id": "record-FJ77BPQ9fG95qzvK49bxBb79"}]}
+                                      {"name": "plato_boost_1_48_0_asset", "id": "record-FJ77BPQ9fG95qzvK49bxBb79"}]}
   },
   "details": {
     "upstreamVersion": "PLATO 2.1.0",

@@ -1,4 +1,5 @@
 all:
+	sudo apt-get install -y libtool
 	# First change out boost
 	sudo apt-get purge -y --auto-remove libboost-dev
 	wget http://downloads.sourceforge.net/project/boost/boost/1.48.0/boost_1_48_0.tar.bz2
@@ -14,4 +15,8 @@ all:
 	sudo ldconfig
 
 	sudo apt-get install -y libgsl0-dev
+
+	wget https://dl.dnanex.us/F/D/77pyvj79g4g9g2BQjj9bZ392V9Y47b5PY6f5v3kV/plato-2.1.0-beta3.tar.gz
+	tar -zxvf plato-2.1.0-beta3.tar.gz --no-same-owner
+	cd plato-2.1.0-beta3; autoreconf -i; mkdir -p build; cd build; ../configure --with-boost-libdir=/usr/local/lib; make && sudo make install
 

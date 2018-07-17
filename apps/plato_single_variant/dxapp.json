@@ -175,11 +175,11 @@
     "aws:us-east-1": {"systemRequirements": {"main": {"instanceType": "mem1_ssd1_x2"},
                                              "*": {"instanceType": "mem1_ssd1_x32"}},
                       "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"},
-                                       {"name": "boost_1_48_0_asset", "id": "record-FGzQz500fZ0pQgXJ2xqbk3xz"}]},
+                                       {"name": "plato_boost_1_48_0_asset", "id": "record-FJ75PxQ0kZbJZQZF3yY9xB2k"}]},
     "azure:westus": {"systemRequirements": {"main": {"instanceType": "azure:mem1_ssd1_x2"},
                                             "*": {"instanceType": "azure:mem4_ssd1_x16"}},
                      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"},
-                                      {"name": "boost_1_48_0_asset", "id": "record-FGzkKv09qb87ZJvQ2vbVkq37"}]}
+                                      {"name": "boost_1_48_0_asset", "id": "record-FJ77BPQ9fG95qzvK49bxBb79"}]}
   },
   "details": {
     "upstreamVersion": "PLATO 2.1.0",

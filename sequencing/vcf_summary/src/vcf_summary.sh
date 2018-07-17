@@ -18,11 +18,6 @@
 set -ex -o pipefail
 
 main() {
-
-    if test "$variant" = "false" -a "$sample" = "false"; then
-        dx-jobutil-report-error "No Summary stats requested; what's the point?"
-    fi
-
     echo "Value of vcf_fn: '$variants_vcfgz'"
 
     if test -z "$prefix"; then
@@ -41,7 +36,6 @@ main() {
         dx download "$variants_vcfgz" -o $LOCALFN
     fi
 
-    if test "$sample" = "true"; then
         # Download biofilter + loki
         sudo mkdir /usr/share/biofilter
         sudo chmod a+rwx /usr/share/biofilter
@@ -56,7 +50,7 @@ main() {
     
         # download the entire contents of the biofilter folder
         dx download -r "$DX_ASSETS_ID:/Biofilter/"
-        sudo mv ./Biofilter/* /usr/share/biofilter/
+        sudo mv ./Biofilter/2.4/* /usr/share/biofilter/
 
         # download LOKI DB
         dx download "$DX_ASSETS_ID:/LOKI/LOKI-20150427-noSNPs.db" -o /usr/share/biofilter/loki.db
@@ -77,11 +71,4 @@ main() {
 
         sample_stats=$(dx upload $OUTDIR/$prefix.sample --brief)
         dx-jobutil-add-output sample_stats "$sample_stats" --class=file
-    fi
-
-    # Use Marta's variant script to get by-variant summary stats here
-    # XXX TODO: NOT IMPLEMENTED
-    if test "$variant" = "true"; then
-        echo "This option has not been implemented. Variant summary not produced."
-    fi
 }

@@ -27,22 +27,6 @@
       "help": "Output filename prefix. By default, the given VCF's filename will be reused minus the .vcf.gz extension.",
       "class" : "string",
       "optional" : true
-    },
-    {
-      "name" : "sample",
-      "label" : "Include Sample Summary Stats?",
-      "help": "Option to create and return a table of per-sample summary statistics.",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
-    },
-    {
-      "name" : "variant",
-      "label" : "Include Variant Summary Stats?",
-      "help": "(Not implemented) Option to create and return a table of per-variant summary statistics.",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : false
     }
   ],
   "outputSpec": [
@@ -50,13 +34,7 @@
       "name": "sample_stats",
       "label": "Sample statistics",
       "class": "file",
-      "optional" : true
-    },
-    {
-      "name": "variant_stats",
-      "label": "Variant statistics",
-      "class": "file",
-      "optional" : true
+      "optional" : false
     }
   ],
   "runSpec": {

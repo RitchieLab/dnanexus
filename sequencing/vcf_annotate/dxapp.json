@@ -43,7 +43,7 @@
       "patterns": [
         "*.vcf.gz"
       ],
-      "help": "VEP annotations VCF file."
+      "help": "(Optional) VEP annotations VCF file."
     },
     {
       "group": "Annotation Options",
@@ -54,7 +54,7 @@
       "patterns": [
         "*.vcf.gz.tbi"
       ],
-      "help": "VEP annotations VCF Index."
+      "help": "(Optional) VEP annotations VCF Index."
     },
     {
       "group": "Annotation Options",
@@ -65,7 +65,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "VEP header file."
+      "help": "(Optional) VEP header file."
     },
     {
       "group": "Annotation Options",
@@ -76,7 +76,7 @@
       "patterns": [
         "*.zip"
       ],
-      "help": "Source archive used to install VEP."
+      "help": "(Optional) Source archive used to install VEP."
     },
     {
       "group": "Annotation Options",
@@ -87,7 +87,7 @@
       "patterns": [
         "*.tar.gz"
       ],
-      "help": "Archive containing VEP caches required to run VEP."
+      "help": "(Optional) Archive containing VEP caches required to run VEP."
     },
     {
       "group": "Annotation Options",
@@ -98,7 +98,7 @@
       "patterns": [
         "*.vcf.gz"
       ],
-      "help": "dbNSFP annotations VCF file."
+      "help": "(Optional) dbNSFP annotations VCF file."
     },
     {
       "group": "Annotation Options",
@@ -109,7 +109,7 @@
       "patterns": [
         "*.vcf.gz.tbi"
       ],
-      "help": "dbNSFP annotations VCF Index."
+      "help": "(Optional) dbNSFP annotations VCF Index."
     },
     {
       "group": "Annotation Options",
@@ -120,7 +120,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "dbNSFP header file."
+      "help": "(Optional) dbNSFP header file."
     },
     {
       "group": "Annotation Options",
@@ -131,7 +131,7 @@
       "patterns": [
         "*.vcf.gz"
       ],
-      "help": "HGMD annotations VCF file."
+      "help": "(Optional) HGMD annotations VCF file."
     },
     {
       "group": "Annotation Options",
@@ -142,7 +142,7 @@
       "patterns": [
         "*.vcf.gz.tbi"
       ],
-      "help": "HGMD annotations VCF Index."
+      "help": "(Optional) HGMD annotations VCF Index."
     },
     {
       "group": "Annotation Options",
@@ -153,7 +153,18 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "HGMD header file."
+      "help": "(Optional) HGMD header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "hgmd_tsv",
+      "label": "HGMD TSV File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tsv", "*.tsv.gz", "*.txt", "*.txt.gz"
+      ],
+      "help": "(Optional) HGMD TSV file. If this is specified in place of the VCF file, conversion to VCF is performed automatically."
     },
     {
       "group": "Annotation Options",
@@ -164,7 +175,7 @@
       "patterns": [
         "*.vcf.gz"
       ],
-      "help": "ClinVar annotations VCF file."
+      "help": "(Optional) ClinVar annotations VCF file."
     },
     {
       "group": "Annotation Options",
@@ -175,7 +186,7 @@
       "patterns": [
         "*.vcf.gz.tbi"
       ],
-      "help": "ClinVar annotations VCF Index."
+      "help": "(Optional) ClinVar annotations VCF Index."
     },
     {
       "group": "Annotation Options",
@@ -186,7 +197,28 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "ClinVar header file."
+      "help": "(Optional) ClinVar header file."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "clinvar_tsv",
+      "label": "ClinVar TSV File",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.tsv", "*.tsv.gz", "*.txt", "*.txt.gz"
+      ],
+      "help": "(Optional) ClinVar TSV file. If this is specified in place of the VCF file, conversion to VCF is performed automatically."
+    },
+    {
+      "group": "Annotation Options",
+      "name": "build_version",
+      "label": "NCBI Build Version",
+      "class": "string",
+      "choices": ["b38","b37"],
+      "default": "b38",
+      "optional": false,
+      "help": "The build version of your VCF file (the default is NCBI b38)."
     }
   ],
   "outputSpec": [

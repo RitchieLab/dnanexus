@@ -193,6 +193,6 @@
   "openSource" : true,
   "details": {
     "upstreamVersion": "PLINK 1.9 and eigenstrat 6.0",
-    "whatsNew": ""
+    "whatsNew": "* 1.0.0 First version of the Calculate PCs from VCF app."
   }
 }

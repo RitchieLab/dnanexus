@@ -19,11 +19,6 @@ export SHELL="/bin/bash"
 
 procCount=$(nproc --all)
 
-# build bcftools
-cd /home/dnanexus/bcftools-1.3.1
-make
-make prefix=/usr/local/ install
-
 # create temporary working directories
 WKDIR=$(mktemp -d)
 DXVCF_LIST=$(mktemp)
@@ -127,6 +122,15 @@ function download_resources(){
 		if [ -n "$hgmd_header_txt" ]; then
 		  dx download "$hgmd_header_txt" -o HGMD_header.txt
         fi
+
+    elif [ -n "$hgmd_tsv" ]; then
+
+        dx download "${hgmd_tsv}"
+        python reformatHGMD.py $(dx describe "$hgmd_tsv" --name) | bgzip -c > HGMD_PRO.reformated.vcf.gz
+        tabix -p vcf -f HGMD_PRO.reformated.vcf.gz
+        hgmd_vcfgz=HGMD_PRO.reformated.vcf.gz
+        hgmd_vcfgztbi=HGMD_PRO.reformated.vcf.gz.tbi
+
 	fi
 
 	if [ -n "$clinvar_vcfgz" ]; then
@@ -137,6 +141,22 @@ function download_resources(){
 		  dx download "$clinvar_header_txt" -o ClinVar_header.txt
 		fi
 
+	elif [ -n "$clinvar_tsv" ]; then
+
+        dx download "${clinvar_tsv}"
+        python ClinVar_tsvTOvcf.py $(dx describe "$clinvar_tsv" --name)
+        if [ "$build_version" = "b37" ];
+        then
+          vcf-sort -c variant_summary.b37.vcf | bgzip -c > variant_summary.b37.vcf.gz
+          tabix -p vcf -f variant_summary.b37.vcf.gz
+          clinvar_vcfgz=variant_summary.b37.vcf.gz
+          clinvar_vcfgztbi=variant_summary.b37.vcf.gz.tbi
+        else
+          vcf-sort -c variant_summary.b38.vcf | bgzip -c > variant_summary.b38.vcf.gz
+          tabix -p vcf -f variant_summary.b38.vcf.gz
+          clinvar_vcfgz=variant_summary.b38.vcf.gz
+          clinvar_vcfgztbi=variant_summary.b38.vcf.gz.tbi
+        fi
 	fi
 }
 export -f download_resources

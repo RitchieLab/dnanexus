@@ -23,7 +23,7 @@
     },
     {
       "name" : "prefix",
-      "label" : "Filename prefix",
+      "label" : "Filename Prefix",
       "help": "Output filename prefix. By default, the given VCF's filename will be reused minus the .vcf.gz extension.",
       "class" : "string",
       "optional" : true
@@ -32,7 +32,7 @@
   "outputSpec": [
     {
       "name": "sample_stats",
-      "label": "Sample statistics",
+      "label": "Sample Statistics",
       "class": "file",
       "optional" : false
     }

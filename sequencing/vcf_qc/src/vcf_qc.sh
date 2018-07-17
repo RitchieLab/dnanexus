@@ -23,12 +23,12 @@ echo "deb http://us.archive.ubuntu.com/ubuntu vivid main restricted universe mul
 main() {
 
 
-    echo "Value of fn_vcfgz: '$fn_vcfgz'"
-    echo "Value of fn_vcfidx: '$fn_vcfidx'"
+    echo "Value of variants_vcfgz: '$variants_vcfgz'"
+    echo "Value of variants_vcfgztbi: '$variants_vcfgztbi'"
     echo "Value of gatk_jar: '$gatk_jar'"
-    echo "Value of genome_fasta: '$genome_fasta'"
-    echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
-    echo "Value of genome_fasta_dict: '$genome_fasta_dict'"
+    echo "Value of genome_fastagz: '$genome_fastagz'"
+    echo "Value of genome_fai: '$genome_fai'"
+    echo "Value of genome_dict: '$genome_dict'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -38,20 +38,20 @@ main() {
     echo "Value of addl_filter: '$addl_filter'"
 
 	# Sanity check - make sure vcf + vcfidx have same # of elements
-	if test "${#fn_vcfidx[@]}" -ne "${#fn_vcfgz[@]}"; then
+	if test "${#variants_vcfgztbi[@]}" -ne "${#variants_vcfgz[@]}"; then
 		dx-jobutil-report-error "ERROR: Number of VCFs and VCF indexes do NOT match!"
 	fi
 
 	# first, we need to match up the VCF and tabix index files
 	# To do that, we'll get files of filename -> dxfile ID
 	VCF_LIST=$(mktemp)
-	for i in "${!fn_vcfgz[@]}"; do
-		dx describe --json "${fn_vcfgz[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
+	for i in "${!variants_vcfgz[@]}"; do
+		dx describe --json "${variants_vcfgz[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed 's/\t$/\n/' >> $VCF_LIST
 	done
 
 	VCFIDX_LIST=$(mktemp)
-	for i in "${!fn_vcfidx[@]}"; do
-		dx describe --json "${fn_vcfidx[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
+	for i in "${!variants_vcfgztbi[@]}"; do
+		dx describe --json "${variants_vcfgztbi[$i]}" | jq -r ".name,.id" | tr '\n' '\t' | sed -e 's/\t$/\n/' -e 's/\.tbi\t/\t/' >> $VCFIDX_LIST
 	done
 
 	# Now, get the prefix (strip off any .tbi) and join them
@@ -59,7 +59,7 @@ main() {
 	join -t$'\t' -j1 <(sort -k1,1 $VCF_LIST) <(sort -k1,1 $VCFIDX_LIST) > $JOINT_LIST
 
 	# Ensure that we still have the same number of files; throw an error if not
-	if test $(cat $JOINT_LIST | wc -l) -ne "${#fn_vcfgz[@]}"; then
+	if test $(cat $JOINT_LIST | wc -l) -ne "${#variants_vcfgz[@]}"; then
 		dx-jobutil-report-error "ERROR: VCF files and indexes do not match!"
 	fi
 
@@ -77,11 +77,11 @@ main() {
 		VCF_DXFN=$(echo "$VCF_LINE" | cut -f2)
 		VCFIDX_DXFN=$(echo "$VCF_LINE" | cut -f3)
 
-		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ifn_vcfgz:file="$VCF_DXFN" -ifn_vcfidx:file="$VCFIDX_DXFN" -igatk_jar="$gatk_jar" -igenome_fasta="$genome_fasta" -igenome_fasta_fai="$genome_fasta_fai" -igenome_fasta_dict="$genome_fasta_dict" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
+		SUBJOB=$(dx-jobutil-new-job run_qc $JOB_ARGS -ifn_vcfgz:file="$VCF_DXFN" -ifn_vcfidx:file="$VCFIDX_DXFN" -igatk_jar="$gatk_jar" -igenome_fasta="$genome_fastagz" -igenome_fai="$genome_fai" -igenome_dict="$genome_dict" -iSNP_tranches="$SNP_tranches" -iSNP_recal="$SNP_recal" -iINDEL_tranches="$INDEL_tranches" -iINDEL_recal="$INDEL_recal" -iSNP_ts="$SNP_ts" -iINDEL_ts="$INDEL_ts" -iaddl_filter="$addl_filter")
 
 		# for each subjob, add the output to our array
-    	dx-jobutil-add-output out_vcfgz --array "$SUBJOB:out_vcfgz" --class=jobref
-	    dx-jobutil-add-output out_vcfidx --array "$SUBJOB:out_vcfidx" --class=jobref
+        	dx-jobutil-add-output out_variants_vcfgz --array "$SUBJOB:out_vcfgz" --class=jobref
+	    dx-jobutil-add-output out_variants_vcfgztbi --array "$SUBJOB:out_vcfidx" --class=jobref
 
 	done < $JOINT_LIST
 
@@ -94,8 +94,8 @@ run_qc() {
     echo "Value of fn_vcfidx: '$fn_vcfidx'"
     echo "Value of gatk_jar: '$gatk_jar'"
     echo "Value of genome_fasta: '$genome_fasta'"
-    echo "Value of genome_fasta_fai: '$genome_fasta_fai'"
-    echo "Value of genome_fasta_dict: '$genome_fasta_dict'"
+    echo "Value of genome_fai: '$genome_fai'"
+    echo "Value of genome_dict: '$genome_dict'"
     echo "Value of SNP_tranches: '$SNP_tranches'"
     echo "Value of SNP_recal: '$SNP_recal'"
     echo "Value of INDEL_tranches: '$INDEL_tranches'"
@@ -105,7 +105,7 @@ run_qc() {
     echo "Value of addl_filter: '$addl_filter'"
 
     dx download "$fn_vcfidx" -o raw.vcf.gz.tbi
-	PREFIX=$(dx describe --name "$fn_vcfgz" | sed 's/\.vcf.\(gz\)*$//')
+	PREFIX="$fn_vcfgz_name"
     SUBJOBS=0
 
 	if test -z "$INTERVAL" -a "$target" -a "$max_sz"; then
@@ -197,8 +197,8 @@ run_qc() {
             dx download "$genome_fasta" -o /usr/share/GATK/resources/build.fasta
         fi
 
-        dx download "$genome_fasta_fai" -o /usr/share/GATK/resources/build.fasta.fai
-        dx download "$genome_fasta_dict" -o /usr/share/GATK/resources/build.fasta.dict
+        dx download "$genome_fai" -o /usr/share/GATK/resources/build.fasta.fai
+        dx download "$genome_dict" -o /usr/share/GATK/resources/build.fasta.dict
 
 		TOT_MEM=$(free -m | grep "Mem" | awk '{print $2}')
 		# only ask for 90% of total system memory

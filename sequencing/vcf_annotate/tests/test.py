@@ -67,8 +67,9 @@ def remove_output(output_value):
         map(remove_output, output_value.values())
     elif dxpy.is_dxlink(output_value):
         dxpy.remove(output_value)
-    elif True:  # TODO: test whether output_value is a job
-        output = output_value.describe()['output']
+    elif hasattr(output_value, 'describe'):
+        # Can probably just change this to isinstance(output_value, DxJob)
+        output = output_value.describe().get('output', None)
         if output:
             remove_output(output)
     else:

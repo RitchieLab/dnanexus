@@ -44,8 +44,8 @@ main() {
         -ibim_file="${bim_file}" \
         -ifam_file="${fam_file}" \
         -iphenotypes_tsv="${phenotypes_tsv}" \
-        -iinput_continuous_covariate="${input_continuous_covariate_txt}" \
-        -iinput_categorical_covariate="${input_categorical_covariate_txt}" \
+        -iinput_continuous_covariate_txt="${input_continuous_covariate_txt}" \
+        -iinput_categorical_covariate_txt="${input_categorical_covariate_txt}" \
         -iregression="${regression}" \
         -ioutcome="${outcome}" \
         -imissingness="${missingness}" \
@@ -67,8 +67,8 @@ main() {
       -ibim_file="${bim_file}" \
       -ifam_file="${fam_file}" \
       -iphenotypes_tsv="${phenotypes_tsv}" \
-      -iinput_continuous_covariate="${input_continuous_covariate_txt}" \
-      -iinput_categorical_covariate="${input_categorical_covariate_txt}" \
+      -iinput_continuous_covariate_txt="${input_continuous_covariate_txt}" \
+      -iinput_categorical_covariate_txt="${input_categorical_covariate_txt}" \
       -iregression="${regression}" \
       -ioutcome="${outcome}" \
       -imissingness="${missingness}" \
@@ -116,6 +116,7 @@ plato_reg() {
   fi
 
   # Download Continous Covariate files
+echo "Value of input_continuous_covariate_txt: '$input_continuous_covariate_txt'"
   if [ -n "$input_continuous_covariate_txt" ];then
     dx download "$input_continuous_covariate_txt" -o input_continuous_covariate_txt
     load_cont="--file $INPUTDIR/input_continuous_covariate_txt"

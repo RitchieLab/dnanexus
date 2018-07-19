@@ -3,14 +3,20 @@
   "title": "VCF Summary Statistics",
   "summary": "Generate summary statistics for a VCF file (by sample and by variant)",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Statistics"
   ],
+  "details": {
+    "whatsNew": "* 1.0.0 Initial release\n",
+    "citation": "",
+    "license": "GPLv3"
+  },
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgz",
       "label": "VCF File",
+      "help": "Variant file to summarize, in VCF format.",
       "class": "file",
       "optional": false,
       "patterns" : ["*.vcf", "*.vcf.gz"]
@@ -18,55 +24,48 @@
     {
       "name" : "prefix",
       "label" : "Filename Prefix",
+      "help": "Output filename prefix. By default, the given VCF's filename will be reused minus the .vcf.gz extension.",
       "class" : "string",
       "optional" : true
-    },
-    {
-      "name" : "sample",
-      "label" : "Include Sample Summary Stats",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : true
-    },
-    {
-      "name" : "variant",
-      "label" : "Include Variant Summary Stats",
-      "class" : "boolean",
-      "optional" : false,
-      "default" : false
     }
   ],
   "outputSpec": [
     {
-      "name": "sample_status",
+      "name": "sample_stats",
       "label": "Sample Statistics",
       "class": "file",
-      "optional" : true
-    },
-    {
-      "name": "variant_stats",
-      "label": "Variant Statistics",
-      "class": "file",
-      "optional" : true
+      "optional" : false
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "pigz"},
-      {"name": "tabix"},
-      {"name": "vcftools"},
-      {"name": "python-apsw"}
-    ],  
     "interpreter": "bash",
-    "file": "src/vcf_summary.sh"
+    "file": "src/vcf_summary.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 8 }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
+  },
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "*": { "instanceType": "mem1_ssd1_x4" }
+      },
+      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}],
+      "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
+    },
+    "azure:westus": {
+      "systemRequirements": {
+        "*": { "instanceType": "azure:mem2_ssd1_x4" }
+      },
+      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}],
+      "resources" : "project-FGvp3009BJq40pkZ683v3754"
+    }
   },
   "access": {
     "network": [
       "*"
     ]
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "openSource" : true
 }

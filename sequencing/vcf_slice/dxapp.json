@@ -1,69 +1,90 @@
 {
   "name": "vcf_slice",
   "title": "Slice VCF File(s)",
-  "summary": "vcf_slice",
+  "summary": "Return a small section of a VCF file or files (similar to tabix).",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
+      "name": "variants_vcfgzs",
       "label": "VCF Files",
+      "help": "Variant files to be sliced, in VCF format.",
       "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf.gz"]
+      "patterns": ["*.vcf.gz", "*.vcf"]
     },
     {
-      "name": "vcfidx_fn",
-      "label": "VCF Index Files",
+      "name": "variants_vcfgztbis",
+      "label": "VCF Indices",
+      "help": "Tabix index files corresponding to VCF files. Each VCF must have a corresponding index with matching base filename.",
       "class": "array:file",
       "optional": false,
-      "patterns" : ["*.vcf.gz.tbi"]
+      "patterns": ["*.vcf.gz.tbi", "*.vcf.tbi", "*.vcf.idx"]
     },
     {
-      "name": "region_fn",
-      "label": "File of regions (chr:start-stop)",
+      "name": "region_list",
+      "label": "File of Regions (chr:start-stop)",
+      "help": "Text file of genomic region coordinates. Variants within these ranges will be extracted from the given VCF files.",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": ["*.txt", "*.list"]
     },
     {
-      "name": "suffix_fn",
-      "label": "Output File name suffix (Optional)",
+      "name": "suffix",
+      "label": "Output file name suffix (optional)",
+      "help": "(Optional) Include this given string in the output VCF filename extension, e.g. '*.sliced.SUFFIX.vcf.gz'.",
       "class": "string",
       "optional": true
     }
   ],
   "outputSpec": [
     {
-      "name": "vcf_out",
+      "name": "out_variants_vcfgz",
       "label": "Sliced VCF Files",
-      "class": "array:file"
+      "help": "Variant file containing only target regions, in VCF format.",
+      "class": "array:file",
+      "patterns": ["*.vcf.gz.tbi"]
     },
     {
-      "name": "vcfidx_out",
-      "label": "Sliced VCF Index Files",
-      "class": "array:file"
+      "name": "out_variants_vcfgztbi",
+      "label": "Sliced VCF Indices",
+      "help": "Tabix index file corresponding to the output VCF files.",
+      "class": "array:file",
+      "patterns": ["*.vcf.gz"]
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "pigz"},
-      {"name": "openjdk-7-jre-headless"},
-      {"name": "tabix"},
-      {"name": "vcftools"}
-    ],  
     "interpreter": "bash",
-    "file": "src/vcf_slice.sh"
+    "file": "src/vcf_slice.sh",
+    "timeoutPolicy": {
+      "*": { "hours": 8 }
+    },
+    "release": "14.04",
+    "distribution": "Ubuntu"
   },
-  "access": {
-    "network": [
-      "*"
-    ]
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "*": { "instanceType": "mem1_ssd1_x4" }
+      },
+      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}]
+    },
+    "azure:westus": {
+      "systemRequirements": {
+        "*": { "instanceType": "azure:mem2_ssd1_x4" }
+      },
+      "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}]
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "openSource" : true,
-  "developers" : ["user-tnperson", "user-johnwallace123", "user-auv13", "user-atf3"],
-  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "details": {
+        "upstreamVersion": "",
+        "whatsNew": "* 1.0.0 First version of the Slice VCF File(s) app.",
+        "citation": "",
+        "upstreamURL": "",
+        "upstreamLicenses": ["GPLv3"]
+        },
+  "openSource": true
 }

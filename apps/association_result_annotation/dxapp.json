@@ -1,63 +1,82 @@
 {
   "name": "association_result_annotation",
   "title": "Annotate GWAS, PheWAS Associations",
-  "summary": "association_result_annotation",
+  "summary": "This app increases the depth of annotation information in an input GWAS tsv file.",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
-  "categories": [],
+  "version": "1.0.0",
+  "details": {
+    "whatsNew": "*1.0.0: updated to ubuntu 14.04, added patterns/help to input/output spec, added regionalOptions/assetDepends;",
+    "upstreamAuthor": "Ritchie, MD",
+    "citations": []
+  },
+  "categories": ["GWAS"],
   "inputSpec": [
     {
-      "name": "input_file",
+      "name": "associations",
       "label": "Input Assocaition File",
       "class": "file",
-      "optional": false
+      "optional": false,
+      "patterns": ["*.tsv"],
+      "help": "A data file containing information from a genome wide association catalog."
     },
     {
-      "name": "sql_file",
-      "label": "SQLite file",
+      "name": "sql_database",
+      "label": "SQLite Databse File",
       "class": "file",
+      "patterns": ["*.db"],
       "hidden": true,
-      "default": {
-        "$dnanexus_link":
-        {
-          "project": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-          "id": "file-BxGpVYQ0pB0vZkV6g5JVgz9F"
-      }
-      }
+      "help": "A SQLite3 databse file.",
+      "suggestions": [
+        {   
+          "project": "project-FGqF5B00ByvPXG4G87yQy23G",
+          "id": "file-FGzv6FQ0Byv9p5ZV6ZkgVv3K",
+          "path": "/GWAS_Annotations",
+          "name": "Ritchie Lab Software_dx: AWS East"
+        },
+        {   
+          "project": "project-FGvp3009BJq40pkZ683v3754",
+          "id": "file-FJ05Yy89bvJbYYq126fxFb81",
+          "path": "/GWAS_Annotations",
+          "name": "Ritchie Lab Software_dx: AZURE West"
+        }      
+      ]   
     },
     {
       "name": "icd9_desc",
-      "label": "ICD-9 description",
+      "label": "Do you want to add ICD-9 descriptions?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "ICD-9 Description"
+      "group": "ICD-9 Description",
+      "help": "(Optional) Adds ICD-9 code long descriptions to the output."
     },
     {
       "name": "icd9_col",
-      "label": "ICD-9 Column Name",
-      "help" : "Provide column name that contains ICD-9 codes in the input file",
+      "label": "Which column in the input file contains ICD-9 codes?",
+      "help" : "(Optional) Indicates the column name in input file containing ICD-9 codes (ensure that it is not the first column). It is required if icd9_desc is set to true.",
       "class": "string",
       "optional": true,
       "group": "ICD-9 Description"
-   },
+    },
     { "name": "ebi_gwas",
-      "label": "EBI GWAS catalog",
+      "label": "Do you want to add traits found in the the EBI GWAS catalog?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Add traits found in EBI GWAS catalog for SNPs position in input file."
     },
     { "name": "grasp",
-      "label": "GRASP",
+      "label": "Do you want to add traits found in the GRASP GWAS catalog for SNPs in the input file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) GRASP has more thorough list of published GWAS results but it also include results with p-value < 0.01 and that makes it a bigger database than EBI."
     },
     { "name": "grasp_pval",
       "label": "GRASP p-value threshold",
-      "help": "GRASP reports association from known GWAS with pvalue <0.01. We suggest to use a lower significance to reduce result lookup",
+      "help": "(Optional) Because GRASP reports association from known GWAS with pvalue < 0.01, we suggest to use a lower significance (<1E-05) to reduce result lookup.",
       "class": "string",
       "default": "0.00001",
       "optional": true,
@@ -65,56 +84,61 @@
     },
     {
       "name": "or_val",
-      "label": "Odds Ratio",
+      "label": "Do you want to calculate the odds ratio from the beta and standard error in the input file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Statistics (Only works with PLATO output)"
+      "group": "Statistics (Only works with PLATO output)",
+      "help": "(Optional) odds ratio and confidence interval calculated from the beta and standard error."
     },
     {
       "name": "case_control_num",
-      "label": "Case-Control Numbers",
+      "label": "Do you want to include case-control numbers in the output file?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Statistics (Only works with PLATO output)"
+      "group": "Statistics (Only works with PLATO output)",
+      "help": "(Optional) Listing case-control numbers only works with output from PLATO."
     },
     {
       "name": "gene",
-      "label": "Gene",
+      "label": "Do you want to map genes to chromosome-basepair positions from the input data?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Map gene to chromosome-basepair position in input file."
     },
     {
       "name": "up_gene",
-      "label": "Upstream Gene",
+      "label": "Do you want to map upstream genes to chromosome-basepair position in the input file and provide the distances to the SNPs?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Maps upstream genes to chromosome-basepair position in input file and provides distances to SNPs."
     },
     {
       "name": "down_gene",
-      "label": "Downstream Gene",
+      "label": "Do you want to map downstream genes to chromosome-basepair positions in the input file and provide distances to the SNPs?",
       "class": "boolean",
       "default": false,
       "optional": true,
-      "group": "Gene and GWAS Catalog"
+      "group": "Gene and GWAS Catalog",
+      "help": "(Optional) Maps downstream genes to chromosome-basepair position in the input file and provides distances to SNPs."
     },
     {
       "name": "chr_col",
-      "label": "Chromosome Column name",
-      "help" : "Provide column name that contains chromosome number in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "label": "Which column name contains the chromosome numbers in the input file?",
+      "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain chromosome numbers. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,
       "group": "Gene and GWAS Catalog"
     },
     {
       "name": "pos_col",
-      "label": "Basepair position Column name",
-      "help" : "Provide column name that contains basepair postion of a SNP in the input file. In case of PLATO association results output, just enter 'Var1_Pos'",
+      "label": "Which column name contains the basepair postion of a SNP in the input file?",
+      "help" : "(Optional) It is required if any of the option in Gene and GWAS Catalog is true. It allows app to know which column in input file contain basepair position. In case of PLATO association results output, just enter 'Var1_Pos'.",
       "class": "string",
       "optional": true,
       "group": "Gene and GWAS Catalog"
@@ -122,26 +146,57 @@
   ],
   "outputSpec": [
     {
-      "name": "out_file",
-      "label": "Output File",
-      "class": "file"
+      "name": "output_tsv",
+      "label": "Output TSV",
+      "patterns": ["*.tsv" ],
+      "class": "file",
+      "help": "The output file contains columns from the input file with additional columns requested for annotation."
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {"name": "python-apsw"}
-    ],
     "interpreter": "bash",
-    "file": "src/association_result_annotation.sh"
-  },
-  "regionalOptions": {
+    "distribution": "Ubuntu",
+	"release": "14.04",
+    "file": "src/association_result_annotation.sh",
+    "timeoutPolicy": { "main": { "hours": 24 }, "*": { "hours": 8, "minutes": 30 } } },
+   "regionalOptions": {
     "aws:us-east-1": {
-      "resources": "project-BYpFk1Q0pB0xzQY8ZxgJFv1V"
-    }
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_x4"
+        }   
+      },  
+      "assetDepends": [
+          {   
+          "project": "project-FGfj3Qj035bYpjzg9y3bvXFG",
+          "folder": "/asset/",
+          "id":"record-FJ73QFj0j17Xz9z046V69ZPj",
+          "name": "marylyn_asset",
+          "resources" : "project-FGqF5B00ByvPXG4G87yQy23G"
+          }   
+       ]   
+    },
+     "azure:westus": {
+      "assetDepends": [
+        {
+          "project": "project-FGp4k7j9k2Vy68736j2kBVPy",
+          "folder": "/asset/",
+          "id": "record-FJ73pB8984f05v2v32Xk49qZ",
+          "name": "marylyn_asset",
+          "resources" : "project-FGvp3009BJq40pkZ683v3754"
+        }
+      ],
+      "systemRequirements": {
+        "*": {
+          "instanceType": "azure:mem2_ssd1_x4"
+        }
+      }
+   }   
   },
   "access": {
     "project": "CONTRIBUTE"
   },
-   "developers" : ["user-auv13", "user-atf3"],
-   "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-geisinger_devel", "org-emerge_geisinger"]
+   "openSource": true,
+   "distribution": "Ubuntu",
+   "release": "14.04"
 }

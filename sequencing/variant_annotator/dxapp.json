@@ -3,57 +3,83 @@
   "title": "GATK VariantAnnotator",
   "summary": "Annotate a VCF file using GATK VariantAnnotator",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "categories": [
     "Variation Calling"
   ],
   "inputSpec": [
     {
-      "name": "vcf_fn",
-      "label": "VCF File",
+      "name": "variants_vcfgzs",
+      "label": "VCF Files",
       "class": "array:file",
       "optional": false,
       "patterns": [
         "*.vcf.gz"
-      ]
+      ],
+      "help": "An array of variant files to be annotated."
     },
     {
-      "name": "vcfidx_fn",
-      "label": "VCF Index File",
+      "name": "variants_vcfgztbis",
+      "label": "VCF File Indices",
       "class": "array:file",
       "optional": false,
       "patterns": [
-        "*.tbi"
-      ]
+        "*.vcf.gz.tbi"
+      ],
+      "help": "An array of variant index files matched to the variant files."
+    },
+    {
+      "name": "gatk_jar",
+      "label": "GATK3 jar file",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "GenomeAnalysisTK*.jar"
+      ],
+      "help": "A jar file for GATK3."
+    },
+    {
+      "name": "genome_fastagz",
+      "label": "Reference Genome",
+      "class": "file",
+      "optional": false,
+      "suggestions": [
+        {
+          "name": "DNAnexus Reference Genomes: AWS US-east",
+          "project": "project-BQpp3Y804Y0xbyG4GJPQ01xv",
+          "path": "/"
+        },
+        {
+          "name": "DNAnexus Reference Genomes: Azure West US",
+          "project": "project-F0yyz6j9Jz8YpxQV8B8Kk7Zy",
+          "path": "/"
+        }
+      ],
+      "help": "The reference genome used during variant calling.",
+      "patterns": ["*.fasta.gz", "*.fa.gz", "*.fasta", "*.fa"]
     },
     {
       "name" : "no_geno",
-      "label" : "Suppress all samples VCF",
+      "label" : "Omit producing a VCF with sample information?",
       "class" : "boolean",
       "optional" : false,
-      "default" : false
+      "default" : false,
+      "help": "Do not produce an annotated VCF that contains sample information."
     },
     {
       "name": "hdr_only",
-      "label": "Output Sites-only VCF",
+      "label": "Output a sites-only VCF?",
       "class": "boolean",
       "optional": false,
-      "default" : true
+      "default" : true,
+      "help": "Create an annotated VCF that contains sites-only, no sample information."
     },
     {
       "name": "cmd_params",
       "label": "VariantAnnotator Parameters",
       "class": "string",
-      "optional": false
-    },
-    {
-      "group": "Build Options",
-      "name": "build_version",
-      "label": "NCBI Build Version",
-      "class": "string",
-      "choices": ["b38","b37_decoy"],
-      "default": "b37_decoy",
-      "optional": true
+      "optional": true,
+      "help": "(Optional) Additional command line options to be passed to the GATK3 VariantAnnotator call."
     }
   ],
   "outputSpec": [
@@ -64,7 +90,8 @@
       "optional" : true,
       "patterns": [
         "*.vcf.gz"
-      ]
+      ],
+      "help": "(Optional) An array of annotated variant files that include sample-level information."
     },
     {
       "name": "vcfidx_out",
@@ -73,7 +100,8 @@
       "optional" : true,
       "patterns": [
         "*.tbi"
-      ]
+      ],
+      "help": "(Optional) An array of index files that match the sample-level variant files."
     },
     {
       "name": "vcf_hdr_out",
@@ -82,7 +110,8 @@
       "optional" : true,
       "patterns": [
         "*.vcf.gz"
-      ]
+      ],
+      "help": "(Optional) An array of annotated variant files that are site-only and omit sample-level information."
     },
     {
       "name": "vcfidx_hdr_out",
@@ -91,29 +120,30 @@
       "optional" : true,
       "patterns": [
         "*.tbi"
-      ]
+      ],
+      "help": "(Optional) An array of index files that match the site-only variant files."
     }
   ],
   "runSpec": {
-  "execDepends": [
-      {
-        "name": "pigz"
-      },
-      {
-        "name": "tabix"
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "interpreter": "python2.7",
+    "file": "src/variant_annotator.py",
+    "timeoutPolicy": {
+      "*": {
+        "hours": 24
       }
-    ],
-    "interpreter": "bash",
-    "file": "src/variant_annotator.sh"
+    }
   },
-  "resources" : "project-BYpFk1Q0pB0xzQY8ZxgJFv1V",
-  "access": {
-    "network": [
-      "*"
-    ],
-     "allProjects": "VIEW"
+  "regionalOptions": {
+    "aws:us-east-1": {"systemRequirements": {"*": {"instanceType": "mem1_ssd1_x8"}},
+                      "assetDepends": [{"id": "record-FJ3zf8j08zVZFzqYG88Pbk7z"}]},
+    "azure:westus": {"systemRequirements": {"*": {"instanceType": "azure:mem1_ssd1_x8"}},
+                     "assetDepends": [{"id": "record-FJ4058j9Vf9ZBBVB2Q7b3VQz"}]}
   },
-  "developers": ["user-tnperson", "user-auv13"],
   "openSource" : true,
-  "authorizedUsers" : ["org-geisinger_affiliate", "org-geisinger", "org-support", "user-codushlaine", "user-semanti.mukherjee", "user-alexander.li", "user-shannon.bruse", "user-jan.freudenberg", "user-crisvh"]
+  "details": {
+    "upstreamUrl": "https://software.broadinstitute.org/gatk/documentation/tooldocs/3.8-0/org_broadinstitute_gatk_tools_walkers_annotator_VariantAnnotator.php",
+    "whatsNew": "* 1.0.0 First version of the GATK3 VariantAnnotator app."
+  }
 }

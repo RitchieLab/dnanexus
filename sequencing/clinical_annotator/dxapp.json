@@ -26,6 +26,21 @@
     {
       "name": "variants_vcfgztbis",
       "label": "VCF File Indices",
+  "summary": "Annotates a VCF File with most recent ClinVar TSV file and with a user provided HGMD PRO vcf file. Because of VCF Normalization difference some annotations will be skiped.",
+  "dxapi": "1.0.0",
+  "version": "1.0.0",
+  "inputSpec": [
+    {
+      "name": "vcf_fn",
+      "label": "VCF File",
+      "class": "array:file",
+      "optional": false,
+      "patterns" : ["*.vcf.gz"],
+        "help": "VCF File to be annotated. chr prefix must not be present"
+    },
+    {
+      "name": "vcfidx_fn",
+      "label": "VCF Index File",
       "class": "array:file",
       "optional": true,
       "patterns": [
@@ -43,6 +58,19 @@
       ],
       "help": "(Optional) Make sure the build version matches the VCF to be annotated (infomation on purchasing an HGMD PRO license can be found at: https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/)."
     },
+
+        "help": "Tabix index file for VCF to be annotated"
+    },
+    {
+        "name": "hgmd_pro_file",
+        "label": "HGMD PRO File",
+        "class": "file",
+        "optional": true,
+        "patterns": [
+          "*.vcf","*.vcf.gz"
+        ],
+        "help": "HGMD PRO VCF.  Make sure the build version matches the vcf to be annotated.  Infomation on purchasing an HGMD PRO license can be found at: https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/  Please ensure that the HGMD"
+      },
     {
       "group": "Build Options",
       "name": "build_version",
@@ -52,6 +80,7 @@
       "default": "b38",
       "optional": false,
       "help": "Please indicate which build your VCF is (the default is NCBI b38)."
+      "help": "Please indicate what build your vcf is.  Default is NCBI b38"
     }
   ],
   "outputSpec": [
@@ -113,5 +142,54 @@
   },
   "access": {
     "project": "CONTRIBUTE"
+
+      "name": "vcf_out",
+      "label": "Annotated VCF",
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz"],
+      "help": "Annotated VCF"
+    },
+    {
+      "name": "vcfidx_out",
+      "label": "Annotated VCF Index",
+      "class": "array:file",
+      "patterns" : ["*.vcf.gz.tbi"],
+      "help": "Index File"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "vcftools"
+      },
+      {
+        "name": "liblzma-dev"
+      },
+      {
+        "name": "tabix"
+      }
+    ],
+    "interpreter": "bash",
+    "distribution": "Ubuntu",
+    "release": "14.04",
+    "file": "src/clinical_annotator.sh"
+  },
+  "access": {
+    "network": [
+      "*"
+    ],
+     "allProjects": "VIEW"
+  },
+  "openSource" : true,
+  "developers" : ["user-tnperson"],
+  "authorizedUsers": ["org-geisinger_affiliate", "org-geisinger", "org-support", "org-geisinger_devel"],
+  "regionalOptions": {
+  "aws:us-east-1": {
+    "systemRequirements": {
+      "*": {
+        "instanceType": "mem1_ssd1_x4"
+        }
+      }
+    }
   }
 }

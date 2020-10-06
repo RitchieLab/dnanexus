@@ -1,0 +1,238 @@
+{
+  "name": "regenie",
+  "title": "regenie",
+  "summary": "regenie",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "inputSpec": [
+    {
+      "name": "input_bed",
+      "label": ".bed genotypes file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.bed"
+      ],
+      "help": "Input genotype data in PLINK .bed format"
+    },
+    {
+      "name": "input_bim",
+      "label": "(Conditional) .bim variants file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.bim"
+      ],
+      "help": "Input variants data in PLINK .bim format, corresponding to the .bed file"
+    },
+    {
+      "name": "input_fam",
+      "label": "(Conditional) .fam samples file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.fam"
+      ],
+      "help": "Input samples data in PLINK .fam format, corresponding to the .bed file"
+    },
+    {
+      "name": "input_bgen",
+      "label": ".bgen genotypes file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.bgen"
+      ],
+      "help": "Input genotype data in .bgen format"
+    },
+    {
+      "name": "input_sample",
+      "label": "(Conditional) .sample file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.sample"
+      ],
+      "help": "Input samples data in .sample format, corresponding to the .bgen file"
+    },
+    {
+      "name": "input_keep_samples",
+      "label": "(Optional) Sample include file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "File listing samples to include in the analysis"
+    },
+    {
+      "name": "input_remove_samples",
+      "label": "(Optional) Sample exclude file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "File listing samples to exclude from the analysis"
+    },
+    {
+      "name": "input_keep_variants",
+      "label": "(Optional) Variant include file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "File listing variants to include in the analysis"
+    },
+    {
+      "name": "input_remove_variants",
+      "label": "(Optional) Variant exclude file",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "File listing variants to exclude from the analysis"
+    },
+    {
+      "name": "input_pheno",
+      "label": "Phenotypes file",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "Input phenotypes data"
+    },
+    {
+      "name": "pheno_columns",
+      "label": "(Optional) Phenotype(s)",
+      "class": "string",
+      "optional": true,
+      "help": "Comma-separated list of phenotypes to include in the analysis"
+    },
+    {
+      "name": "input_covar",
+      "label": "Covariates file",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "Input covariates data"
+    },
+    {
+      "name": "covar_columns",
+      "label": "(Optional) Covariate(s)",
+      "class": "string",
+      "optional": true,
+      "help": "Comma-separated list of covariates to include in the analysis"
+    },
+    {
+      "name": "drop_missing_covars",
+      "label": "Drop samples with missing covars",
+      "class": "boolean",
+      "optional": true,
+      "default": false,
+      "help": "Regenie doesn't support missing covariates; enable this option to automatically drop samples from the analysis which have any missing covariates."
+    },
+    {
+      "name": "block_size",
+      "label": "Genotype block size",
+      "class": "int",
+      "optional": true,
+      "default": 1000,
+      "help": "Size of genotype blocks for regenie"
+    },
+    {
+      "name": "flag_loocv",
+      "label": "LOOCV",
+      "class": "boolean",
+      "optional": true,
+      "default": true,
+      "help": "Use leave-one-out cross validation"
+    },
+    {
+      "name": "flag_bt",
+      "label": "Binary traits",
+      "class": "boolean",
+      "optional": true,
+      "default": true,
+      "help": "Treat phenotypes as binary instead of quantitative"
+    },
+    {
+      "name": "flag_lowmem",
+      "label": "Low memory",
+      "class": "boolean",
+      "optional": true,
+      "default": true,
+      "help": "Write level 0 predictions to temporary files; reduces memory usage, but increases run-time and VM storage requirements"
+    },
+    {
+      "name": "firth_limit",
+      "label": "(Optional) Firth correction",
+      "class": "float",
+      "optional": true,
+      "help": "Use Firth correction for p-values less than this threshold"
+    },
+    {
+      "name": "flag_firth_approx",
+      "label": "Firth approximation",
+      "class": "boolean",
+      "optional": true,
+      "default": true,
+      "help": "When using Firth correction, use approximation for computational speedup"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "dropped_samples",
+      "label": "(Optional) Dropped samples",
+      "class": "file",
+      "patterns": [
+        "*.sample"
+      ],
+      "help": "List of samples that were dropped from the analysis due to missing covariates"
+    },
+    {
+      "name": "output_log",
+      "label": "Log file",
+      "class": "file",
+      "patterns": [
+        "*.log"
+      ],
+      "help": "Regenie log file"
+    },
+    {
+      "name": "output_regenie",
+      "label": "Regenie output",
+      "class": "file",
+      "patterns": [
+        "*.regenie"
+      ],
+      "help": "Output .regenie data file"
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 48
+      }
+    },
+    "interpreter": "bash",
+    "release": "16.04",
+    "distribution": "Ubuntu",
+    "file": "src/regenie.sh",
+    "version": "1"
+  },
+  "regionalOptions": {
+    "aws:us-east-1": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x4"
+        }
+      }
+    }
+  }
+}

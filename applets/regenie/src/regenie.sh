@@ -72,15 +72,15 @@ main() {
     fi
 
     dx download "${input_pheno}" -o input/pheno.txt
-    REGENIE_ARGS="${REGENIE_ARGS} --p input/pheno.txt"
+    REGENIE_ARGS="${REGENIE_ARGS} --phenoFile input/pheno.txt"
     if [[ -n "${pheno_columns}" ]]; then
-        REGENIE_ARGS="${REGENIE_ARGS} --phenoColList \"${pheno_columns}\""
+        REGENIE_ARGS="${REGENIE_ARGS} --phenoColList ${pheno_columns}"
     fi
 
     dx download "${input_covar}" -o input/covar.txt
-    REGENIE_ARGS="${REGENIE_ARGS} --c input/covar.txt"
+    REGENIE_ARGS="${REGENIE_ARGS} --covarFile input/covar.txt"
     if [[ -n "${covar_columns}" ]]; then
-        REGENIE_ARGS="${REGENIE_ARGS} --covarColList \"${covar_columns}\""
+        REGENIE_ARGS="${REGENIE_ARGS} --covarColList ${covar_columns}"
     fi
     if [[ "${drop_missing_covars}" == "true" ]]; then
         grep -P "(^|\s)NA(\s|$)" input/covar.txt | awk '{print $1,$2}' > input/covar.drop.samples
@@ -91,7 +91,7 @@ main() {
         fi
     fi
 
-    REGENIE_ARGS="${REGENIE_ARGS} --b ${block_size}"
+    REGENIE_ARGS="${REGENIE_ARGS} --bsize ${block_size}"
     if [[ "${flag_loocv}" == "true" ]]; then
         REGENIE_ARGS="${REGENIE_ARGS} --loocv"
     fi
@@ -102,7 +102,7 @@ main() {
         REGENIE_ARGS="${REGENIE_ARGS} --lowmem"
     fi
     if [[ -n "${firth_limit}" ]]; then
-        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --firth ${firth_limit}"
+        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --firth --pThresh ${firth_limit}"
         if [[ "${flag_firth_approx}" == "true" ]]; then
             REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --approx"
         fi
@@ -132,14 +132,14 @@ main() {
     for P in $(seq 1 $(head -n 1 input/pheno.txt | wc -w)) ; do
         touch output1/step1_${P}.loco
     done
-    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} --o output1/step1
+    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} --out output1/step1
 
     echo "===== STEP 1 OUTPUTS ====="
     ls -la output1
 
     echo "===== RUNNING STEP 2 ====="
     mkdir output2
-    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list --o output2/step2
+    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list --out output2/step2
 
     echo "===== STEP 2 OUTPUTS ====="
     ls -la output2

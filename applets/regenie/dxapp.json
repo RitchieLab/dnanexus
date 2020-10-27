@@ -63,7 +63,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "File listing samples to include in the analysis"
+      "help": "File listing samples to include in the analysis; if omitted, all samples will be included"
     },
     {
       "name": "input_remove_samples",
@@ -73,7 +73,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "File listing samples to exclude from the analysis"
+      "help": "File listing samples to exclude from the analysis; if omitted, no samples will be excluded"
     },
     {
       "name": "input_keep_variants",
@@ -83,7 +83,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "File listing variants to include in the analysis"
+      "help": "File listing variants to include in the analysis; if omitted, all variants will be included"
     },
     {
       "name": "input_remove_variants",
@@ -93,7 +93,7 @@
       "patterns": [
         "*.txt"
       ],
-      "help": "File listing variants to exclude from the analysis"
+      "help": "File listing variants to exclude from the analysis; if omitted, no variants will be excluded"
     },
     {
       "name": "input_pheno",
@@ -110,7 +110,7 @@
       "label": "(Optional) Phenotype(s)",
       "class": "string",
       "optional": true,
-      "help": "Comma-separated list of phenotypes to include in the analysis"
+      "help": "Comma-separated list of phenotypes to include in the analysis; if blank, all phenotypes will be included"
     },
     {
       "name": "input_covar",
@@ -127,7 +127,7 @@
       "label": "(Optional) Covariate(s)",
       "class": "string",
       "optional": true,
-      "help": "Comma-separated list of covariates to include in the analysis"
+      "help": "Comma-separated list of covariates to include in the analysis; if blank, all covariates will be included"
     },
     {
       "name": "drop_missing_covars",
@@ -174,7 +174,7 @@
       "label": "(Optional) Firth correction",
       "class": "float",
       "optional": true,
-      "help": "Use Firth correction for p-values less than this threshold"
+      "help": "Use Firth correction for p-values less than this threshold; if blank, do not use Firth correction"
     },
     {
       "name": "flag_firth_approx",
@@ -190,6 +190,7 @@
       "name": "dropped_samples",
       "label": "(Optional) Dropped samples",
       "class": "file",
+      "optional": true,
       "patterns": [
         "*.sample"
       ],
@@ -225,14 +226,5 @@
     "distribution": "Ubuntu",
     "file": "src/regenie.sh",
     "version": "1"
-  },
-  "regionalOptions": {
-    "aws:us-east-1": {
-      "systemRequirements": {
-        "*": {
-          "instanceType": "mem1_ssd1_v2_x4"
-        }
-      }
-    }
   }
 }

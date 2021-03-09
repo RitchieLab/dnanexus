@@ -71,6 +71,17 @@ main() {
         REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --exclude input/remove.variants"
     fi
 
+    if [[ -n "${input_pred}" ]]; then
+        if [[ "${run_step_1}" == "true" ]]; then
+            echo "WARNING: ignoring input predictions file because step 1 will be run"
+        else
+            dx download "${input_pred}" -o input/pred.list
+            REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP1} --pred input/remove.variants"
+        fi
+    elif [[ "${run_step_1}" == "false" && "${run_step_2}" == "true" ]]; then
+        dx-jobutil-report-error "Input predictions file not found; step 1 predictions must be supplied when running step 2 only"
+    fi
+
     dx download "${input_pheno}" -o input/pheno.txt
     REGENIE_ARGS="${REGENIE_ARGS} --phenoFile input/pheno.txt"
     if [[ -n "${pheno_columns}" ]]; then
@@ -101,50 +112,55 @@ main() {
     if [[ "${flag_lowmem}" == "true" ]]; then
         REGENIE_ARGS="${REGENIE_ARGS} --lowmem"
     fi
+    if [[ -n "${max_iter}" ]]; then
+        REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --niter ${max_iter}"
+    fi
     if [[ -n "${firth_limit}" ]]; then
         REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --firth --pThresh ${firth_limit}"
         if [[ "${flag_firth_approx}" == "true" ]]; then
             REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --approx"
         fi
     fi
+    if [[ -n "${min_mac}" ]]; then
+        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --minMAC ${min_mac}"
+    fi
 
     echo "===== INPUTS ====="
     ls -la input
 
-    echo "===== CONFIG ====="
-    REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} ${extra_options_1}"
-    REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} ${extra_options_2}"
-    echo "plink args: ${PLINK_ARGS}"
-    echo "regenie base args: ${REGENIE_ARGS}"
-    echo "regenie step1 args: ${REGENIE_ARGS_STEP1}"
-    echo "regenie step2 args: ${REGENIE_ARGS_STEP2}"
 
-
-    ### apply MAF/LD QC for step 1
-
-    echo "===== RUNNING PLINK QC ====="
-    plink ${PLINK_ARGS} --maf 0.1 --indep-pairwise 400 5 0.4 --out input/qc
-    REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --extract input/qc.prune.in"
-
-
-    ### run regenie steps 1 and 2
-
-    echo "===== RUNNING STEP 1 ====="
+    ### run regenie step 1?
     mkdir output1
-    for P in $(seq 1 $(head -n 1 input/pheno.txt | wc -w)) ; do
-        touch output1/step1_${P}.loco
-    done
-    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} --out output1/step1
+    if [[ "${run_step_1}" == "true" ]]; then
+        if [[ "${auto_qc}" == "true" ]]; then
+            ### apply MAF/LD QC for step 1
+            echo "===== RUNNING PLINK QC: ${PLINK_ARGS} ====="
+            plink ${PLINK_ARGS} --out input/qc
+            REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --extract input/qc.prune.in"
+        fi
 
-    echo "===== STEP 1 OUTPUTS ====="
-    ls -la output1
+        echo "===== RUNNING REGENIE STEP 1: ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} ====="
+        for P in $(seq 1 $(head -n 1 input/pheno.txt | wc -w)) ; do
+            touch output1/step1_${P}.loco
+        done
+        regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} --out output1/step1
+        
+        echo "===== STEP 1 OUTPUTS ====="
+        ls -la output1
+        
+        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list"
+    fi
 
-    echo "===== RUNNING STEP 2 ====="
+
+    ### run regenie step 2?
     mkdir output2
-    regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list --out output2/step2
+    if [[ "${run_step_2}" == "true" ]]; then
+        echo "===== RUNNING REGENIE STEP 2: ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} ====="
+        regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2}  --out output2/step2
 
-    echo "===== STEP 2 OUTPUTS ====="
-    ls -la output2
+        echo "===== STEP 2 OUTPUTS ====="
+        ls -la output2
+    fi
 
 
     ### upload outputs
@@ -155,7 +171,12 @@ main() {
     fi
     output_log="$(dx upload --brief output2/step2.log)"
     dx-jobutil-add-output output_log "${output_log}" --class=file
-    output_regenie="$(dx upload --brief output2/step2.regenie)"
-    dx-jobutil-add-output output_regenie "${output_regenie}" --class=file
+    if [[ -s output1/step1_pred.list ]]; then
+        output_pred="$(dx upload --brief output1/step1_pred.list)"
+        dx-jobutil-add-output output_pred "${output_pred}" --class=file
+    fi
+    if [[ -s output2/step2.regenie ]]; then
+        output_regenie="$(dx upload --brief output2/step2.regenie)"
+        dx-jobutil-add-output output_regenie "${output_regenie}" --class=file
+    fi
 }
-

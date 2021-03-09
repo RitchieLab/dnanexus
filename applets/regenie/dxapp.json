@@ -183,6 +183,20 @@
       "optional": true,
       "default": true,
       "help": "When using Firth correction, use approximation for computational speedup"
+    },
+    {
+      "name": "extra_options_1",
+      "label": "(Optional) Extra command-line option(s) for step 1",
+      "class": "string",
+      "optional": true,
+      "help": "Any additional command-line options to pass directly to the regenie program during step 1"
+    },
+    {
+      "name": "extra_options_2",
+      "label": "(Optional) Extra command-line option(s) for step 2",
+      "class": "string",
+      "optional": true,
+      "help": "Any additional command-line options to pass directly to the regenie program during step 2"
     }
   ],
   "outputSpec": [

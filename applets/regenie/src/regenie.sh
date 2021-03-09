@@ -112,6 +112,8 @@ main() {
     ls -la input
 
     echo "===== CONFIG ====="
+    REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} ${extra_options_1}"
+    REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} ${extra_options_2}"
     echo "plink args: ${PLINK_ARGS}"
     echo "regenie base args: ${REGENIE_ARGS}"
     echo "regenie step1 args: ${REGENIE_ARGS_STEP1}"

@@ -78,7 +78,7 @@ main() {
             dx download "${input_pred}" -o input/pred.list
             REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP1} --pred input/remove.variants"
         fi
-    elif [[ "${run_step_1}" == "false" && "${run_step_2}" == "true" ]]; then
+    elif [[ "${run_step_1}" != "true" && "${run_step_2}" == "true" ]]; then
         dx-jobutil-report-error "Input predictions file not found; step 1 predictions must be supplied when running step 2 only"
     fi
 
@@ -110,7 +110,8 @@ main() {
         REGENIE_ARGS="${REGENIE_ARGS} --bt"
     fi
     if [[ "${flag_lowmem}" == "true" ]]; then
-        REGENIE_ARGS="${REGENIE_ARGS} --lowmem"
+        mkdir lowmem
+        REGENIE_ARGS="${REGENIE_ARGS} --lowmem --lowmem-prefix lowmem/tmp"
     fi
     if [[ -n "${max_iter}" ]]; then
         REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --niter ${max_iter}"
@@ -139,6 +140,7 @@ main() {
             REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} --extract input/qc.prune.in"
         fi
 
+        REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} ${extra_options_1}"
         echo "===== RUNNING REGENIE STEP 1: ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} ====="
         for P in $(seq 1 $(head -n 1 input/pheno.txt | wc -w)) ; do
             touch output1/step1_${P}.loco
@@ -155,6 +157,7 @@ main() {
     ### run regenie step 2?
     mkdir output2
     if [[ "${run_step_2}" == "true" ]]; then
+        REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} ${extra_options_2}"
         echo "===== RUNNING REGENIE STEP 2: ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} ====="
         regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2}  --out output2/step2
 

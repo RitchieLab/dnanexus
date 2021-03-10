@@ -172,11 +172,17 @@ main() {
         dropped_samples="$(dx upload --brief input/covar.drop.samples)"
         dx-jobutil-add-output dropped_samples "${dropped_samples}" --class=file
     fi
-    output_log="$(dx upload --brief output2/step2.log)"
-    dx-jobutil-add-output output_log "${output_log}" --class=file
+    if [[ -s output1/step1.log ]]; then
+        output_log_1="$(dx upload --brief output1/step1.log)"
+        dx-jobutil-add-output output_log_1 "${output_log_1}" --class=file
+    fi
     if [[ -s output1/step1_pred.list ]]; then
         output_pred="$(dx upload --brief output1/step1_pred.list)"
         dx-jobutil-add-output output_pred "${output_pred}" --class=file
+    fi
+    if [[ -s output2/step2.log ]]; then
+        output_log_2="$(dx upload --brief output2/step2.log)"
+        dx-jobutil-add-output output_log_2 "${output_log_2}" --class=file
     fi
     if [[ -s output2/step2.regenie ]]; then
         output_regenie="$(dx upload --brief output2/step2.regenie)"

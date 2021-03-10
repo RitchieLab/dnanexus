@@ -76,7 +76,7 @@ main() {
             echo "WARNING: ignoring input predictions file because step 1 will be run"
         else
             dx download "${input_pred}" -o input/pred.list
-            REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP1} --pred input/remove.variants"
+            REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --pred input/remove.variants"
         fi
     elif [[ "${run_step_1}" != "true" && "${run_step_2}" == "true" ]]; then
         dx-jobutil-report-error "Input predictions file not found; step 1 predictions must be supplied when running step 2 only"
@@ -157,7 +157,7 @@ main() {
     ### run regenie step 2?
     mkdir output2
     if [[ "${run_step_2}" == "true" ]]; then
-        REGENIE_ARGS_STEP1="${REGENIE_ARGS_STEP1} ${extra_options_2}"
+        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} ${extra_options_2}"
         echo "===== RUNNING REGENIE STEP 2: ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2} ====="
         regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP2}  --out output2/step2
 

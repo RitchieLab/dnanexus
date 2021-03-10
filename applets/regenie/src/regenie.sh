@@ -73,10 +73,9 @@ main() {
 
     if [[ -n "${input_pred}" ]]; then
         if [[ "${run_step_1}" == "true" ]]; then
-            echo "WARNING: ignoring input predictions file because step 1 will be run"
+            echo "WARNING: ignoring input predictions archive because step 1 will be run"
         else
-            dx download "${input_pred}" -o input/pred.list
-            REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --pred input/pred.list"
+            dx download "${input_pred}" -o input/pred.tar.gz
         fi
     elif [[ "${run_step_1}" != "true" && "${run_step_2}" == "true" ]]; then
         dx-jobutil-report-error "Input predictions file not found; step 1 predictions must be supplied when running step 2 only"
@@ -146,12 +145,16 @@ main() {
             touch output1/step1_${P}.loco
         done
         regenie ${REGENIE_ARGS} ${REGENIE_ARGS_STEP1} --out output1/step1
-        
-        echo "===== STEP 1 OUTPUTS ====="
-        ls -la output1
-        
-        REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list"
+        tar -czvf output1/step1_pred.tar.gz output1/step1_pred.list output1/step1_*.loco
+    else
+        # the step1_pred.list file inside the archive contains absolute paths
+        # (i.e. "/home/dnanexus/output1/step1_1.loco"), but the archive itself
+        # should contain the output1/ layer, so we can just extract it right here
+        tar -xzvf input/pred.tar.gz
     fi
+    REGENIE_ARGS_STEP2="${REGENIE_ARGS_STEP2} --pred output1/step1_pred.list"
+    echo "===== STEP 1 OUTPUTS ====="
+    ls -la output1
 
 
     ### run regenie step 2?
@@ -176,8 +179,8 @@ main() {
         output_log_1="$(dx upload --brief output1/step1.log)"
         dx-jobutil-add-output output_log_1 "${output_log_1}" --class=file
     fi
-    if [[ -s output1/step1_pred.list ]]; then
-        output_pred="$(dx upload --brief output1/step1_pred.list)"
+    if [[ -s output1/step1_pred.tar.gz ]]; then
+        output_pred="$(dx upload --brief output1/step1_pred.tar.gz)"
         dx-jobutil-add-output output_pred "${output_pred}" --class=file
     fi
     if [[ -s output2/step2.log ]]; then

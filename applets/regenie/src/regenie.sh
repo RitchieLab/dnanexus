@@ -190,5 +190,5 @@ main() {
     for F in output2/step2*.regenie ; do
         output_regenie="$(dx upload --brief "${F}")"
         dx-jobutil-add-output output_regenie "${output_regenie}" --class="array:file"
-    fi
+    done
 }

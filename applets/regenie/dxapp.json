@@ -288,13 +288,13 @@
     },
     {
       "name": "output_regenie",
-      "label": "(Optional) Regenie output",
-      "class": "file",
+      "label": "(Optional) Regenie outputs",
+      "class": "array:file",
       "optional": true,
       "patterns": [
         "*.regenie"
       ],
-      "help": "Output results .regenie data file generatd by step 2"
+      "help": "Output results .regenie data files generatd by step 2"
     }
   ],
   "runSpec": {

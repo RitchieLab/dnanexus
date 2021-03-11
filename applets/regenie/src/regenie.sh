@@ -187,8 +187,8 @@ main() {
         output_log_2="$(dx upload --brief output2/step2.log)"
         dx-jobutil-add-output output_log_2 "${output_log_2}" --class=file
     fi
-    if [[ -s output2/step2.regenie ]]; then
-        output_regenie="$(dx upload --brief output2/step2.regenie)"
-        dx-jobutil-add-output output_regenie "${output_regenie}" --class=file
+    for F in output2/step2*.regenie ; do
+        output_regenie="$(dx upload --brief "${F}")"
+        dx-jobutil-add-output output_regenie "${output_regenie}" --class="array:file"
     fi
 }
